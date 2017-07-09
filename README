@@ -1,0 +1,23 @@
+Using
+=====
+Edit PyleWM.py to set whatever window management hotkeys you'd like,
+then execute it from its directory to activate the PyleWM window
+management shortcuts.
+
+The default shortcuts are my personal preferred ones, so you will
+have to edit them to get something halfway sane.
+
+Dependencies
+============
+Requires pypiwin32.
+
+Focus Stealing
+==============
+Since a lot of this program deals with stealing focus from windows and
+giving it to others, we need to set Windows to allow us to steal focus.
+By default it'll prevent us from doing so if we don't already own the 
+focused window.
+
+To enable focus stealing, set the following registry key to 0:
+
+    HKCU\Control Panel\Desktop\ForegroundLockTimeout
