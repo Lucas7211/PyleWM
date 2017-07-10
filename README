@@ -1,3 +1,17 @@
+What is it?
+===========
+Trying to use Windows after being used to i3/awesomewm window management
+is a massive pain in the ass. Since there was nothing to emulate some
+of the features I wanted, I decided to write my own pseudo-tiling window
+manager for Windows.
+
+Functionality includes:
+* Binding arbitrary global hotkeys to various builtin / any python functions.
+* Switching which window is focused based on a direction. (Similar to i3's
+  mod+hjkl / "focus left" command)
+* All windows are automatically tiled, with manual layout control using
+  vsplit/hsplit shortcuts.
+
 Using
 =====
 Edit PyleWM.py to set whatever window management hotkeys you'd like,

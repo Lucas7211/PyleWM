@@ -2,6 +2,9 @@ import sys, ctypes
 from ctypes import windll, CFUNCTYPE, POINTER, c_int, c_uint, c_void_p, byref, c_ulong, pointer, addressof, create_string_buffer
 import win32con, win32api, win32gui, atexit
 
+from threading import Lock
+WMLock = Lock()
+
 class ModPair:
     def __init__(self, left=False, right=False, either=False):
         self.left = left
@@ -111,20 +114,16 @@ def handle_python(isKeyDown, keyCode, scanCode):
     ActiveKey.ctrl.update(keyCode, isKeyDown, win32con.VK_LCONTROL, win32con.VK_RCONTROL)
     ActiveKey.win.update(keyCode, isKeyDown, win32con.VK_LWIN, win32con.VK_RWIN)
         
-    ch = chr(keyCode)
-    hx = hex(keyCode)
-    print(f"{isKeyDown} {keyCode} {ch} {hx}")
-    
     # Call into keybinds
     ActiveKey.key = VKToChr(keyCode, scanCode)
     ActiveKey.down = isKeyDown
-    print(f"KEY {ActiveKey}")
     for bnd in KeyBindings:
         if bnd[0] == ActiveKey:
-            print(f"EXECUTE {bnd[0]} = {bnd[1]}")
+            WMLock.acquire()
             bndReturn = bnd[1]()
             if bndReturn or bndReturn is None:
                 absorbKey = True
+            WMLock.release()
     return absorbKey
 
 KBState = (ctypes.c_byte * 256)()
