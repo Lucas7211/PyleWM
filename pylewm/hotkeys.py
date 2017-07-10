@@ -2,8 +2,7 @@ import sys, ctypes
 from ctypes import windll, CFUNCTYPE, POINTER, c_int, c_uint, c_void_p, byref, c_ulong, pointer, addressof, create_string_buffer
 import win32con, win32api, win32gui, atexit
 
-from threading import Lock
-WMLock = Lock()
+import traceback, threading
 
 class ModPair:
     def __init__(self, left=False, right=False, either=False):
@@ -95,6 +94,7 @@ class KeySpec:
             
 KeyBindings = []
 ActiveKey = KeySpec('')
+queue = None
 
 def register(key, callback):
     registerSpec(KeySpec.fromTuple(key), callback)
@@ -119,11 +119,8 @@ def handle_python(isKeyDown, keyCode, scanCode):
     ActiveKey.down = isKeyDown
     for bnd in KeyBindings:
         if bnd[0] == ActiveKey:
-            WMLock.acquire()
-            bndReturn = bnd[1]()
-            if bndReturn or bndReturn is None:
-                absorbKey = True
-            WMLock.release()
+            queue(bnd[1])
+            absorbKey = True
     return absorbKey
 
 KBState = (ctypes.c_byte * 256)()
@@ -149,7 +146,6 @@ def waitForHotkeys():
             shouldContinue = True
             if isKeyDown or isKeyUp:
                 shouldContinue = not handle_python(isKeyDown, lParam[0], lParam[1])
-            
             if shouldContinue:
                 return windll.user32.CallNextHookEx(windowsHook, nCode, wParam, lParam)
             return 1
@@ -158,7 +154,7 @@ def waitForHotkeys():
     handlerPtr = HANDLER(handle_windows)
     windowsHook = windll.user32.SetWindowsHookExA(win32con.WH_KEYBOARD_LL, handlerPtr, win32api.GetModuleHandle(None), 0)
     atexit.register(windll.user32.UnhookWindowsHookEx, windowsHook)
-
+    
     while True:
         msg = win32gui.GetMessage(None, 0, 0)
         win32gui.TranslateMessage(byref(msg))

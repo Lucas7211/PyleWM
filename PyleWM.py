@@ -16,6 +16,7 @@ HOTKEYS = {
     (MOD, 'n')              : pylewm.tiles.focus_dir("up"),
     (MOD, 'w')              : pylewm.tiles.switch_next,
     (MOD, 'v')              : pylewm.tiles.switch_prev,
+    (MOD, 'g')              : pylewm.tiles.focus_floating,
     
     # Window movement
     (MOD, 'shift', 'h')     : pylewm.tiles.move_dir("left"),
@@ -37,6 +38,7 @@ HOTKEYS = {
     
     # Application management
     (MOD, ';')              : pylewm.execution.run(r'C:\cygwin64\bin\mintty.exe -'),
+    (MOD, 'shift', ';')     : pylewm.execution.run(r'cmd.exe'),
     (MOD, ',')              : pylewm.execution.start_menu,
     (MOD, 'p')              : pylewm.execution.run(r'"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"'),
     (MOD, 'k')              : pylewm.execution.run(r'explorer.exe'),

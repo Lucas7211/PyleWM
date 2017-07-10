@@ -6,6 +6,7 @@ import win32gui, win32con
 import ctypes
 
 IGNORED_CLASSES = {"applicationframewindow"}
+IGNORED_WINDOWS = {"program manager"}
 
 def ignoreWindowClass(cls):
     IGNORED_CLASSES.add(cls.lower())
@@ -16,7 +17,8 @@ def isEmptyWindow(window):
     
 def isRelevantWindow(window):
     cls = win32gui.GetClassName(window)
-    return cls.lower() not in IGNORED_CLASSES
+    title = win32gui.GetWindowText(window)
+    return cls.lower() not in IGNORED_CLASSES and title.lower() not in IGNORED_WINDOWS
 
 def gatherWindows():
     windows = []
@@ -25,9 +27,6 @@ def gatherWindows():
             return
         title = win32gui.GetWindowText(hwnd)
         if len(title) == 0:
-            return
-        #TODO: HACK: Should detect the desktop window instead of using its title
-        if title == "Program Manager":
             return
         if isEmptyWindow(hwnd):
             return
@@ -49,6 +48,8 @@ def close():
 def focus_dir(dir="left"):
     """ Switch focus to a window in a particular direction relative to the currently focused window. """
     curWindow = win32gui.GetForegroundWindow()
+    if not win32gui.IsWindow(curWindow):
+        return
     curRect = win32gui.GetWindowRect(curWindow)
     
     selWin = pylewm.rects.getClosestInDirection(dir, curRect, gatherWindows(), 

@@ -32,7 +32,7 @@ def getClosestInDirection(dir, fromRect, toList, rectFun = lambda x: x, wrap = T
         nonlocal maxDiff
         nonlocal sel
         for other in toList:
-            if other is ignore:
+            if other == ignore:
                 continue
             otherRect = rectFun(other)
             otherStart = getDim(otherRect)
@@ -65,7 +65,7 @@ def getMostOverlapping(fromRect, toList, rectFun = lambda x: x, ignore = None):
     mostOverlap = 0
     sel = None
     for other in toList:
-        if other is ignore:
+        if other == ignore:
             continue
         otherRect = rectFun(other)
         if fromRect[0] > otherRect[2] or fromRect[1] > otherRect[3]:
@@ -77,4 +77,19 @@ def getMostOverlapping(fromRect, toList, rectFun = lambda x: x, ignore = None):
         if overlap > mostOverlap:
             mostOverlap = overlap
             sel = other
+    return sel
+    
+def getClosestTo(fromRect, toList, rectFun = lambda x: x, ignore = None):
+    """ Get the rect in the list that is the closest. """
+    # TODO: Use something better than manhattan distance between top left corners
+    leastDistance = 1e8
+    sel = None
+    for other in toList:
+        if other == ignore:
+            continue
+        otherRect = rectFun(other)
+        dist = abs(otherRect[0] - fromRect[0]) + abs(otherRect[1] - fromRect[1])
+        if dist < leastDistance:
+            sel = other
+            leastDistance = dist
     return sel

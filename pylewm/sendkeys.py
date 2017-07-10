@@ -2,6 +2,7 @@ from pylewm.hotkeys import KeySpec
 
 from pylewm import pylecommand
 
+import ctypes
 import win32api
 import win32com.client
 
@@ -10,15 +11,9 @@ def sendKeysRaw(winKeys):
     shell.SendKeys(winKeys)
 
 def sendKeySpec(keySpec):
-    shell = win32com.client.Dispatch("WScript.Shell")
-    keyStr = keySpec.key
-    if keySpec.ctrl.isSet:
-        keyStr = "^" + keyStr
-    if keySpec.alt.isSet:
-        keyStr = "%" + keyStr
-    if keySpec.shift.isSet:
-        keyStr = "+" + keyStr
-    shell.SendKeys(keyStr)
+    pass
+    #ctypes.windll.user32.keybd_event(vk_mod, 0, 0, 0)
+    #ctypes.windll.user32.keybd_event(vkCode, 0, 0, 0)
 
 @pylecommand
 def sendkey(keys):

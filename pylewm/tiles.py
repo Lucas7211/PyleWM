@@ -3,6 +3,8 @@ from pylewm.windows import isEmptyWindow, isRelevantWindow
 import pylewm.windows
 import pylewm.focus
 import pylewm.rects
+import pylewm.style
+import pylewm.floating
 import win32gui, win32con, win32api
 from ctypes import CFUNCTYPE, POINTER, c_uint, windll
 import atexit
@@ -14,7 +16,9 @@ DelayTicks = 25
 @pylecommand
 def focus_dir(dir):
     """ Focus the neighbouring child to the selected one in a particular direction. """
-    # TODO: Floating layer
+    # Send focus command to floating layer if the current window is floating
+    if pylewm.floating.isFloatingFocused():
+        return pylewm.floating.focus_dir(dir)()
     
     # Check which tile to give focus to based on the currently focused one
     tile = FocusTile
@@ -28,6 +32,26 @@ def focus_dir(dir):
     
     # Fall back on a window-based focus_dir if no tile supports the operation
     pylewm.windows.focus_dir(dir)()
+    
+@pylecommand
+def focus_floating():
+    """ Toggle whether a floating window is focused on not. """
+    curWindow = win32gui.GetForegroundWindow()
+    if not win32gui.IsWindow(curWindow):
+        RootTile.childList[0].focus()
+        return
+    curRect = win32gui.GetWindowRect(curWindow)
+    
+    if pylewm.floating.isFloatingFocused():
+        # Focus the closest tile to the current floating window
+        tile = getClosestTile(curRect)
+        if tile is not None:
+            tile.focus()
+    else:
+        # Focus the closest floating window to the current tile
+        floatingWindow = pylewm.floating.getClosestFloatingWindow(curRect)    
+        if floatingWindow is not None:
+            floatingWindow.focus()
     
 @pylecommand
 def move_dir(dir):
@@ -722,7 +746,7 @@ class TileWindow(TileBase):
                     else:
                         self.resizeDelay = DelayTicks
                 except:
-                    pass
+                    self.noResize = True
         
         
     def update(self):
@@ -737,17 +761,18 @@ class TileWindow(TileBase):
     def focus(self):
         print(f"FOCUS {self.title}")
         pylewm.focus.set(self.window)
-        traceback.print_exc()
         
     def show(self):
         print(f"SHOW {self.title}")
         self.hidden = False
-        #self.updatePosition(force=True)
+        self.updatePosition(force=True)
+        pylewm.floating.showWithParent(self.window)
                         
     def hide(self):
         print(f"HIDE {self.title}")
         self.hidden = True
-        self.updatePosition(force=True)
+        pylewm.floating.hideWithParent(self.window)
+        #self.updatePosition(force=True)
         
     def isHidden(self):
         return self.hidden
@@ -770,24 +795,46 @@ def getCurrentMonitorTile(rect):
         best = PrimaryTile
     return best
     
+def getClosestTile(toRect, windowTilesOnly=True, ignore=None):
+    check = [RootTile]
+    valid = []
+    ind = 0
+    while ind < len(check):
+        tile = check[ind]
+        if not tile.hidden:
+            if not windowTilesOnly or isinstance(tile, TileWindow):
+                valid.append(tile)
+            check.extend(tile.childList)
+        ind += 1
+    return pylewm.rects.getClosestTo(toRect, valid,
+        lambda tile: tile.rect, ignore=ignore)
+    
 def onWindowCreated(window):
-    # Find which tile to use for this window
-    InTile = None
-    if len(PendingOpenTiles) != 0:
-        InTile = PendingOpenTiles[0]
-        del PendingOpenTiles[0]
-    if InTile is None:
-        InTile = FocusTile
-    if InTile is None:
-        InTile = PrevFocusTile
-    if InTile is None:
-        InTile = getCurrentMonitorTile(win32gui.GetWindowRect(window))
-    newTile = TileWindow(window)
-    InTile.add(newTile)
-    teleportMouse(newTile)
+    if isPopup(window):
+        # Add window to our floating layout
+        pylewm.floating.onWindowCreated(window)
+    else:
+        # Find which tile to use for this window
+        InTile = None
+        if len(PendingOpenTiles) != 0:
+            InTile = PendingOpenTiles[0]
+            del PendingOpenTiles[0]
+        if InTile is None:
+            InTile = FocusTile
+        if InTile is None:
+            InTile = PrevFocusTile
+        if InTile is None:
+            InTile = getCurrentMonitorTile(win32gui.GetWindowRect(window))
+        pylewm.style.applyTiled(window)
+        newTile = TileWindow(window)
+        InTile.add(newTile)
 
 def isFocused(window):
     return FocusWindow == window
+    
+def isPopup(hwnd):
+    style = win32api.GetWindowLong(hwnd, win32con.GWL_STYLE)
+    return bool(style & win32con.WS_POPUP)
     
 def print_tree():
     print_sub(0, RootTile)
@@ -801,7 +848,10 @@ def print_sub(indent, tile):
 def teleportMouse(tile):
     tile = tile.getInnerActive()
     if pylewm.config.get("TeleportMouse", False):
-        win32api.SetCursorPos((tile.rect[0] + 10, tile.rect[1] + 10))
+        try:
+            win32api.SetCursorPos((tile.rect[0] + 10, tile.rect[1] + 10))
+        except:
+            pass # Not allowed, probably an administrator window has focus or something
     
 @pyleinit
 def initTiles():
@@ -830,13 +880,19 @@ def tickTiles():
         title = win32gui.GetWindowText(hwnd)
         if len(title) == 0:
             return
-        #TODO: HACK: Should detect the desktop window instead of using its title
-        if title == "Program Manager":
-            return
         if not isRelevantWindow(hwnd):
             return
         if isEmptyWindow(hwnd):
             return
+        style = win32api.GetWindowLong(hwnd, win32con.GWL_STYLE)
+        extStyle = win32api.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
+        print(f"Window: {title} / {win32gui.GetClassName(hwnd)}")
+        for s in ((win32con.WS_CHILD, "WS_CHILD"), (win32con.WS_DISABLED, "WS_DISABLED"), (win32con.WS_POPUP, "WS_POPUP"), (win32con.WS_TILED, "WS_TILED"), (win32con.WS_VISIBLE, "WS_VISIBLE")):
+            print(f"{s[1]}: {bool(style & s[0])}")
+        for s in ((win32con.WS_EX_APPWINDOW, "WS_EX_APPWINDOW"), (win32con.WS_EX_NOACTIVATE, "WS_EX_NOACTIVATE"), (win32con.WS_EX_TOOLWINDOW, "WS_EX_TOOLWINDOW")):
+            print(f"{s[1]}: {bool(extStyle & s[0])}")
+        print(f"PLACEMENT: {win32gui.GetWindowPlacement(hwnd)} STYLE {hex(style)} / {hex(extStyle)}")
+        print(f"PARENT: {win32api.GetWindowLong(hwnd, win32con.GWL_HWNDPARENT)}")
         unknown_windows.append(hwnd)
     win32gui.EnumWindows(enumUnknown, None)
 
