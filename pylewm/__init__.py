@@ -5,6 +5,7 @@ import pylewm.hotkeys
 
 InitFunctions = []
 TickFunctions = []
+config = {}
 
 def pylecommand(fun):
     out = lambda *args: partial(fun, *args)
@@ -30,9 +31,9 @@ def tick():
     global queuedFunctions
     run = list(queuedFunctions)
     queuedFunctions = []
-    for fun in run:
-        fun()
     for fun in TickFunctions:
+        fun()
+    for fun in run:
         fun()
     pylewm.hotkeys.WMLock.release()
 

@@ -1,35 +1,144 @@
-from pylewm import pyleinit, pyletick, pylecommand
+from pylewm import pyleinit, pyletick, pylecommand, config
 from pylewm.windows import isEmptyWindow, isRelevantWindow
 import pylewm.windows
 import pylewm.focus
+import pylewm.rects
 import win32gui, win32con, win32api
 from ctypes import CFUNCTYPE, POINTER, c_uint, windll
 import atexit
+import traceback
 
 TileWindowOverlap = 4
+DelayTicks = 25
 
 @pylecommand
 def focus_dir(dir):
     """ Focus the neighbouring child to the selected one in a particular direction. """
+    # TODO: Floating layer
+    
+    # Check which tile to give focus to based on the currently focused one
     tile = FocusTile
     while tile is not None:
         inDir = tile.in_dir(dir)
         if inDir is not None:
             inDir.focus()
+            teleportMouse(inDir)
             return
         tile = tile.parent
     
     # Fall back on a window-based focus_dir if no tile supports the operation
     pylewm.windows.focus_dir(dir)()
+    
+@pylecommand
+def move_dir(dir):
+    """ Move the focused single window in a particular direction. """
+    # Find the destination tile in that direction
+    sourceTile = FocusTile
+    destTile = sourceTile
+    while destTile is not None:
+        inDir = destTile.in_dir(dir)
+        if inDir is not None:
+            destTile = inDir
+            break
+        destTile = destTile.parent
+        
+    if destTile is None:
+        return
+        
+    # Resolve the source to a single window
+    sourceTile = getWindowTile(FocusWindow)
+    
+    if sourceTile is None:
+        return
+        
+    print(f"MOVE {sourceTile.title} ONTO {destTile.title}")
+    print_tree()
+    
+    # Check if we should replace the window with one from the destination
+    replaceWindow = None
+    if destTile.parent is not None:
+        replaceWindow = destTile.parent.getReplaceWindow(sourceTile, destTile)
+    
+    if replaceWindow is not None:
+        # Swap this window for the window we want to replace
+        replaceParent = replaceWindow.parent
+        sourceParent = sourceTile.parent
+        
+        replaceParent.remove(replaceWindow)
+        sourceParent.remove(sourceTile)
+        
+        replaceParent.add(sourceTile)
+        sourceParent.add(replaceWindow)
+    else:
+        # Add it as a new singular tile to the existing destination
+        newTile = TileSingular()
+        newTile.hidden = True
+        newTile.rect = sourceTile.rect
+        sourceParent = sourceTile.parent
+        sourceParent.remove(sourceTile)
+        sourceParent.update()
+        newTile.add(sourceTile)
+        newTile.visibleChild = sourceTile
+        destTile.addOnTile(newTile)
+        newTile.focus()
+        
+    teleportMouse(sourceTile)
+
+    print("AFTER")
+    print_tree()
+    
+@pylecommand
+def move_tile_dir(dir):
+    """ Move the focused entire tile in a particular direction. """
+    # Find the destination tile in that direction
+    sourceTile = FocusTile
+    destTile = sourceTile
+    while destTile is not None:
+        inDir = destTile.in_dir(dir)
+        if inDir is not None:
+            destTile = inDir
+            break
+        destTile = destTile.parent
+        
+    if destTile is None:
+        return
+        
+    print(f"MOVE {FocusTile.title} ONTO {destTile.title}")
+    print_tree()
+    
+    if sourceTile.persistent:
+        # Persistent tiles should just lose all their children instead
+        focusWindowTile = getWindowTile(FocusWindow)
+        newTile = TileSingular()
+        newTile.rect = sourceTile.rect
+        for child in sourceTile.childList[:]:
+            sourceTile.remove(child)
+            newTile.add(child)
+        newTile.visibleChild = focusWindowTile
+        destTile.addOnTile(newTile)
+        teleportMouse(focusWindowTile)
+    elif sourceTile.parent is destTile.parent:
+        # Just swap the positions of the children
+        sourceTile.parent.swapChildren(sourceTile, destTile)
+        teleportMouse(sourceTile)
+    else:
+        # Remove window from its parent
+        sourceTile.parent.remove(sourceTile)
+        
+        # Add window to new parent
+        destTile.addOnTile(sourceTile)
+        teleportMouse(sourceTile)
+    print("AFTER")
+    print_tree()
 
 @pylecommand
-def focus_next():
-    """ Focus the next child in the active tile. """
+def switch_next():
+    """ Switch to the next window contained in the active tile. """
     tile_bubble(FocusTile, "next")
  
 @pylecommand
-def focus_prev():
-    """ Focus the previous child in the active tile. """
+def switch_prev():
+    """ Switch to the previous window contained in the active tile. """
     tile_bubble(FocusTile, "prev")
 
 @pylecommand
@@ -89,6 +198,7 @@ class TileBase:
         self.persistent = False
         self.hidden = False
         self.pending = False
+        self.isMaximize = False
         
     def checkFocus(self):
         for child in self.childList:
@@ -117,6 +227,9 @@ class TileBase:
         
     def focus(self):
         pass
+        
+    def getInnerActive(self):
+        return self
         
     def in_dir(self, dir, fromChild = None):
         return None
@@ -150,6 +263,23 @@ class TileBase:
         # Swap the order of children so it's in the same order it was before
         self.childList[wasIndex], self.childList[-1] = self.childList[-1], self.childList[wasIndex]
         
+    def swapChildren(self, fromTile, toTile):
+        fromIndex = self.childList.index(fromTile)
+        toIndex = self.childList.index(toTile)
+        self.childList[fromIndex], self.childList[toIndex] = self.childList[toIndex], self.childList[fromIndex]
+        
+    def getReplaceWindow(self, forWindow, onTile):
+        return None
+        
+    def addOnTile(self, tile, onToTile=None):
+        onIndex = 0
+        if onToTile is not None:
+            onIndex = self.childList.index(onToTile)
+        self.add(tile)
+        if onToTile is not None:
+            self.childList.remove(tile)
+            self.childList.insert(onIndex, tile)
+        
     def next(self):
         return False
         
@@ -161,26 +291,64 @@ class TileBase:
         return f"{self.__class__.__name__} {self.rect}"
         
 class TileRoot(TileBase):
+    def __init__(self):
+        self.focusChild = None
+        TileBase.__init__(self)
+        
     def getInnerFocused(self):
         for child in self.childList:
             if child.focused:
                 return child.getInnerFocused()
         return None
         
+    def in_dir(self, dir, fromChild = None):
+        if fromChild is None:
+            fromChild = self.focusChild
+        if fromChild is None or fromChild not in self.childList:
+            return None
+        sel = pylewm.rects.getClosestInDirection(
+            dir, fromChild.rect, self.childList, lambda tile: tile.rect,
+            wrap = True, ignore = fromChild
+        )
+        print(f"SELECT {dir} = {fromChild.title} -> {sel.title}")
+        return sel
+        
+    def update(self):
+        TileBase.update(self)
+        # Update focused status
+        self.focused = False
+        self.focusChild = None
+        for i, child in enumerate(self.childList):
+            if child.focused:
+                self.focused = True
+                self.focusChild = child
+                break
+        return True
+        
 class TileSingular(TileBase):
     def __init__(self):
-        self.isMaximize = False
         self.focusChild = None
-        self.childMRU = []
+        self.visibleChild = None
+        self.wasLostChild = False
+        self.focusDelay = 0
         super(TileSingular, self).__init__()
         
     def update(self):
+        if self.focusDelay > 0:
+            self.focusDelay -= 1
         # Update child status
         i = 0
         cnt = len(self.childList)
+        keepFocus = False
+        lostChild = False
         while i < cnt:
             self.childList[i].rect = self.rect
             if not self.childList[i].update():
+                child = self.childList[i]
+                if self.focusChild is self.childList[i]:
+                    keepFocus = True
+                if not hasattr(child, "wasLostChild") or child.wasLostChild:
+                    lostChild = True
                 self.remove(self.childList[i])
                 i -= 1
                 cnt -= 1
@@ -188,66 +356,85 @@ class TileSingular(TileBase):
         if cnt > 0:
             self.pending = False
         if not self.persistent and not self.pending and len(self.childList) == 0:
+            self.wasLostChild = lostChild
             return False
         # Update focused status
         self.focused = False
         self.focusChild = None
-        for i, child in enumerate(self.childMRU):
+        self.visibleChild = None
+        for i, child in enumerate(self.childList):
             if child.checkFocus():
-                if i != 0:
-                    self.setFocus(child)
                 self.focused = True
                 self.focusChild = child
+                self.visibleChild = child
                 break
-        # Show a window if we don't have one visible
-        if len(self.childMRU) != 0 and self.childMRU[0].isHidden():
-            self.hideExisting(self.childMRU[0])
-            self.childMRU[0].show()
+            if not child.isHidden():
+                self.visibleChild = child
+        if self.visibleChild is None and len(self.childList) != 0:
+            self.visibleChild = self.childList[0]
+        if keepFocus and self.visibleChild is not None:
+            self.focusChild = self.visibleChild
+            self.visibleChild.focus()
+        if self.visibleChild is not None:
+            while self.visibleChild is not self.childList[0]:
+                child = self.childList[0]
+                del self.childList[0]
+                self.childList.append(child)
+        # Update which child is visible
+        if self.focusDelay <= 0:
+            for child in self.childList:
+                if child is self.visibleChild and not self.hidden:
+                    if child.isHidden():
+                        child.show()
+                else:
+                    if not child.isHidden():
+                        child.hide()
         return True
         
-    def hideExisting(self, donthide=0):
-        for child in self.childList:
-            if child is not donthide and not child.isHidden():
-                child.hide()
-    
-    def setFocus(self, tile):
-        self.hideExisting(tile)
-        self.childMRU.remove(tile)
-        self.childMRU.insert(0, tile)
+    def switchTo(self, tile):
+        if self.visibleChild is not None:
+            self.visibleChild.hide()
+        self.visibleChild = tile
+        tile.show()
+        if self.focused:
+            tile.focus()
+            self.focusDelay = DelayTicks
         
     def focus(self):
-        if len(self.childMRU) != 0:
-            self.childMRU[0].focus()
+        if self.visibleChild is not None:
+            self.visibleChild.focus()
         
-    def focusTo(self, tile):
-        self.setFocus(tile)
-        tile.rect = self.rect
-        tile.show()
-                
     def add(self, tile):
         print(f"ADD {tile.title} / {len(self.childList)} FROM {self.title} = {self.rect}")
-        self.hideExisting()
-        self.childMRU.insert(0, tile)
         self.childList.append(tile)
         tile.rect = self.rect
-        tile.show()
         tile.parent = self
         
     def remove(self, tile):
-        print(f"REMOVE {tile.title} / {len(self.childList)} FROM {self.title} = {self.rect}")
-        self.childMRU.remove(tile)
-        self.childList.remove(tile)
-        if tile is self.focusChild:
-            if len(self.childMRU) != 0:
-                self.focusTo(self.childMRU[0])
-            
+        TileBase.remove(self, tile)
+        
+    def addOnTile(self, tile, onToTile=None):
+        if isinstance(tile, TileSingular):
+            # Merge all its windows into this
+            toFocus = None
+            if tile.visibleChild:
+                toFocus = tile.visibleChild
+            for child in tile.childList[:]:
+                tile.remove(child)
+                self.add(child)
+            if toFocus is not None:
+                self.switchTo(toFocus)
+        else:
+            raise "Not Allowed"
+        
     def hide(self):
-        self.hideExisting()
+        for child in self.childList:
+            child.hide()
         self.hidden = True
         
     def show(self):
-        if len(self.childMRU) != 0:
-            self.childMRU[0].show()
+        if self.visibleChild is not None:
+            self.visibleChild.show()
         self.hidden = False
         
     def isHidden(self):
@@ -257,8 +444,8 @@ class TileSingular(TileBase):
         if len(self.childList) <= 1:
             return True
         for i, child in enumerate(self.childList):
-            if child is self.focusChild:
-                self.focusTo(self.childList[(i+1) % len(self.childList)])
+            if child is self.visibleChild:
+                self.switchTo(self.childList[(i+1) % len(self.childList)])
                 return True
         return True
         
@@ -266,8 +453,8 @@ class TileSingular(TileBase):
         if len(self.childList) <= 1:
             return True
         for i, child in enumerate(self.childList):
-            if child is self.focusChild:
-                self.focusTo(self.childList[(i-1) % len(self.childList)])
+            if child is self.visibleChild:
+                self.switchTo(self.childList[(i-1) % len(self.childList)])
                 return True
         return True
         
@@ -283,6 +470,8 @@ class TileSingular(TileBase):
         splitTile.add(pendingTile)
         PendingOpenTiles.insert(0, pendingTile)
         splitTile.updateRects()
+        splitTile.persistent = self.persistent
+        self.persistent = False
         print(f"AFTER")
         print_tree()
         return True
@@ -297,6 +486,7 @@ class TileListBase(TileBase):
     def __init__(self):
         self.focusChild = None
         self.lastFocusChild = None
+        self.wasLostChild = False
         super(TileListBase, self).__init__()
         
     def update(self):
@@ -304,15 +494,27 @@ class TileListBase(TileBase):
         i = 0
         cnt = len(self.childList)
         self.updateRects()
+        keepFocus = None
+        lostChild = False
         while i < cnt:
             if not self.childList[i].update():
+                child = self.childList[i]
+                if not hasattr(child, "wasLostChild") or child.wasLostChild:
+                    if self.focusChild is child or self.lastFocusChild is child and cnt >= 2:
+                        keepFocus = self.childList[(i-1)%cnt]
+                    print(f"{self.title} LOST CHILD {child.title}")
+                    lostChild = True
                 self.remove(self.childList[i])
                 i -= 1
                 cnt -= 1
             i += 1
         if cnt > 0:
             self.pending = False
+        if keepFocus is not None:
+            print(f"KEEP FOCUS {self.title} : {keepFocus.title}")
+            keepFocus.focus()
         if not self.persistent and not self.pending and len(self.childList) == 0:
+            self.wasLostChild = lostChild
             return False
         # A list with only one child removes itself and puts the child back on its parent
         if len(self.childList) == 1:
@@ -320,6 +522,7 @@ class TileListBase(TileBase):
             child = self.childList[0]
             self.remove(child)
             self.parent.replaceChild(self, child)
+            child.persistent = self.persistent
             return True
         # Update focused status
         self.focused = False
@@ -342,8 +545,21 @@ class TileListBase(TileBase):
         setTo = self.focusChild
         if setTo is None:
             setTo = self.lastFocusChild
+        if setTo is None and self.childList:
+            setTo = self.childList[0]
         if setTo is not None:
             setTo.focus()
+                       
+    def getInnerActive(self):
+        inner = self.focusChild
+        if inner is None:
+            inner = self.lastFocusChild
+        if inner is None and self.childList:
+            inner = self.childList[0]
+        if inner is None:
+            return self
+        else:
+            return inner.getInnerActive()
                 
     def add(self, tile):
         print(f"ADD {tile.title} / {len(self.childList)} FROM {self.title} = {self.rect}")
@@ -351,6 +567,29 @@ class TileListBase(TileBase):
         self.updateRects()
         tile.show()
         tile.parent = self
+        
+    def addTile(self, tile, onToTile=None):
+        if onToTile is None:
+            onToTile = self.lastFocusChild
+        TileBase.addTile(self, tile, onToTile=onToTile)
+        
+    def addWindowTile(self, windowTile, onToTile=None):
+        tile = TileSingular()
+        tile.add(windowTile)
+        self.addTile(tile, onToTile)
+        
+    def replaceChild(self, fromTile, toTile):
+        if self.lastFocusChild is fromTile:
+            self.lastFocusChild = toTile
+        TileBase.replaceChild(self, fromTile, toTile)
+                    
+    def getReplaceWindow(self, forWindow, onTile):
+        # Do a replace if we're the window's second parent
+        if forWindow.parent is not None and self is forWindow.parent.parent:
+            if isinstance(onTile, TileSingular):
+                if onTile.visibleChild is not None:
+                    return onTile.visibleChild
+        return None
         
     def remove(self, tile):
         print(f"REMOVE {tile.title} / {len(self.childList)} FROM {self.title} = {self.rect}")
@@ -449,6 +688,8 @@ class TileWindow(TileBase):
     def __init__(self, window):
         self.window = window
         self.noResize = False
+        self.resizeDelay = 0
+        self.prevRect = (0,0,0,0)
         print(f"MAKE {self.title}")
         super(TileWindow, self).__init__()
         
@@ -461,48 +702,73 @@ class TileWindow(TileBase):
         
     def getInnerFocused(self):
         return None
+    
+    def updatePosition(self, force=False):
+        if not self.hidden:
+            placement = win32gui.GetWindowPlacement(self.window)
+            if placement[1] != win32con.SW_MAXIMIZE and self.parent.isMaximize:
+                win32gui.ShowWindow(self.window, win32con.SW_MAXIMIZE)                
+            elif (placement[1] == win32con.SW_MAXIMIZE and not self.parent.isMaximize) or placement[1] == win32con.SW_MINIMIZE:
+                win32gui.ShowWindow(self.window, win32con.SW_SHOWNOACTIVATE)
+            if (win32gui.GetWindowRect(self.window) != self.rect or force) and not self.noResize and (self.resizeDelay <= 0 or self.prevRect != self.rect or force):
+                print(f"REPOSITION {self.title} % {self.hidden}: {win32gui.GetWindowRect(self.window)} => {self.rect}")
+                try:
+                    win32gui.SetWindowPos(self.window, win32con.HWND_BOTTOM if self.hidden else win32con.HWND_TOP,
+                        self.rect[0], self.rect[1],
+                        self.rect[2] - self.rect[0], self.rect[3] - self.rect[1],
+                        win32con.SWP_NOACTIVATE)
+                    if self.prevRect != self.rect:
+                        self.prevRect = self.rect
+                    else:
+                        self.resizeDelay = DelayTicks
+                except:
+                    pass
         
-    def hide(self):
-        print(f"HIDE {self.title}")
-        if not win32gui.IsIconic(self.window):
-            win32gui.ShowWindow(self.window, win32con.SW_FORCEMINIMIZE)
-        self.hidden = True
         
     def update(self):
         if not win32gui.IsWindow(self.window):
             return False
+        if self.resizeDelay > 0:
+            self.resizeDelay -= 1
         if not self.isHidden():
-            if win32gui.GetWindowRect(self.window) != self.rect and not self.noResize:
-                print(f"REPOSITION {self.title} FROM {win32gui.GetWindowRect(self.window)} TO {self.rect} ({self.parent.title})")
-                try:
-                    win32gui.SetWindowPos(self.window, win32con.HWND_TOP,
-                        self.rect[0], self.rect[1],
-                        self.rect[2] - self.rect[0], self.rect[3] - self.rect[1],
-                        win32con.SWP_NOACTIVATE)
-                except:
-                    print(f"CANNOT RESIZE {self.title}")
-                    self.noResize = True
+            self.updatePosition()
         return True
         
     def focus(self):
+        print(f"FOCUS {self.title}")
         pylewm.focus.set(self.window)
+        traceback.print_exc()
         
     def show(self):
         print(f"SHOW {self.title}")
         self.hidden = False
-        try:
-            win32gui.SetWindowPos(self.window, win32con.HWND_TOP,
-                self.rect[0], self.rect[1],
-                self.rect[2] - self.rect[0], self.rect[3] - self.rect[1],
-                0)
-        except:
-            pass # Probably not a window we can set position on
-        win32gui.ShowWindow(self.window, win32con.SW_RESTORE)
-        #if self.isMaximize:
-            #win32gui.ShowWindow(window, win32con.SW_MAXIMIZE)
+        #self.updatePosition(force=True)
+                        
+    def hide(self):
+        print(f"HIDE {self.title}")
+        self.hidden = True
+        self.updatePosition(force=True)
         
     def isHidden(self):
-        return win32gui.IsIconic(self.window)
+        return self.hidden
+        
+def getWindowTile(window):
+    check = [RootTile]
+    ind = 0
+    while ind < len(check):
+        tile = check[ind]
+        if isinstance(tile, TileWindow):
+            if tile.window == window:
+                return tile
+        check.extend(tile.childList)
+        ind += 1
+    return None
+        
+def getCurrentMonitorTile(rect):
+    best = pylewm.rects.getMostOverlapping(rect, RootTile.childList, lambda tile: tile.rect)
+    if best is None:
+        best = PrimaryTile
+    return best
     
 def onWindowCreated(window):
     # Find which tile to use for this window
@@ -515,8 +781,10 @@ def onWindowCreated(window):
     if InTile is None:
         InTile = PrevFocusTile
     if InTile is None:
-        InTile = PrimaryTile
-    InTile.add(TileWindow(window))
+        InTile = getCurrentMonitorTile(win32gui.GetWindowRect(window))
+    newTile = TileWindow(window)
+    InTile.add(newTile)
+    teleportMouse(newTile)
 
 def isFocused(window):
     return FocusWindow == window
@@ -529,6 +797,12 @@ def print_sub(indent, tile):
     for child in tile.childList:
         print_sub(indent+4, child)
     
+
+def teleportMouse(tile):
+    tile = tile.getInnerActive()
+    if pylewm.config.get("TeleportMouse", False):
+        win32api.SetCursorPos((tile.rect[0] + 10, tile.rect[1] + 10))
+    
 @pyleinit
 def initTiles():
     # Create an empty top level tile for each monitor
@@ -539,7 +813,6 @@ def initTiles():
         monitor = win32api.GetMonitorInfo(mhnd[0])
         tile = TileSingular()
         tile.persistent = True
-        tile.isMaximize = True
         tile.rect = tuple(monitor['Work'][0:4])
         RootTile.add(tile)
         if monitor['Flags'] & win32con.MONITORINFOF_PRIMARY:

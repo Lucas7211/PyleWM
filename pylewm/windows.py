@@ -1,6 +1,7 @@
 from pylewm import pylecommand, queue
 import pylewm.monitors
 import pylewm.focus
+import pylewm.rects
 import win32gui, win32con
 import ctypes
 
@@ -47,56 +48,10 @@ def close():
 @pylecommand
 def focus_dir(dir="left"):
     """ Switch focus to a window in a particular direction relative to the currently focused window. """
-    def getDim(rect):
-        if dir == "left": return rect[0]
-        if dir == "up": return rect[1]
-        if dir == "right": return rect[0]
-        return rect[1]
-    def getOtherDim(rect):
-        if dir == "left": return rect[1]
-        if dir == "up": return rect[0]
-        if dir == "right": return rect[1]
-        return rect[0]
-    def isAfter(A, B):
-        if dir == "left" or dir == "up":
-            return B < A
-        else:
-            return A < B
     curWindow = win32gui.GetForegroundWindow()
     curRect = win32gui.GetWindowRect(curWindow)
-    curStart = getDim(curRect)
-    curOtherDim = getOtherDim(curRect)
-    maxDiff = float(1e20)
-    selWin = None
     
-    # Find which window is the closest in the particular direction
-    def checkWindows():
-        nonlocal maxDiff
-        nonlocal selWin
-        for otherWin in gatherWindows():
-            if otherWin == curWindow:
-                continue
-            otherRect = win32gui.GetWindowRect(otherWin)
-            otherStart = getDim(otherRect)
-            otherOtherDim = getOtherDim(otherRect)
-            
-            # Skip windows not at all extended in the right direction
-            if not isAfter(curStart, otherStart):
-                continue
-                
-            diff = float(abs(curStart - otherStart)) + float(abs(curOtherDim - otherOtherDim) / 10000.0)
-            if diff < maxDiff:
-                # Closer to the window's starting edge
-                maxDiff = diff
-                selWin = otherWin
-            
-    # Focus the window we found
-    checkWindows()
+    selWin = pylewm.rects.getClosestInDirection(dir, curRect, gatherWindows(), 
+        lambda win: win32gui.GetWindowRect(win), wrap=True, ignore=curWindow)
     if selWin is not None:
         pylewm.focus.set(selWin)
-    else:
-        # Wrap around to the other side
-        curStart = getDim(pylewm.monitors.DesktopArea) - curStart
-        checkWindows()
-        if selWin is not None:
-            pylewm.focus.set(selWin)
