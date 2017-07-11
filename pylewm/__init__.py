@@ -1,6 +1,7 @@
 import sys, time, threading
 from functools import partial
 import traceback, os
+import subprocess
 
 import pylewm.hotkeys
 from threading import RLock
@@ -11,7 +12,7 @@ TickFunctions = []
 config = {}
 
 def pylecommand(fun):
-    out = lambda *args: partial(fun, *args)
+    out = lambda *args, **kwargs: partial(fun, *args, **kwargs)
     out.pylewm_callback = fun
     return out
  
@@ -52,15 +53,26 @@ def runThread():
         
 def start():
     import ctypes
-    if not ctypes.windll.shell32.IsUserAnAdmin():
+    if not ctypes.windll.shell32.IsUserAnAdmin() and config.get("RunAsAdmin", True):
         ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
         sys.exit()
         return
+    else:
+        # Get the credentials for the user right now so we can spawn stuff later
+        #  Apparently we can't spawn stuff as a user without getting their password,
+        #  even if we're elevated. Windows.
+        print("Prompting for user credentials, since windows won't let us spawn as user without them even when we're admin:")
+        args = ["runas", "/user:"+os.environ["USERDOMAIN"]+"\\"+os.environ["USERNAME"], "/savecred", "cmd.exe /c echo Credentials Saved..."]
+        subprocess.call(args, shell=True)
     for fun in InitFunctions:
         fun()
     threading.Thread(target=runThread).start()
     pylewm.hotkeys.queue = queue
     pylewm.hotkeys.waitForHotkeys()
+
+def restart():
+    subprocess.call([sys.executable, *sys.argv])
+    quit()
     
 def quit():
     global stopped

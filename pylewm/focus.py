@@ -1,5 +1,6 @@
 from pylewm import pylecommand, queue
 import win32gui
+import traceback
 
 def set(window, num=10):
     if num == 10:
@@ -13,4 +14,5 @@ def set(window, num=10):
         if num > 0:
             queue(lambda: set(window, num-1))
         else:
-            print("COULD NOT SET FOREGROUND TO "+win32gui.GetWindowText(window))
+            print("Error: Could not switch focus to window: "+win32gui.GetWindowText(window))
+            print("Is HKCU\Control Panel\Desktop\ForegroundLockTimeout set to 0?")

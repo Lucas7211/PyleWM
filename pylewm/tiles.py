@@ -734,6 +734,8 @@ class TileWindow(TileBase):
                 win32gui.ShowWindow(self.window, win32con.SW_MAXIMIZE)                
             elif (placement[1] == win32con.SW_MAXIMIZE and not self.parent.isMaximize) or placement[1] == win32con.SW_MINIMIZE:
                 win32gui.ShowWindow(self.window, win32con.SW_SHOWNOACTIVATE)
+            if win32gui.IsIconic(self.window):
+                win32gui.ShowWindow(self.window, win32con.SW_RESTORE)
             if (win32gui.GetWindowRect(self.window) != self.rect or force) and not self.noResize and (self.resizeDelay <= 0 or self.prevRect != self.rect or force):
                 print(f"REPOSITION {self.title} % {self.hidden}: {win32gui.GetWindowRect(self.window)} => {self.rect}")
                 try:
@@ -790,7 +792,14 @@ def getWindowTile(window):
     return None
         
 def getCurrentMonitorTile(rect):
-    best = pylewm.rects.getMostOverlapping(rect, RootTile.childList, lambda tile: tile.rect)
+    best = None
+    if len(rect) == 4:
+        best = pylewm.rects.getMostOverlapping(rect, RootTile.childList, lambda tile: tile.rect)
+    elif len(rect) == 2:
+        for tile in RootTile.childList:
+            if tile.rect[0] <= rect[0] and tile.rect[2] >= rect[0] \
+                and tile.rect[1] <= rect[1] and tile.rect[3] >= rect[1]:
+                best = tile
     if best is None:
         best = PrimaryTile
     return best
@@ -819,6 +828,12 @@ def onWindowCreated(window):
         if len(PendingOpenTiles) != 0:
             InTile = PendingOpenTiles[0]
             del PendingOpenTiles[0]
+        # If the mouse is on a monitor that doesn't have any windows yet,
+        # open the window there
+        monitor = getCurrentMonitorTile(win32gui.GetCursorPos())
+        if monitor is not None:
+            if len(monitor.childList) == 0:
+                InTile = monitor
         if InTile is None:
             InTile = FocusTile
         if InTile is None:
@@ -887,7 +902,8 @@ def tickTiles():
         style = win32api.GetWindowLong(hwnd, win32con.GWL_STYLE)
         extStyle = win32api.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
         print(f"Window: {title} / {win32gui.GetClassName(hwnd)}")
-        for s in ((win32con.WS_CHILD, "WS_CHILD"), (win32con.WS_DISABLED, "WS_DISABLED"), (win32con.WS_POPUP, "WS_POPUP"), (win32con.WS_TILED, "WS_TILED"), (win32con.WS_VISIBLE, "WS_VISIBLE")):
+        for s in ((win32con.WS_CHILD, "WS_CHILD"), (win32con.WS_DISABLED, "WS_DISABLED"), (win32con.WS_POPUP, "WS_POPUP"), (win32con.WS_TILED, "WS_TILED"), (win32con.WS_VISIBLE, "WS_VISIBLE")
+            , (win32con.WS_BORDER, "WS_BORDER"), (win32con.WS_CAPTION, "WS_CAPTION")):
             print(f"{s[1]}: {bool(style & s[0])}")
         for s in ((win32con.WS_EX_APPWINDOW, "WS_EX_APPWINDOW"), (win32con.WS_EX_NOACTIVATE, "WS_EX_NOACTIVATE"), (win32con.WS_EX_TOOLWINDOW, "WS_EX_TOOLWINDOW")):
             print(f"{s[1]}: {bool(extStyle & s[0])}")

@@ -5,8 +5,26 @@ import pylewm.windows
 import pylewm.monitors
 import pylewm.tiles
 
+import os
+
 # Main modifier key that all the hotkeys are behind
 MOD =                       'rctrl'
+
+# Function to open a WSL command in a new wsltty window
+@pylewm.pylecommand
+def wsl_term(cmd=""):
+    wsltty = r'%LOCALAPPDATA%\wsltty\bin\mintty.exe --wsl -h ' +\
+               'err --configdir="%APPDATA%\wsltty" -o Locale=C -o ' +\
+               'Charset=UTF-8 /bin/wslbridge -t /bin/bash'
+    if cmd:
+        wsltty += " -c \""+cmd+"\""
+    return pylewm.execution.run(wsltty)()
+    
+# Turns a path from a windows path to the equivalent WSL path
+def wsl_path(path):
+    path = path.replace("\\", "/")
+    path = path.replace(":/", "/")
+    return "/mnt/" + path[0].lower() + path[1:]
 
 HOTKEYS = {    
     # Window focus control
@@ -37,16 +55,23 @@ HOTKEYS = {
     (MOD, '/')              : pylewm.tiles.print_tree,
     
     # Application management
-    (MOD, ';')              : pylewm.execution.run(r'C:\cygwin64\bin\mintty.exe -'),
+    (MOD, ';')              : wsl_term,
     (MOD, 'shift', ';')     : pylewm.execution.run(r'cmd.exe'),
     (MOD, ',')              : pylewm.execution.start_menu,
     (MOD, 'p')              : pylewm.execution.run(r'"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"'),
-    (MOD, 'k')              : pylewm.execution.run(r'explorer.exe'),
+    (MOD, 'k')              : wsl_term("ranger "+wsl_path(os.environ["USERPROFILE"])),
+    (MOD, 'shift', 'k')     : pylewm.execution.run(r'explorer.exe'),
+    (MOD, 'shift', 'r')     : pylewm.restart,
     (MOD, 'shift', 'q')     : pylewm.quit,
 }
 
 # Teleport the mouse to any window that focus has been switched to
 pylewm.config["TeleportMouse"] = True
+
+# Window classes to remove the titlebar of
+pylewm.config["HideTitlebarWindowClasses"] = {
+    "mintty",
+}
 
 if __name__ == "__main__":
     for key, val in HOTKEYS.items():
