@@ -55,6 +55,12 @@ def getClosestFloatingWindow(toRect):
         (win for win in FloatingWindows if not win.hidden),
         lambda win: win32gui.GetWindowRect(win.window))
 
+def takeFloatingWindow(floating):
+    FloatingWindows.remove(floating)
+
+def returnFloatingWindow(floating):
+    FloatingWindows.append(floating)
+
 class FloatingWindow:
     def __init__(self, window):
         self.window = window

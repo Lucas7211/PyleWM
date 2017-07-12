@@ -223,7 +223,7 @@ def tile_bubble(tile, cmdName):
         return tile_bubble(tile.parent, cmdName)
 
 RootTile = None
-PrimaryTile = None
+PrimaryMonitorRect = (0,0,0,0)
 KnownWindows = set()
 FocusTile = None
 FocusWindow = None
@@ -325,6 +325,22 @@ class TileBase:
         return False
 
     def prev(self):
+        return False
+
+    def banish(self):
+        for child in self.childList:
+            child.banish()
+
+    def summon(self):
+        for child in self.childList:
+            child.summon()
+
+    def isChildOf(self, check):
+        parent = self
+        while parent is not None:
+            if parent is check:
+                return True
+            parent = parent.parent
         return False
 
     @property
@@ -444,6 +460,13 @@ class TileSingular(TileBase):
     def focus(self):
         if self.visibleChild is not None:
             self.visibleChild.focus()
+
+    def summon(self):
+        for child in self.childList:
+            if child is not self.visibleChild:
+                child.summon()
+        if self.visibleChild is not None:
+            self.visibleChild.summon()
 
     def add(self, tile):
         print(f"ADD {tile.title} / {len(self.childList)} FROM {self.title} = {self.rect}")
@@ -793,6 +816,14 @@ class TileWindow(TileBase):
         pylewm.floating.hideWithParent(self.window)
         #self.updatePosition(force=True)
 
+    def banish(self):
+        print(f"BANISH {self.title}")
+        pylewm.windows.banish(self.window)
+
+    def summon(self):
+        print(f"SUMMON {self.title}")
+        pylewm.windows.summon(self.window)
+
     def isHidden(self):
         return self.hidden
 
@@ -818,7 +849,7 @@ def getCurrentMonitorTile(rect):
                 and tile.rect[1] <= rect[1] and tile.rect[3] >= rect[1]:
                 best = tile
     if best is None:
-        best = PrimaryTile
+        best = pylewm.rects.getMostOverlapping(PrimaryMonitorRect, RootTile.childList, lambda tile: tile.rect)
     return best
 
 def getClosestTile(toRect, windowTilesOnly=True, ignore=None):
@@ -835,6 +866,32 @@ def getClosestTile(toRect, windowTilesOnly=True, ignore=None):
     return pylewm.rects.getClosestTo(toRect, valid,
         lambda tile: tile.rect, ignore=ignore)
 
+def takeMonitorTile(rect):
+    tile = getCurrentMonitorTile(rect)
+    if tile is None:
+        return
+
+    tile.banish()
+    RootTile.remove(tile)
+
+    # Remove pending tiles that are getting taken
+    for pending in PendingOpenTiles[:]:
+        if pending.isChildOf(tile):
+            PendingOpenTiles.remove(pending)
+
+    return tile
+
+def returnMonitorTile(tile):
+    tile.summon()
+    RootTile.add(tile)
+
+def newMonitorTile(rect):
+    print(f"NEW DESKTOP TILE {rect}")
+    tile = TileSingular()
+    tile.persistent = True
+    tile.rect = rect
+    RootTile.add(tile)
+    PendingOpenTiles.insert(0, tile)
 
 def startTilingWindow(window):
     # Find which tile to use for this window
@@ -894,7 +951,6 @@ def print_sub(indent, tile):
     for child in tile.childList:
         print_sub(indent+4, child)
 
-
 def teleportMouse(tile):
     tile = tile.getInnerActive()
     if pylewm.config.get("TeleportMouse", False):
@@ -906,17 +962,17 @@ def teleportMouse(tile):
 @pyleinit
 def initTiles():
     # Create an empty top level tile for each monitor
-    global PrimaryTile
     global RootTile
+    global PrimaryMonitorRect
     RootTile = TileRoot()
     for mhnd in win32api.EnumDisplayMonitors(None, None):
         monitor = win32api.GetMonitorInfo(mhnd[0])
         tile = TileSingular()
         tile.persistent = True
         tile.rect = tuple(monitor['Work'][0:4])
-        RootTile.add(tile)
         if monitor['Flags'] & win32con.MONITORINFOF_PRIMARY:
-            PrimaryTile = tile
+            PrimaryMonitorRect = tile.rect
+        RootTile.add(tile)
 
 @pyletick
 def tickTiles():

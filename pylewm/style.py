@@ -5,7 +5,7 @@ import win32api, win32con, win32gui
 WindowsWithTitlebar = set()
 
 def applyTiled(window):
-    if pylewm.selector.matches(window, pylewm.config.get("HideTitlebarWindowClasses", [])):
+    if pylewm.selector.matches(window, pylewm.config.get("HideTitlebarWindows", [])):
         style = win32api.GetWindowLong(window, win32con.GWL_STYLE)
         if style & win32con.WS_CAPTION:
             style = style & ~win32con.WS_CAPTION

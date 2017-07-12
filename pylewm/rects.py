@@ -1,4 +1,4 @@
-import pylewm.monitors
+DesktopArea = [0,0,0,0]
 
 def getClosestInDirection(dir, fromRect, toList, rectFun = lambda x: x, wrap = True, ignore = None):
     """ Get the closest rect in the list in the direction from fromRect. """
@@ -55,7 +55,7 @@ def getClosestInDirection(dir, fromRect, toList, rectFun = lambda x: x, wrap = T
     else:
         # Wrap around to the other side
         if wrap:
-            curStart = getOppositeEnd(pylewm.monitors.DesktopArea)
+            curStart = getOppositeEnd(DesktopArea)
             curOtherDim = curStart
             checkRects()
         return sel

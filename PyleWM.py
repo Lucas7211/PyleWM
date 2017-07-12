@@ -32,8 +32,8 @@ HOTKEYS = {
     (MOD, 'l')              : pylewm.tiles.focus_dir("right"),
     (MOD, 't')              : pylewm.tiles.focus_dir("down"),
     (MOD, 'n')              : pylewm.tiles.focus_dir("up"),
-    (MOD, 'w')              : pylewm.tiles.switch_next,
-    (MOD, 'v')              : pylewm.tiles.switch_prev,
+    (MOD, 's')              : pylewm.tiles.switch_next,
+    (MOD, 'r')              : pylewm.tiles.switch_prev,
 
     # Floating layer
     (MOD, 'f')              : pylewm.tiles.toggle_floating,
@@ -45,6 +45,11 @@ HOTKEYS = {
     (MOD, 'shift', 'l')     : pylewm.tiles.move_dir("right"),
     (MOD, 'shift', 't')     : pylewm.tiles.move_dir("down"),
     (MOD, 'shift', 'n')     : pylewm.tiles.move_dir("up"),
+
+    # Virtual desktop management
+    (MOD, 'w')              : pylewm.monitors.nextDesktop,
+    (MOD, 'v')              : pylewm.monitors.prevDesktop,
+    (MOD, 'z')              : pylewm.monitors.newDesktop,
 
     # Layout control
     (MOD, 'd')              : pylewm.tiles.vsplit,
@@ -79,7 +84,8 @@ pylewm.config["HideTitlebarWindows"] = [
 
 # Windows that should be completely ignored by the window manager
 pylewm.config["IgnoreWindows"] = [
-    {"title": "Windows Shell Experience Host"}
+    {"title": "Windows Shell Experience Host"},
+    {"title": "Store"}
 ]
 
 # Windows that should always start floating

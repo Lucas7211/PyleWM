@@ -1,5 +1,4 @@
 from pylewm import pylecommand, queue, config
-import pylewm.monitors
 import pylewm.focus
 import pylewm.rects
 import pylewm.selector
