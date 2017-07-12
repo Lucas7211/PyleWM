@@ -19,14 +19,14 @@ def wsl_term(cmd=""):
     if cmd:
         wsltty += " -c \""+cmd+"\""
     return pylewm.execution.run(wsltty)()
-    
+
 # Turns a path from a windows path to the equivalent WSL path
 def wsl_path(path):
     path = path.replace("\\", "/")
     path = path.replace(":/", "/")
     return "/mnt/" + path[0].lower() + path[1:]
 
-HOTKEYS = {    
+HOTKEYS = {
     # Window focus control
     (MOD, 'h')              : pylewm.tiles.focus_dir("left"),
     (MOD, 'l')              : pylewm.tiles.focus_dir("right"),
@@ -34,26 +34,30 @@ HOTKEYS = {
     (MOD, 'n')              : pylewm.tiles.focus_dir("up"),
     (MOD, 'w')              : pylewm.tiles.switch_next,
     (MOD, 'v')              : pylewm.tiles.switch_prev,
+
+    # Floating layer
+    (MOD, 'f')              : pylewm.tiles.toggle_floating,
+    (MOD, 'lctrl', 'f')     : pylewm.floating.toggle_layer,
     (MOD, 'g')              : pylewm.tiles.focus_floating,
-    
+
     # Window movement
     (MOD, 'shift', 'h')     : pylewm.tiles.move_dir("left"),
     (MOD, 'shift', 'l')     : pylewm.tiles.move_dir("right"),
     (MOD, 'shift', 't')     : pylewm.tiles.move_dir("down"),
     (MOD, 'shift', 'n')     : pylewm.tiles.move_dir("up"),
-    
+
     # Layout control
     (MOD, 'd')              : pylewm.tiles.vsplit,
     (MOD, 'b')              : pylewm.tiles.hsplit,
     (MOD, 'shift', 'd')     : pylewm.tiles.vextend,
     (MOD, 'shift', 'b')     : pylewm.tiles.hextend,
-    (MOD, 'e')              : pylewm.tiles.extend, 
+    (MOD, 'e')              : pylewm.tiles.extend,
     (MOD, 'm')              : pylewm.tiles.cancel_pending,
 
     # Window management
     (MOD, '$')              : pylewm.windows.close,
     (MOD, '/')              : pylewm.tiles.print_tree,
-    
+
     # Application management
     (MOD, ';')              : wsl_term,
     (MOD, 'shift', ';')     : pylewm.execution.run(r'cmd.exe'),
@@ -69,9 +73,18 @@ HOTKEYS = {
 pylewm.config["TeleportMouse"] = True
 
 # Window classes to remove the titlebar of
-pylewm.config["HideTitlebarWindowClasses"] = {
-    "mintty",
-}
+pylewm.config["HideTitlebarWindows"] = [
+    {"class": "mintty"},
+]
+
+# Windows that should be completely ignored by the window manager
+pylewm.config["IgnoreWindows"] = [
+    {"title": "Windows Shell Experience Host"}
+]
+
+# Windows that should always start floating
+pylewm.config["FloatingWindows"] = [
+]
 
 if __name__ == "__main__":
     for key, val in HOTKEYS.items():

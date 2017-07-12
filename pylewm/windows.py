@@ -1,7 +1,8 @@
-from pylewm import pylecommand, queue
+from pylewm import pylecommand, queue, config
 import pylewm.monitors
 import pylewm.focus
 import pylewm.rects
+import pylewm.selector
 import win32gui, win32con
 import ctypes
 
@@ -16,6 +17,8 @@ def isEmptyWindow(window):
     return rect[2] <= rect[0] or rect[3] <= rect[1]
     
 def isRelevantWindow(window):
+    if pylewm.selector.matches(window, config.get("IgnoreWindows", [])):
+        return False
     cls = win32gui.GetClassName(window)
     title = win32gui.GetWindowText(window)
     return cls.lower() not in IGNORED_CLASSES and title.lower() not in IGNORED_WINDOWS
@@ -56,3 +59,11 @@ def focus_dir(dir="left"):
         lambda win: win32gui.GetWindowRect(win), wrap=True, ignore=curWindow)
     if selWin is not None:
         pylewm.focus.set(selWin)
+
+def banish(window):
+    if not win32gui.IsIconic(window):
+        win32gui.ShowWindow(window, win32con.SW_MINIMIZE)
+
+def summon(window):
+    if win32gui.IsIconic(window):
+        win32gui.ShowWindow(window, win32con.SW_RESTORE)

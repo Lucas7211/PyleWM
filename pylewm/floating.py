@@ -2,9 +2,11 @@ from pylewm import pylecommand, pyletick
 import pylewm.focus
 import pylewm.style
 import pylewm.rects
+import pylewm.windows
 import win32gui,win32con, win32api
 
 FloatingWindows = []
+FloatingVisible = True
 
 @pylecommand
 def focus_dir(dir="left"):
@@ -20,6 +22,21 @@ def focus_dir(dir="left"):
         ignore=getFloatingWindowFor(curWindow))
     if selWin is not None:
         selWin.focus()
+
+@pylecommand
+def toggle_layer():
+    """ Toggle whether the floating layer is visible or not. """
+    global FloatingVisible
+    if FloatingVisible:
+        FloatingVisible = False
+        for win in FloatingWindows:
+            win.banish()
+    else:
+        FloatingVisible = True
+        for win in FloatingWindows:
+            win.summon()
+            win.show()
+
         
 def getFloatingWindowFor(hwnd):
     for win in FloatingWindows:
@@ -82,6 +99,12 @@ class FloatingWindow:
                         win32con.SWP_NOACTIVATE)
         self.hidden = True
 
+    def banish(self):
+        pylewm.windows.banish(self.window)
+
+    def summon(self):
+        pylewm.windows.summon(self.window)
+
 def hideWithParent(parent):
     for win in FloatingWindows:
         if parent in win.parentStack:
@@ -93,7 +116,29 @@ def showWithParent(parent):
             win.show()
     
 def onWindowCreated(window):
-    FloatingWindows.append(FloatingWindow(window))
+    startFloatingWindow(window)
+
+def startFloatingWindow(window):
+    floating = FloatingWindow(window)
+    if not FloatingVisible:
+        floating.banish()
+    FloatingWindows.append(floating)
+
+def stopFloatingWindow(window, keepFloatingFocus=False):
+    for win in FloatingWindows:
+        if win.window == window:
+            if not FloatingVisible:
+                win.summon()
+            win.hide()
+            FloatingWindows.remove(win)
+            if keepFloatingFocus and win32gui.GetForegroundWindow() == win:
+                closest = getClosestFloatingWindow(win32gui.GetWindowRect(win))
+                if closest is not None:
+                    closest.focus()
+                    return True
+                return False
+            return None
+    return None
     
 @pyletick
 def tickFloating():

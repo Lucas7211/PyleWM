@@ -26,7 +26,7 @@ def getClosestInDirection(dir, fromRect, toList, rectFun = lambda x: x, wrap = T
     curOtherDim = getOtherDim(fromRect)
     maxDiff = float(1e20)
     sel = None
-    
+
     # Find which rect is the closest in the particular direction
     def checkRects():
         nonlocal maxDiff
@@ -37,17 +37,17 @@ def getClosestInDirection(dir, fromRect, toList, rectFun = lambda x: x, wrap = T
             otherRect = rectFun(other)
             otherStart = getDim(otherRect)
             otherOtherDim = getOtherDim(otherRect)
-            
+
             # Skip windows not at all extended in the right direction
             if not isAfter(curStart, otherStart):
                 continue
-                
+
             diff = float(abs(curStart - otherStart)) + float(abs(curOtherDim - otherOtherDim) / 10000.0)
             if diff < maxDiff:
                 # Closer to the window's starting edge
                 maxDiff = diff
                 sel = other
-            
+
     # Return the element with the closest rect
     checkRects()
     if sel is not None:
@@ -59,7 +59,7 @@ def getClosestInDirection(dir, fromRect, toList, rectFun = lambda x: x, wrap = T
             curOtherDim = curStart
             checkRects()
         return sel
-        
+
 def getMostOverlapping(fromRect, toList, rectFun = lambda x: x, ignore = None):
     """ Get the rect in the list that fromRect overlaps the most. """
     mostOverlap = 0
@@ -72,13 +72,13 @@ def getMostOverlapping(fromRect, toList, rectFun = lambda x: x, ignore = None):
             continue
         if fromRect[2] < otherRect[0] or fromRect[3] < otherRect[1]:
             continue
-            
+
         overlap = (min(fromRect[2], otherRect[2]) - max(fromRect[0], otherRect[0])) * (min(fromRect[3], otherRect[3]) - max(fromRect[1], otherRect[1]))
         if overlap > mostOverlap:
             mostOverlap = overlap
             sel = other
     return sel
-    
+
 def getClosestTo(fromRect, toList, rectFun = lambda x: x, ignore = None):
     """ Get the rect in the list that is the closest. """
     # TODO: Use something better than manhattan distance between top left corners

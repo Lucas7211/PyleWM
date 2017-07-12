@@ -9,8 +9,10 @@ Functionality includes:
 * Binding arbitrary global hotkeys to various builtin / any python functions.
 * Switching which window is focused based on a direction. (Similar to i3's
   mod+hjkl / "focus left" command)
-* All windows are automatically tiled, with manual layout control using
-  vsplit/hsplit shortcuts.
+* Windows are automatically tiled, with manual layout control using
+  vsplit/hsplit shortcuts and directional movement.
+* Full support for a floating layer of windows on top, with keybinds
+  to control which windows are floating.
 
 Using
 =====
@@ -19,7 +21,7 @@ then execute it from its directory to activate the PyleWM window
 management shortcuts.
 
 The default shortcuts are my personal preferred ones, so you will
-have to edit them to get something halfway sane.
+have to edit them heavily to get anything halfway sane.
 
 Dependencies
 ============
@@ -35,3 +37,21 @@ focused window.
 To enable focus stealing, set the following registry key to 0:
 
     HKCU\Control Panel\Desktop\ForegroundLockTimeout
+
+Permissions
+===========
+Unfortunately, PyleWM will have to run as administrator (it prompts UAC
+when ran as user). Windows does not allow window management on system
+windows such as Task Manager unless administrator permissions are active.
+Worse than that, it will completely deactivate any keyboard hooks that
+are present, with no way to detect it, essentially breaking PyleWM whenever
+you open Task Manager if it's not elevated.
+
+As an additional bonus, Windows does not allow spawning applications as
+a regular user without having prompted for that user's password at least
+once. EVEN if you are admin, it still needs that user's credentials.
+So, in order to be able to spawn new windows without giving them admin,
+after the UAC prompt PyleWM will ask for the user's password in its command
+line window.
+
+Windows permissions are weird.
