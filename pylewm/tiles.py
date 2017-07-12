@@ -210,6 +210,7 @@ def toggle_floating():
         # Drop the window into a tile
         pylewm.floating.stopFloatingWindow(curWindow)
         startTilingWindow(curWindow)
+        pylewm.focus.set(curWindow)
     else:
         # Raise the window to floating
         stopTilingWindow(curWindow)
@@ -264,6 +265,9 @@ class TileBase:
                 i -= 1
                 cnt -= 1
             i += 1
+        return True
+
+    def canFocus(self):
         return True
 
     def focus(self):
@@ -457,7 +461,13 @@ class TileSingular(TileBase):
             tile.focus()
             self.focusDelay = DelayTicks
 
+    def canFocus(self):
+        return len(self.childList) != 0
+
     def focus(self):
+        if not self.canFocus():
+            self.parent.focus()
+            return
         if self.visibleChild is not None:
             self.visibleChild.focus()
 
@@ -476,6 +486,8 @@ class TileSingular(TileBase):
 
     def remove(self, tile):
         TileBase.remove(self, tile)
+        if self.visibleChild is tile and self.childList:
+            self.visibleChild = self.childList[0]
 
     def addOnTile(self, tile, onToTile=None):
         if isinstance(tile, TileSingular):
@@ -605,12 +617,27 @@ class TileListBase(TileBase):
     def updateRects(self):
         pass
 
+    def canFocus(self):
+        return len(self.childList) != 0
+
     def focus(self):
+        if not self.canFocus():
+            self.parent.focus()
+            return
         setTo = self.focusChild
         if setTo is None:
             setTo = self.lastFocusChild
         if setTo is None and self.childList:
             setTo = self.childList[0]
+        if setTo is not None and not setTo.canFocus() or setTo not in self.childList:
+            index = 0
+            if setTo in self.childList:
+                index = self.childList.index(setTo)
+            setTo = None
+            for i in range(0, len(self.childList)-1):
+                nextIndex = (index-i) % len(self.childList)
+                if self.childList[i].canFocus():
+                    setTo = self.childList[i]
         if setTo is not None:
             setTo.focus()
 
@@ -920,20 +947,26 @@ def stopTilingWindow(window, keepTilingFocus=False):
     windowTile = getWindowTile(window)
     if windowTile is None:
         return
+    inParent = windowTile.parent
     windowTile.parent.remove(windowTile)
     win32gui.SetWindowPos(window, win32con.HWND_TOP,
                     windowTile.originalRect[0], windowTile.originalRect[1],
                     windowTile.originalRect[2] - windowTile.originalRect[0],
                     windowTile.originalRect[3] - windowTile.originalRect[1],
                     win32con.SWP_NOACTIVATE)
-    if keepTilingFocus and windowTile.focused:
-        windowTile.parent.focus()
+    if keepTilingFocus and inParent.focused:
+        print(f"KEEP FOCUS TILE")
+        inParent.focus()
 
 def onWindowCreated(window):
-    if isPopup(window) or pylewm.selector.matches(window, pylewm.config.get("FloatingWindows", [])):
+    print(f"DETECT WINDOW {win32gui.GetWindowText(window)}")
+    print(f"  Class: {win32gui.GetClassName(window)}    Popup: {isPopup(window)}")
+    if (isPopup(window) and not pylewm.selector.matches(window, pylewm.config.get("TilingWindows", []))) \
+            or pylewm.selector.matches(window, pylewm.config.get("FloatingWindows", [])):
         # Add window to our floating layout
         pylewm.floating.onWindowCreated(window)
     else:
+        # Add window to automatic tiling management
         startTilingWindow(window)
 
 def isFocused(window):

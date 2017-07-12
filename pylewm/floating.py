@@ -47,6 +47,12 @@ def getFloatingWindowFor(hwnd):
 def isFloatingFocused():
     curWindow = win32gui.GetForegroundWindow()
     return getFloatingWindowFor(curWindow) is not None
+
+def isFloatingWindow(window):
+    for win in FloatingWindows:
+        if win.window == window:
+            return True
+    return False
     
 def getClosestFloatingWindow(toRect):
     if not FloatingWindows:

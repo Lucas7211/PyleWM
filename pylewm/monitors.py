@@ -10,19 +10,19 @@ Monitors = []
 DesktopArea = [0,0,0,0]
 
 @pylecommand
-def nextDesktop():
+def next_desktop():
     monitor = getFocusMonitor()
     if monitor is not None:
         monitor.switchNextDesktop()
 
 @pylecommand
-def prevDesktop():
+def prev_desktop():
     monitor = getFocusMonitor()
     if monitor is not None:
         monitor.switchPrevDesktop()
 
 @pylecommand
-def newDesktop():
+def new_desktop():
     monitor = getFocusMonitor()
     print(f"NEW DESKTOP {monitor}")
     if monitor is not None:
@@ -143,8 +143,7 @@ def getFocusMonitor():
     elif len(pylewm.tiles.getCurrentMonitorTile(cursorPos).childList) == 0:
         return mouseMonitor
     else:
-        monitor = getMonitor(win32gui.GetWindowRect(win))
-    return monitor
+        return getMonitor(win32gui.GetWindowRect(win))
 
 @pyleinit
 def initMonitors():

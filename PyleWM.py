@@ -4,6 +4,7 @@ import pylewm.execution
 import pylewm.windows
 import pylewm.monitors
 import pylewm.tiles
+import pylewm.scratch
 
 import os
 
@@ -47,9 +48,14 @@ HOTKEYS = {
     (MOD, 'shift', 'n')     : pylewm.tiles.move_dir("up"),
 
     # Virtual desktop management
-    (MOD, 'w')              : pylewm.monitors.nextDesktop,
-    (MOD, 'v')              : pylewm.monitors.prevDesktop,
-    (MOD, 'z')              : pylewm.monitors.newDesktop,
+    (MOD, 'w')              : pylewm.monitors.next_desktop,
+    (MOD, 'v')              : pylewm.monitors.prev_desktop,
+    (MOD, 'z')              : pylewm.monitors.new_desktop,
+
+    # Yanking windows to scratch
+    (MOD, 'y')              : pylewm.scratch.yank,
+    (MOD, 'i')              : pylewm.scratch.drop,
+    (MOD, 'shift', 'i')     : pylewm.scratch.drop_all,
 
     # Layout control
     (MOD, 'd')              : pylewm.tiles.vsplit,
@@ -67,7 +73,7 @@ HOTKEYS = {
     (MOD, ';')              : wsl_term,
     (MOD, 'shift', ';')     : pylewm.execution.run(r'cmd.exe'),
     (MOD, ',')              : pylewm.execution.start_menu,
-    (MOD, 'p')              : pylewm.execution.run(r'"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"'),
+    (MOD, 'p')              : pylewm.execution.run(r'"C:\Program Files\qutebrowser\qutebrowser.exe"'),
     (MOD, 'k')              : wsl_term("ranger "+wsl_path(os.environ["USERPROFILE"])),
     (MOD, 'shift', 'k')     : pylewm.execution.run(r'explorer.exe'),
     (MOD, 'shift', 'r')     : pylewm.restart,
@@ -80,16 +86,22 @@ pylewm.config["TeleportMouse"] = True
 # Window classes to remove the titlebar of
 pylewm.config["HideTitlebarWindows"] = [
     {"class": "mintty"},
+    {"title": "qutebrowser"},
 ]
 
 # Windows that should be completely ignored by the window manager
 pylewm.config["IgnoreWindows"] = [
     {"title": "Windows Shell Experience Host"},
-    {"title": "Store"}
+    {"title": "Store"},
 ]
 
 # Windows that should always start floating
 pylewm.config["FloatingWindows"] = [
+]
+
+# Windows that should always start tiling
+pylewm.config["TilingWindows"] = [
+    {"title": "*qutebrowser*", "class": "QT5QWindowIcon"},
 ]
 
 if __name__ == "__main__":
