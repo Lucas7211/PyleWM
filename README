@@ -12,7 +12,7 @@ Functionality includes:
 * Windows are automatically tiled, with manual layout control using
   vsplit/hsplit shortcuts and directional movement.
 * Full support for a floating layer of windows on top, with keybinds
-  to control which windows are floating.
+  to control which windows are floating and to move and resize them.
 * Per-monitor "virtual desktop" emulation. Each virtual desktop has
   its own layout and set of windows.
 

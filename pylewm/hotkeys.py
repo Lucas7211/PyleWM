@@ -4,6 +4,35 @@ import win32con, win32api, win32gui, atexit
 
 import traceback, threading
 
+class Mode:
+    def __init__(self, hotkeys, captureAll=True):
+        self.hotkeys = []
+        self.captureAll = captureAll
+        for key, bind in hotkeys.items():
+            if hasattr(bind, "pylewm_callback"):
+                bind = bind.pylewm_callback
+            self.hotkeys.append((KeySpec.fromTuple(key), bind))
+
+    def handle_key(self, key, isMod):
+        if key.key == "esc":
+            # Escape always escapes out of modes
+            queue(escape_mode)
+            return
+        for bnd in self.hotkeys:
+            if bnd[0] == key:
+                queue(bnd[1])
+                return True
+        return self.captureAll and not isMod
+
+    def __call__(self):
+        with ModeLock:
+            ModeStack.insert(0, self)
+
+def escape_mode():
+    """ Escape whatever hotkey mode we're currently in. """
+    with ModeLock:
+        ModeStack.pop(0)
+
 class ModPair:
     def __init__(self, left=False, right=False, either=False):
         self.left = left
@@ -34,11 +63,15 @@ class ModPair:
         return self.left or self.right or self.either
         
     def update(self, matchKey, matchSet, leftKey, rightKey):
+        isMod = 0
         if matchKey == leftKey:
             self.left = matchSet
+            isMod = 1
         if matchKey == rightKey:
             self.right = matchSet
+            isMod = 2
         self.either = False
+        return isMod
 
 class KeySpec:
     def __init__(self, key):
@@ -93,6 +126,8 @@ class KeySpec:
         return str(self.__dict__)
             
 KeyBindings = []
+ModeStack = []
+ModeLock = threading.RLock()
 ActiveKey = KeySpec('')
 queue = None
 
@@ -109,22 +144,37 @@ def handle_python(isKeyDown, keyCode, scanCode):
     absorbKey = False
         
     # Handle modifiers
-    ActiveKey.alt.update(keyCode, isKeyDown, win32con.VK_LMENU, win32con.VK_RMENU)
-    ActiveKey.shift.update(keyCode, isKeyDown, win32con.VK_LSHIFT, win32con.VK_RSHIFT)
-    ActiveKey.ctrl.update(keyCode, isKeyDown, win32con.VK_LCONTROL, win32con.VK_RCONTROL)
-    ActiveKey.win.update(keyCode, isKeyDown, win32con.VK_LWIN, win32con.VK_RWIN)
-        
-    # Call into keybinds
+    isMod = 0
+    isMod |= ActiveKey.alt.update(keyCode, isKeyDown, win32con.VK_LMENU, win32con.VK_RMENU)
+    isMod |= ActiveKey.shift.update(keyCode, isKeyDown, win32con.VK_LSHIFT, win32con.VK_RSHIFT)
+    isMod |= ActiveKey.ctrl.update(keyCode, isKeyDown, win32con.VK_LCONTROL, win32con.VK_RCONTROL)
+    isMod |= ActiveKey.win.update(keyCode, isKeyDown, win32con.VK_LWIN, win32con.VK_RWIN)
+
+    # Update active key
     ActiveKey.key = VKToChr(keyCode, scanCode)
     ActiveKey.down = isKeyDown
+
+    # Check modes
+    if ModeStack:
+        with ModeLock:
+            return ModeStack[0].handle_key(ActiveKey, isMod)
+
+    # Check keybinds
     for bnd in KeyBindings:
         if bnd[0] == ActiveKey:
             queue(bnd[1])
             absorbKey = True
     return absorbKey
 
+# TODO: Complete this map
+VK_MAP = {
+    win32con.VK_ESCAPE: "esc",
+}
+
 KBState = (ctypes.c_byte * 256)()
 def VKToChr(vk, sc):
+    if vk in VK_MAP:
+        return VK_MAP[vk]
     try:
         output = (ctypes.c_short * 3)()
         retCode = windll.user32.ToAscii(c_uint(vk), c_uint(sc), KBState, output, c_uint(0))

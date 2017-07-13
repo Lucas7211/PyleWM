@@ -57,11 +57,13 @@ def focus_floating():
 
     if pylewm.floating.isFloatingFocused():
         # Focus the closest tile to the current floating window
+        print(f"FLOATING FOCUSED")
         tile = getClosestTile(curRect)
         if tile is not None:
             tile.focus()
     else:
         # Focus the closest floating window to the current tile
+        print(f"FLOATING NOT FOCUSED")
         print_window_info(curWindow)
         floatingWindow = pylewm.floating.getClosestFloatingWindow(curRect)
         if floatingWindow is not None:
@@ -70,6 +72,11 @@ def focus_floating():
 @pylecommand
 def move_dir(dir):
     """ Move the focused single window in a particular direction. """
+    # Pass through to floating movement
+    if pylewm.floating.isFloatingFocused():
+        pylewm.floating.move_dir(dir)()
+        return
+
     # Find the destination tile in that direction
     sourceTile = FocusTile
     destTile = sourceTile
@@ -869,10 +876,7 @@ class TileWindow(TileBase):
             if (win32gui.GetWindowRect(self.window) != self.rect or force) and not self.noResize and (self.resizeDelay <= 0 or self.prevRect != self.rect or force):
                 print(f"REPOSITION {self.title} % {self.hidden}: {win32gui.GetWindowRect(self.window)} => {self.rect}")
                 try:
-                    win32gui.SetWindowPos(self.window, win32con.HWND_BOTTOM if self.hidden else win32con.HWND_TOP,
-                        self.rect[0], self.rect[1],
-                        self.rect[2] - self.rect[0], self.rect[3] - self.rect[1],
-                        win32con.SWP_NOACTIVATE)
+                    pylewm.windows.move(self.window, self.rect, bottom=self.hidden)
                     if self.prevRect != self.rect:
                         self.prevRect = self.rect
                     else:
@@ -1018,11 +1022,14 @@ def stopTilingWindow(window, keepTilingFocus=False):
         return
     inParent = windowTile.parent
     windowTile.parent.remove(windowTile)
-    win32gui.SetWindowPos(window, win32con.HWND_TOP,
-                    windowTile.originalRect[0], windowTile.originalRect[1],
-                    windowTile.originalRect[2] - windowTile.originalRect[0],
-                    windowTile.originalRect[3] - windowTile.originalRect[1],
-                    win32con.SWP_NOACTIVATE)
+
+    curRect = win32gui.GetWindowRect(window)
+
+    # Move the original position to the current monitor
+    newPos = pylewm.rects.moveRelativeInto(windowTile.originalRect, 
+        getCurrentMonitorTile(windowTile.originalRect).rect,
+        getCurrentMonitorTile(curRect).rect)
+    pylewm.windows.move(window, newPos)
     if keepTilingFocus and inParent.focused:
         print(f"KEEP FOCUS TILE")
         inParent.focus()

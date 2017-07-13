@@ -85,3 +85,15 @@ def banish(window):
 def summon(window):
     if win32gui.IsIconic(window):
         win32gui.ShowWindow(window, win32con.SW_RESTORE)
+
+def move(window, newScreenRect, topmost=False, bottom=False):
+    setting = win32con.HWND_TOP
+    if bottom:
+        setting = win32con.HWND_BOTTOM
+    if topmost:
+        setting = win32con.HWND_TOPMOST
+
+    width = newScreenRect[2] - newScreenRect[0]
+    height = newScreenRect[3] - newScreenRect[1]
+    clientPos = newScreenRect[0:2]
+    win32gui.SetWindowPos(window, setting, clientPos[0], clientPos[1], width, height, win32con.SWP_NOACTIVATE)

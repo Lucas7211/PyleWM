@@ -34,10 +34,7 @@ class YankedWindow:
             pylewm.windows.summon(self.window)
 
             print(f"DROP WINDOW {self.relRect} TO {rect} ON MONITOR {monitorRect}")
-            win32gui.SetWindowPos(self.window, win32con.HWND_TOP,
-                rect[0], rect[1], rect[2] - rect[0], rect[3] - rect[1],
-                win32con.SWP_NOACTIVATE)
-
+            pylewm.windows.move(self.window, rect)
             pylewm.floating.startFloatingWindow(self.window)
         else:
             pylewm.windows.summon(self.window)

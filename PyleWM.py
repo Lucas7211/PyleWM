@@ -40,8 +40,26 @@ HOTKEYS = {
     (MOD, 'f')              : pylewm.tiles.toggle_floating,
     (MOD, 'lctrl', 'f')     : pylewm.floating.toggle_layer,
     (MOD, 'g')              : pylewm.tiles.focus_floating,
+    (MOD, 'shift', 'g')     : pylewm.floating.focus_next,
+    (MOD, 'lctrl', 'g')     : pylewm.floating.focus_prev,
 
-    # Window movement
+    # Floating window movement mode
+    (MOD, 'c')              : pylewm.floating.if_floating(
+        pylewm.hotkeys.Mode({
+            ('h')            : pylewm.floating.move_dir("left"),
+            ('l')            : pylewm.floating.move_dir("right"),
+            ('j')            : pylewm.floating.move_dir("down"),
+            ('k')            : pylewm.floating.move_dir("up"),
+            ('shift', 'h')   : pylewm.floating.shrink_dir("right"),
+            ('shift', 'l')   : pylewm.floating.grow_dir("right"),
+            ('shift', 'j')   : pylewm.floating.grow_dir("down"),
+            ('shift', 'k')   : pylewm.floating.shrink_dir("down"),
+            ('t')            : pylewm.floating.center,
+            ('q')            : pylewm.hotkeys.escape_mode,
+        })
+    ),
+
+    # Tiled window movement
     (MOD, 'shift', 'h')     : pylewm.tiles.move_dir("left"),
     (MOD, 'shift', 'l')     : pylewm.tiles.move_dir("right"),
     (MOD, 'shift', 't')     : pylewm.tiles.move_dir("down"),
@@ -70,7 +88,7 @@ HOTKEYS = {
     (MOD, '$')              : pylewm.windows.close,
 
     # Windows that are 'forgotten' are completely ignored by PyleWM until discovered again
-    (MOD, '#')              : pylewm.tiles.forget_window,
+    (MOD, 'alt', '#')       : pylewm.tiles.forget_window,
     (MOD, 'shift', '#')     : pylewm.tiles.discover_window,
 
     # Debug printing to console

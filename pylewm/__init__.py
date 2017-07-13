@@ -15,6 +15,16 @@ def pylecommand(fun):
     out = lambda *args, **kwargs: partial(fun, *args, **kwargs)
     out.pylewm_callback = fun
     return out
+
+def runpylecommand(fun, *args, **kwargs):
+    if hasattr(fun, "pylewm_callback"):
+        fun = fun.pylewm_callback
+    fun(*args, **kwargs)
+
+def getpylecommand(fun, *args, **kwargs):
+    if hasattr(fun, "pylewm_callback"):
+        return fun.pylewm_callback
+    return fun
  
 def pyleinit(fun):
     InitFunctions.append(fun)

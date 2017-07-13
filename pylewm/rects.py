@@ -1,5 +1,11 @@
 DesktopArea = [0,0,0,0]
 
+def isInDesktopArea(pos):
+    if len(pos) == 4:
+        return isInDesktopArea(pos[0:2]) and isInDesktopArea(pos[2:4])
+    return pos[0] >= DesktopArea[0] and pos[0] <= DesktopArea[2] and \
+           pos[1] >= DesktopArea[1] and pos[1] <= DesktopArea[3]
+
 def overlapsDesktopArea(rect):
     if rect[0] > DesktopArea[2] or rect[1] > DesktopArea[3]:
         return False
@@ -100,3 +106,22 @@ def getClosestTo(fromRect, toList, rectFun = lambda x: x, ignore = None):
             sel = other
             leastDistance = dist
     return sel
+
+def overlaps(fromRect, toRect):
+    if fromRect[0] > toRect[2] or fromRect[1] > toRect[3]:
+        return False
+    if fromRect[2] < toRect[0] or fromRect[3] < toRect[1]:
+        return False
+    return True
+
+def moveRelativeInto(rect, outerRect, targetRect):
+    """ Move the rectangle inside outerRect to the same relative position inside targetRect."""
+    moved = [0,0,0,0]
+    for i in range(0,4):
+        outerOffset = outerRect[(i%2)]
+        outerSize = outerRect[2+(i%2)] - outerOffset
+        relPos = float(rect[i] - outerOffset) / float(outerSize)
+        targetOffset = targetRect[(i%2)]
+        targetSize = targetRect[2+(i%2)] - targetOffset
+        moved[i] = int(relPos * float(targetSize)) + targetOffset
+    return moved
