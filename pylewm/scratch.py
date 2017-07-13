@@ -53,9 +53,11 @@ def yank():
 
     yanked = None
     if pylewm.floating.isFloatingWindow(curWindow):
+        print(f"Yank floating {curWindow} {win32gui.GetWindowText(curWindow)}")
         yanked = YankedWindow(curWindow, True)
         pylewm.floating.stopFloatingWindow(curWindow, keepFloatingFocus=True)
     else:
+        print(f"Yank tiled {curWindow} {win32api.GetWindowLong(curWindow, win32con.GWL_HWNDPARENT)} {win32gui.GetWindowText(curWindow)}")
         yanked = YankedWindow(curWindow, False)
         pylewm.tiles.stopTilingWindow(curWindow, keepTilingFocus=True)
 

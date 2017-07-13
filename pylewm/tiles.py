@@ -19,7 +19,18 @@ def focus_dir(dir):
     """ Focus the neighbouring child to the selected one in a particular direction. """
     # Send focus command to floating layer if the current window is floating
     if pylewm.floating.isFloatingFocused():
-        return pylewm.floating.focus_dir(dir)()
+        curWindow = win32gui.GetForegroundWindow()
+        floating = pylewm.floating.getFloatingWindowFor(curWindow)
+        if floating.hidden:
+            if FocusTile is None:
+                RootTile.focus()
+                return
+            else:
+                FocusTile.focus()
+                return
+        else:
+            pylewm.floating.focus_dir(dir)()
+            return
 
     # Check which tile to give focus to based on the currently focused one
     tile = FocusTile
@@ -32,7 +43,8 @@ def focus_dir(dir):
         tile = tile.parent
 
     # Fall back on a window-based focus_dir if no tile supports the operation
-    pylewm.windows.focus_dir(dir)()
+    if not pylewm.windows.focus_dir(dir)():
+        RootTile.focus()
 
 @pylecommand
 def focus_floating():
@@ -50,6 +62,7 @@ def focus_floating():
             tile.focus()
     else:
         # Focus the closest floating window to the current tile
+        print_window_info(curWindow)
         floatingWindow = pylewm.floating.getClosestFloatingWindow(curRect)
         if floatingWindow is not None:
             floatingWindow.focus()
@@ -105,7 +118,10 @@ def move_dir(dir):
         newTile.add(sourceTile)
         newTile.visibleChild = sourceTile
         destTile.addOnTile(newTile)
-        newTile.focus()
+        if newTile.canFocus():
+            newTile.focus()
+        else:
+            destTile.focus()
 
     teleportMouse(sourceTile)
 
@@ -215,6 +231,48 @@ def toggle_floating():
         # Raise the window to floating
         stopTilingWindow(curWindow)
         pylewm.floating.startFloatingWindow(curWindow)
+
+@pylecommand
+def forget_window():
+    """ Completely remove the window from PyleWM and ignore it from now on. """
+    curWindow = win32gui.GetForegroundWindow()
+    if not win32gui.IsWindow(curWindow):
+        return
+
+    print(f"FORGET WINDOW {win32gui.GetWindowText(curWindow)}")
+    if pylewm.floating.isFloatingFocused():
+        pylewm.floating.stopFloatingWindow(curWindow)
+    else:
+        stopTilingWindow(curWindow)
+
+@pylecommand
+def discover_window():
+    """ Add a forgotten window back into PyleWM management. """
+    window = win32gui.GetForegroundWindow()
+    if not win32gui.IsWindow(window):
+        return
+
+    print_window_info(window, "DISCOVER WINDOW")
+
+    if not pylewm.floating.isFloatingWindow(window):
+        if not isTilingWindow(window):
+            onWindowCreated(window)
+
+def print_window_info(window=None, text=None):
+    if window is None:
+        window = win32gui.GetForegroundWindow()
+    if text is None:
+        text = "WINDOW"
+    if not win32gui.IsWindow(window):
+        print("NO WINDOW FOCUSED")
+        return
+
+    print(f"{text} {win32gui.GetWindowText(window)}")
+    print(f"  Class: {win32gui.GetClassName(window)}    Popup: {isPopup(window)}")
+    print(f"  HWND: {window}   Parent: {win32api.GetWindowLong(window, win32con.GWL_HWNDPARENT)}")
+    print(f"  Style: {hex(win32api.GetWindowLong(window, win32con.GWL_STYLE))}"
+        + f"  ExStyle: {hex(win32api.GetWindowLong(window, win32con.GWL_EXSTYLE))}")
+    print(f"  Pos: {win32gui.GetWindowRect(window)}   Ignored: {pylewm.windows.isTaskbarIgnored(window)}")
 
 def tile_bubble(tile, cmdName):
     if tile is not None:
@@ -374,6 +432,11 @@ class TileRoot(TileBase):
         print(f"SELECT {dir} = {fromChild.title} -> {sel.title}")
         return sel
 
+    def focus(self):
+        tile = getPrimaryMonitorTile()
+        if tile.canFocus():
+            tile.focus()
+
     def update(self):
         TileBase.update(self)
         # Update focused status
@@ -465,7 +528,7 @@ class TileSingular(TileBase):
         return len(self.childList) != 0
 
     def focus(self):
-        if not self.canFocus():
+        if not self.canFocus() and self.parent is not None:
             self.parent.focus()
             return
         if self.visibleChild is not None:
@@ -866,6 +929,12 @@ def getWindowTile(window):
         ind += 1
     return None
 
+def isTilingWindow(hwnd):
+    return getWindowTile(hwnd) is not None
+
+def getPrimaryMonitorTile():
+    return pylewm.rects.getMostOverlapping(PrimaryMonitorRect, RootTile.childList, lambda tile: tile.rect)
+
 def getCurrentMonitorTile(rect):
     best = None
     if len(rect) == 4:
@@ -959,14 +1028,14 @@ def stopTilingWindow(window, keepTilingFocus=False):
         inParent.focus()
 
 def onWindowCreated(window):
-    print(f"DETECT WINDOW {win32gui.GetWindowText(window)}")
-    print(f"  Class: {win32gui.GetClassName(window)}    Popup: {isPopup(window)}")
     if (isPopup(window) and not pylewm.selector.matches(window, pylewm.config.get("TilingWindows", []))) \
             or pylewm.selector.matches(window, pylewm.config.get("FloatingWindows", [])):
         # Add window to our floating layout
+        print(f"ADD FLOATING: {win32gui.GetWindowText(window)}")
         pylewm.floating.onWindowCreated(window)
     else:
         # Add window to automatic tiling management
+        print(f"ADD TILING: {win32gui.GetWindowText(window)}")
         startTilingWindow(window)
 
 def isFocused(window):
@@ -1007,6 +1076,24 @@ def initTiles():
             PrimaryMonitorRect = tile.rect
         RootTile.add(tile)
 
+def print_rejected_windows():
+    def enumRejected(hwnd, param):
+        if hwnd in KnownWindows:
+            return
+        if not win32gui.IsWindowVisible(hwnd):
+            return
+        title = win32gui.GetWindowText(hwnd)
+        if len(title) == 0:
+            print_window_info(hwnd, "NO TITLE")
+            return
+        if not isRelevantWindow(hwnd):
+            print_window_info(hwnd, "NOT RELEVANT")
+            return
+        if isEmptyWindow(hwnd):
+            print_window_info(hwnd, "EMPTY")
+            return
+    win32gui.EnumWindows(enumRejected, None)
+
 @pyletick
 def tickTiles():
     # Check for any newly created windows
@@ -1016,6 +1103,14 @@ def tickTiles():
             return
         if not win32gui.IsWindowVisible(hwnd):
             return
+        title = win32gui.GetWindowText(hwnd)
+        if len(title) == 0:
+            return
+        if not isRelevantWindow(hwnd):
+            return
+        if isEmptyWindow(hwnd):
+            return
+        print_window_info(hwnd, "DETECT WINDOW")
         unknown_windows.append(hwnd)
     win32gui.EnumWindows(enumUnknown, None)
 
@@ -1023,15 +1118,6 @@ def tickTiles():
     for win in unknown_windows:
         global KnownWindows
         KnownWindows.add(win)
-
-        # Only trigger something for this window if it's not ignored
-        title = win32gui.GetWindowText(win)
-        if len(title) == 0:
-            continue
-        if not isRelevantWindow(win):
-            continue
-        if isEmptyWindow(win):
-            continue
         onWindowCreated(win)
 
     # Update existing tile focus

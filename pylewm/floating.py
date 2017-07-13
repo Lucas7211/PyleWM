@@ -46,12 +46,17 @@ def getFloatingWindowFor(hwnd):
     
 def isFloatingFocused():
     curWindow = win32gui.GetForegroundWindow()
-    return getFloatingWindowFor(curWindow) is not None
+    return isFloatingWindow(curWindow)
 
 def isFloatingWindow(window):
+    # If a child window of a floating window has focus,
+    # we consider that as a floating window
     for win in FloatingWindows:
         if win.window == window:
             return True
+    parent = win32api.GetWindowLong(window, win32con.GWL_HWNDPARENT)
+    if win32gui.IsWindow(parent):
+        return isFloatingWindow(parent)
     return False
     
 def getClosestFloatingWindow(toRect):
@@ -70,37 +75,59 @@ def returnFloatingWindow(floating):
 class FloatingWindow:
     def __init__(self, window):
         self.window = window
-        self.parent = win32api.GetWindowLong(window, win32con.GWL_HWNDPARENT)
-        
-        self.parentStack = [self.parent]
-        check = self.parent
-        while win32gui.IsWindow(check):
-            self.parentStack.append(check)
-            check = win32api.GetWindowLong(check, win32con.GWL_HWNDPARENT)
+        self.wasGone = False
      
         self.show()          
-        print(f"ADD FLOATING {self.title}")
     
     def update(self):
-        return win32gui.IsWindow(self.window)
+        if not win32gui.IsWindow(self.window):
+            return False
+        if pylewm.windows.isTaskbarIgnored(self.window):
+            return False
+        if not pylewm.rects.overlapsDesktopArea(win32gui.GetWindowRect(self.window)):
+            self.hidden = True
+            self.wasGone = True
+        elif self.wasGone:
+            self.wasGone = False
+            self.hidden = False
+        return True
+
+    def isChildOf(self, parent):
+        if self.window == parent:
+            return True
+        if win32gui.IsChild(parent, self.window):
+            return True
+        return False
+
+    def isChildOf(self, parent):
+        check = self.window
+        while win32gui.IsWindow(check):
+            if check == parent:
+                return True
+            check = win32api.GetWindowLong(check, win32con.GWL_HWNDPARENT)
+        return False
     
     @property
     def title(self):
         return win32gui.GetWindowText(self.window)
         
     def focus(self):
-        print(f"FOCUS FLOATING {self.title} hidden:{self.hidden}")
+        print(f"FOCUS FLOATING {self.title} hidden:{self.hidden} hwnd:{self.window} iconic:{win32gui.IsIconic(self.window)} {win32gui.IsWindowVisible(self.window)}")
+        self.show()
         pylewm.focus.set(self.window)
         
     def show(self):
         # Floating windows are always on top
         print(f"SHOW FLOATING {self.title}")
         self.rect = win32gui.GetWindowRect(self.window)
+        if win32gui.IsIconic(self.window):
+            win32gui.ShowWindow(self.window, win32con.SW_RESTORE)
         win32gui.SetWindowPos(self.window, win32con.HWND_TOPMOST,
                         self.rect[0], self.rect[1],
                         self.rect[2] - self.rect[0], self.rect[3] - self.rect[1],
                         win32con.SWP_NOACTIVATE)
         self.hidden = False
+        self.wasGone = False
         
     def hide(self):
         print(f"HIDE FLOATING {self.title}")
@@ -110,6 +137,7 @@ class FloatingWindow:
                         self.rect[2] - self.rect[0], self.rect[3] - self.rect[1],
                         win32con.SWP_NOACTIVATE)
         self.hidden = True
+        self.wasGone = False
 
     def banish(self):
         pylewm.windows.banish(self.window)
@@ -119,12 +147,12 @@ class FloatingWindow:
 
 def hideWithParent(parent):
     for win in FloatingWindows:
-        if parent in win.parentStack:
+        if win.isChildOf(parent):
             win.hide()
     
 def showWithParent(parent):
     for win in FloatingWindows:
-        if parent in win.parentStack:
+        if win.isChildOf(parent):
             win.show()
     
 def onWindowCreated(window):
@@ -151,6 +179,10 @@ def stopFloatingWindow(window, keepFloatingFocus=False):
                 return False
             return None
     return None
+
+def print_list():
+    for win in FloatingWindows:
+        print(f"Floating: {win.window} {win.title} AT {win.rect} HIDDEN {win.hidden}")
     
 @pyletick
 def tickFloating():

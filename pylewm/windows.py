@@ -2,11 +2,16 @@ from pylewm import pylecommand, queue, config
 import pylewm.focus
 import pylewm.rects
 import pylewm.selector
-import win32gui, win32con
+import win32gui, win32con, win32api
 import ctypes
 
-IGNORED_CLASSES = {"applicationframewindow"}
-IGNORED_WINDOWS = {"program manager"}
+IGNORED_CLASSES = {
+    "windows.ui.core.corewindow", # Always directly under an ApplicationFrameWindow, so safe to ignore
+}
+
+IGNORED_WINDOWS = {
+    "program manager", # The desktop window
+}
 
 def ignoreWindowClass(cls):
     IGNORED_CLASSES.add(cls.lower())
@@ -20,7 +25,18 @@ def isRelevantWindow(window):
         return False
     cls = win32gui.GetClassName(window)
     title = win32gui.GetWindowText(window)
+    if isTaskbarIgnored(window):
+        return False
     return cls.lower() not in IGNORED_CLASSES and title.lower() not in IGNORED_WINDOWS
+
+def isTaskbarIgnored(window):
+    style = win32api.GetWindowLong(window, win32con.GWL_STYLE)
+    exStyle = win32api.GetWindowLong(window, win32con.GWL_EXSTYLE)
+    # NOACTIVATE windows that aren't APPWINDOW are ignored by
+    # the taskbar, so we probably should ignore them as well
+    if (exStyle & win32con.WS_EX_NOACTIVATE) and not (exStyle & win32con.WS_EX_APPWINDOW):
+        return True
+    return False
 
 def gatherWindows():
     windows = []
@@ -51,13 +67,16 @@ def focus_dir(dir="left"):
     """ Switch focus to a window in a particular direction relative to the currently focused window. """
     curWindow = win32gui.GetForegroundWindow()
     if not win32gui.IsWindow(curWindow):
-        return
+        return False
     curRect = win32gui.GetWindowRect(curWindow)
     
     selWin = pylewm.rects.getClosestInDirection(dir, curRect, gatherWindows(), 
         lambda win: win32gui.GetWindowRect(win), wrap=True, ignore=curWindow)
     if selWin is not None:
         pylewm.focus.set(selWin)
+        return True
+    else:
+        return False
 
 def banish(window):
     if not win32gui.IsIconic(window):

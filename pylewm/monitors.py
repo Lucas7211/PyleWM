@@ -40,7 +40,7 @@ class StoredDesktop:
         self.floating = []
         for win in pylewm.floating.FloatingWindows[:]:
             # Don't grab child windows, the parent handles them for us
-            if win32gui.IsWindow(win.parent):
+            if win32gui.IsWindow(win32api.GetWindowLong(win.window, win32con.GWL_HWNDPARENT)):
                 continue
 
             # Check if this is our monitor

@@ -1,5 +1,12 @@
 DesktopArea = [0,0,0,0]
 
+def overlapsDesktopArea(rect):
+    if rect[0] > DesktopArea[2] or rect[1] > DesktopArea[3]:
+        return False
+    if rect[2] < DesktopArea[0] or rect[3] < DesktopArea[1]:
+        return False
+    return True
+
 def getClosestInDirection(dir, fromRect, toList, rectFun = lambda x: x, wrap = True, ignore = None):
     """ Get the closest rect in the list in the direction from fromRect. """
     def getDim(rect):

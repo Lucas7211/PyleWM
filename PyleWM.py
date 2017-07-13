@@ -53,6 +53,7 @@ HOTKEYS = {
     (MOD, 'z')              : pylewm.monitors.new_desktop,
 
     # Yanking windows to scratch
+    ## Windows yanked to scratch are hidden and can be dropped somewhere else
     (MOD, 'y')              : pylewm.scratch.yank,
     (MOD, 'i')              : pylewm.scratch.drop,
     (MOD, 'shift', 'i')     : pylewm.scratch.drop_all,
@@ -67,7 +68,16 @@ HOTKEYS = {
 
     # Window management
     (MOD, '$')              : pylewm.windows.close,
-    (MOD, '/')              : pylewm.tiles.print_tree,
+
+    # Windows that are 'forgotten' are completely ignored by PyleWM until discovered again
+    (MOD, '#')              : pylewm.tiles.forget_window,
+    (MOD, 'shift', '#')     : pylewm.tiles.discover_window,
+
+    # Debug printing to console
+    (MOD, '/')                 : pylewm.tiles.print_tree,
+    (MOD, 'shift', '/')        : pylewm.floating.print_list,
+    (MOD, 'alt', '/')          : pylewm.tiles.print_window_info,
+    (MOD, 'alt', 'shift', '/') : pylewm.tiles.print_rejected_windows,
 
     # Application management
     (MOD, ';')              : wsl_term,
