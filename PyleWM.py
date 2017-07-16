@@ -2,7 +2,7 @@ import pylewm
 import pylewm.hotkeys
 import pylewm.execution
 import pylewm.windows
-import pylewm.monitors
+import pylewm.desktops
 import pylewm.tiles
 import pylewm.scratch
 
@@ -59,6 +59,12 @@ HOTKEYS = {
         })
     ),
 
+    # Move floating windows between monitors
+    (MOD, 'alt', 'h')       : pylewm.floating.move_dir_monitor("left"),
+    (MOD, 'alt', 'l')       : pylewm.floating.move_dir_monitor("right"),
+    (MOD, 'alt', 't')       : pylewm.floating.move_dir_monitor("down"),
+    (MOD, 'alt', 'n')       : pylewm.floating.move_dir_monitor("up"),
+
     # Tiled window movement
     (MOD, 'shift', 'h')     : pylewm.tiles.move_dir("left"),
     (MOD, 'shift', 'l')     : pylewm.tiles.move_dir("right"),
@@ -66,9 +72,15 @@ HOTKEYS = {
     (MOD, 'shift', 'n')     : pylewm.tiles.move_dir("up"),
 
     # Virtual desktop management
-    (MOD, 'w')              : pylewm.monitors.next_desktop,
-    (MOD, 'v')              : pylewm.monitors.prev_desktop,
-    (MOD, 'z')              : pylewm.monitors.new_desktop,
+    (MOD, 'w')              : pylewm.desktops.next_desktop,
+    (MOD, 'v')              : pylewm.desktops.prev_desktop,
+    (MOD, 'z')              : pylewm.desktops.new_desktop,
+
+    # Move virtual desktops between monitors
+    (MOD, 'lctrl', 'h')     : pylewm.desktops.move_dir_monitor("left"),
+    (MOD, 'lctrl', 'l')     : pylewm.desktops.move_dir_monitor("right"),
+    (MOD, 'lctrl', 't')     : pylewm.desktops.move_dir_monitor("down"),
+    (MOD, 'lctrl', 'n')     : pylewm.desktops.move_dir_monitor("up"),
 
     # Yanking windows to scratch
     ## Windows yanked to scratch are hidden and can be dropped somewhere else

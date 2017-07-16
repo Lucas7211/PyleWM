@@ -124,4 +124,4 @@ def moveRelativeInto(rect, outerRect, targetRect):
         targetOffset = targetRect[(i%2)]
         targetSize = targetRect[2+(i%2)] - targetOffset
         moved[i] = int(relPos * float(targetSize)) + targetOffset
-    return moved
+    return tuple(moved)

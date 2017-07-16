@@ -106,6 +106,21 @@ def move_dir(dir="left", step=200, snap=True):
     moveWindow(curWindow, curRect, snapTo=snap, snapThrough=snap)
 
 @pylecommand
+def move_dir_monitor(dir="left"):
+    """ Move the focused focused window to a monitor in a direction from its current. """
+    curWindow = win32gui.GetForegroundWindow()
+    if not win32gui.IsWindow(curWindow):
+        return
+    if not isFloatingWindow(curWindow):
+        return
+
+    curRect = list(win32gui.GetWindowRect(curWindow))
+    curMonitor = pylewm.monitors.getMonitor(curRect)
+    targetMonitor = pylewm.monitors.getMonitorInDirection(curMonitor.rect, dir)
+
+    moveWindow(curWindow, pylewm.rects.moveRelativeInto(curRect, curMonitor.rect, targetMonitor.rect))
+
+@pylecommand
 def grow_dir(dir="left", step=200, snap=True):
     """ Grow the focused floating window in a particular direction. """
     curWindow = win32gui.GetForegroundWindow()
@@ -296,16 +311,17 @@ class FloatingWindow:
         return True
 
     def isChildOf(self, parent):
-        if self.window == parent:
-            return True
-        if win32gui.IsChild(parent, self.window):
-            return True
-        return False
-
-    def isChildOf(self, parent):
         check = self.window
         while win32gui.IsWindow(check):
             if check == parent:
+                return True
+            check = win32api.GetWindowLong(check, win32con.GWL_HWNDPARENT)
+        return False
+
+    def isParentOf(self, child):
+        check = child
+        while win32gui.IsWindow(check):
+            if check == self:
                 return True
             check = win32api.GetWindowLong(check, win32con.GWL_HWNDPARENT)
         return False

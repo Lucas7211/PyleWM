@@ -32,15 +32,23 @@ def focus_dir(dir):
             pylewm.floating.focus_dir(dir)()
             return
 
+    fromTile = FocusTile
+
+    # If the mouse is on a monitor that doesn't have any windows yet,
+    # treat the empty monitor as the tile to focus from.
+    monitorTile = getCurrentMonitorTile(win32gui.GetCursorPos())
+    if monitorTile is not None:
+        if len(monitorTile.childList) == 0:
+            fromTile = monitorTile
+
     # Check which tile to give focus to based on the currently focused one
-    tile = FocusTile
-    while tile is not None:
-        inDir = tile.in_dir(dir)
+    while fromTile is not None:
+        inDir = fromTile.in_dir(dir)
         if inDir is not None:
             inDir.focus()
             teleportMouse(inDir)
             return
-        tile = tile.parent
+        fromTile = fromTile.parent
 
     # Fall back on a window-based focus_dir if no tile supports the operation
     if not pylewm.windows.focus_dir(dir)():
@@ -76,6 +84,14 @@ def move_dir(dir):
     if pylewm.floating.isFloatingFocused():
         pylewm.floating.move_dir(dir)()
         return
+
+    # If the mouse is on a monitor that doesn't have any windows yet,
+    # treat the empty monitor as the tile to focus from.
+    monitorTile = getCurrentMonitorTile(win32gui.GetCursorPos())
+    if monitorTile is not None:
+        if len(monitorTile.childList) == 0:
+            # We're not actually on a tile
+            return
 
     # Find the destination tile in that direction
     sourceTile = FocusTile
@@ -429,7 +445,11 @@ class TileRoot(TileBase):
 
     def in_dir(self, dir, fromChild = None):
         if fromChild is None:
-            fromChild = self.focusChild
+            monitorTile = getCurrentMonitorTile(win32gui.GetCursorPos())
+            if monitorTile is not None and len(monitorTile.childList) == 0:
+                fromChild = monitorTile
+            else:
+                fromChild = self.focusChild
         if fromChild is None or fromChild not in self.childList:
             return None
         sel = pylewm.rects.getClosestInDirection(
@@ -462,7 +482,7 @@ class TileSingular(TileBase):
         self.visibleChild = None
         self.wasLostChild = False
         self.focusDelay = 0
-        super(TileSingular, self).__init__()
+        super().__init__()
 
     def update(self):
         if self.focusDelay > 0:
@@ -633,7 +653,7 @@ class TileListBase(TileBase):
         self.focusChild = None
         self.lastFocusChild = None
         self.wasLostChild = False
-        super(TileListBase, self).__init__()
+        super().__init__()
 
     def update(self):
         # Update child status
@@ -852,7 +872,7 @@ class TileWindow(TileBase):
         self.resizeDelay = 0
         self.prevRect = (0,0,0,0)
         print(f"MAKE {self.title}")
-        super(TileWindow, self).__init__()
+        super().__init__()
 
     @property
     def title(self):
@@ -873,7 +893,8 @@ class TileWindow(TileBase):
                 win32gui.ShowWindow(self.window, win32con.SW_SHOWNOACTIVATE)
             if win32gui.IsIconic(self.window):
                 win32gui.ShowWindow(self.window, win32con.SW_RESTORE)
-            if (win32gui.GetWindowRect(self.window) != self.rect or force) and not self.noResize and (self.resizeDelay <= 0 or self.prevRect != self.rect or force):
+        if not win32gui.IsIconic(self.window):
+            if (win32gui.GetWindowRect(self.window) != tuple(self.rect) or force) and not self.noResize and (self.resizeDelay <= 0 or self.prevRect != self.rect or force):
                 print(f"REPOSITION {self.title} % {self.hidden}: {win32gui.GetWindowRect(self.window)} => {self.rect}")
                 try:
                     pylewm.windows.move(self.window, self.rect, bottom=self.hidden)
@@ -890,8 +911,7 @@ class TileWindow(TileBase):
             return False
         if self.resizeDelay > 0:
             self.resizeDelay -= 1
-        if not self.isHidden():
-            self.updatePosition()
+        self.updatePosition()
         return True
 
     def focus(self):
@@ -966,12 +986,13 @@ def getClosestTile(toRect, windowTilesOnly=True, ignore=None):
     return pylewm.rects.getClosestTo(toRect, valid,
         lambda tile: tile.rect, ignore=ignore)
 
-def takeMonitorTile(rect):
+def takeMonitorTile(rect, banish=True):
     tile = getCurrentMonitorTile(rect)
     if tile is None:
         return
 
-    tile.banish()
+    if banish:
+        tile.banish()
     RootTile.remove(tile)
 
     # Remove pending tiles that are getting taken
@@ -981,8 +1002,9 @@ def takeMonitorTile(rect):
 
     return tile
 
-def returnMonitorTile(tile):
-    tile.summon()
+def returnMonitorTile(tile, summon=True):
+    if summon:
+        tile.summon()
     RootTile.add(tile)
 
 def newMonitorTile(rect):
@@ -1106,26 +1128,29 @@ def tickTiles():
     # Check for any newly created windows
     unknown_windows = []
     def enumUnknown(hwnd, param):
-        if hwnd in KnownWindows:
-            return
-        if not win32gui.IsWindowVisible(hwnd):
-            return
-        title = win32gui.GetWindowText(hwnd)
-        if len(title) == 0:
-            return
-        if not isRelevantWindow(hwnd):
-            return
-        if isEmptyWindow(hwnd):
-            return
-        print_window_info(hwnd, "DETECT WINDOW")
-        unknown_windows.append(hwnd)
+        try:
+            if hwnd in KnownWindows:
+                return
+            if not win32gui.IsWindowVisible(hwnd):
+                return
+            title = win32gui.GetWindowText(hwnd)
+            if len(title) == 0:
+                return
+            if not isRelevantWindow(hwnd):
+                return
+            if isEmptyWindow(hwnd):
+                return
+            print_window_info(hwnd, "DETECT WINDOW")
+            unknown_windows.append(hwnd)
+        except: pass # Window probably just got invalid during detection, happens for short-lived windows
     win32gui.EnumWindows(enumUnknown, None)
 
     # Manage adding newly created windows to tiles
     for win in unknown_windows:
         global KnownWindows
         KnownWindows.add(win)
-        onWindowCreated(win)
+        if win32gui.IsWindow(win):
+            onWindowCreated(win)
 
     # Update existing tile focus
     global FocusWindow

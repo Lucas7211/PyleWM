@@ -27,6 +27,7 @@ have to edit them heavily to get anything halfway sane.
 
 Dependencies
 ============
+Written for minimum Python version 3.6.
 Requires pypiwin32.
 
 Focus Stealing
