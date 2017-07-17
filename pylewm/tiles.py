@@ -281,7 +281,35 @@ def discover_window():
         if not isTilingWindow(window):
             onWindowCreated(window)
 
-def print_window_info(window=None, text=None):
+def print_window_tree(window=None):
+    if window is None:
+        window = win32gui.GetForegroundWindow()
+
+    # Find the parent window of this
+    topmost = None
+    check = window
+    while win32gui.IsWindow(check):
+        topmost = check
+        check = win32gui.GetWindowLong(check, win32con.GWL_HWNDPARENT)
+
+    print_window_tree_children(topmost, window)
+
+def print_window_tree_children(window, selected, indent=""):
+    if not win32gui.IsWindow(window):
+        return
+    if window == selected:
+        print_window_info(window, "* CURRENT WINDOW *", indent)
+    else:
+        print_window_info(window, "", indent)
+
+    indent += "   "
+    def enum(hwnd, param):
+        #print(f"enum {win32gui.GetWindowText(hwnd)}: {win32gui.GetWindowLong(hwnd, win32con.GWL_HWNDPARENT)} == {window}")
+        if win32gui.GetWindowLong(hwnd, win32con.GWL_HWNDPARENT) == window:
+            print_window_tree_children(hwnd, selected, indent)
+    win32gui.EnumWindows(enum, None)
+
+def print_window_info(window=None, text=None, indent=""):
     if window is None:
         window = win32gui.GetForegroundWindow()
     if text is None:
@@ -290,12 +318,12 @@ def print_window_info(window=None, text=None):
         print("NO WINDOW FOCUSED")
         return
 
-    print(f"{text} {win32gui.GetWindowText(window)}")
-    print(f"  Class: {win32gui.GetClassName(window)}    Popup: {isPopup(window)}")
-    print(f"  HWND: {window}   Parent: {win32api.GetWindowLong(window, win32con.GWL_HWNDPARENT)}")
-    print(f"  Style: {hex(win32api.GetWindowLong(window, win32con.GWL_STYLE))}"
+    print(f"{indent}{text} {win32gui.GetWindowText(window)}")
+    print(f"{indent}  Class: {win32gui.GetClassName(window)}    Popup: {isPopup(window)}")
+    print(f"{indent}  HWND: {window}   Parent: {win32api.GetWindowLong(window, win32con.GWL_HWNDPARENT)}")
+    print(f"{indent}  Style: {hex(win32api.GetWindowLong(window, win32con.GWL_STYLE))}"
         + f"  ExStyle: {hex(win32api.GetWindowLong(window, win32con.GWL_EXSTYLE))}")
-    print(f"  Pos: {win32gui.GetWindowRect(window)}   Ignored: {pylewm.windows.isTaskbarIgnored(window)}")
+    print(f"{indent}  Pos: {win32gui.GetWindowRect(window)}   Ignored: {pylewm.windows.isTaskbarIgnored(window)}")
 
 def tile_bubble(tile, cmdName):
     if tile is not None:
@@ -885,26 +913,31 @@ class TileWindow(TileBase):
         return None
 
     def updatePosition(self, force=False):
-        if not self.hidden:
-            placement = win32gui.GetWindowPlacement(self.window)
-            if placement[1] != win32con.SW_MAXIMIZE and self.parent.isMaximize:
-                win32gui.ShowWindow(self.window, win32con.SW_MAXIMIZE)
-            elif (placement[1] == win32con.SW_MAXIMIZE and not self.parent.isMaximize) or placement[1] == win32con.SW_MINIMIZE:
-                win32gui.ShowWindow(self.window, win32con.SW_SHOWNOACTIVATE)
-            if win32gui.IsIconic(self.window):
-                win32gui.ShowWindow(self.window, win32con.SW_RESTORE)
-        if not win32gui.IsIconic(self.window):
-            if (win32gui.GetWindowRect(self.window) != tuple(self.rect) or force) and not self.noResize and (self.resizeDelay <= 0 or self.prevRect != self.rect or force):
-                print(f"REPOSITION {self.title} % {self.hidden}: {win32gui.GetWindowRect(self.window)} => {self.rect}")
-                try:
-                    pylewm.windows.move(self.window, self.rect, bottom=self.hidden)
-                    if self.prevRect != self.rect:
-                        self.prevRect = self.rect
-                    else:
-                        self.resizeDelay = DelayTicks
-                except:
-                    self.noResize = True
-
+        if not win32gui.IsWindow(self.window):
+            return
+        try:
+            if not self.hidden:
+                placement = win32gui.GetWindowPlacement(self.window)
+                if placement[1] != win32con.SW_MAXIMIZE and self.parent.isMaximize:
+                    win32gui.ShowWindow(self.window, win32con.SW_MAXIMIZE)
+                elif (placement[1] == win32con.SW_MAXIMIZE and not self.parent.isMaximize) or placement[1] == win32con.SW_MINIMIZE:
+                    win32gui.ShowWindow(self.window, win32con.SW_SHOWNOACTIVATE)
+                if win32gui.IsIconic(self.window):
+                    win32gui.ShowWindow(self.window, win32con.SW_RESTORE)
+            if not win32gui.IsIconic(self.window):
+                if (win32gui.GetWindowRect(self.window) != tuple(self.rect) or force) and not self.noResize and (self.resizeDelay <= 0 or self.prevRect != self.rect or force):
+                    print(f"REPOSITION {self.title} % {self.hidden}: {win32gui.GetWindowRect(self.window)} => {self.rect}")
+                    try:
+                        pylewm.windows.move(self.window, self.rect, bottom=self.hidden)
+                        if self.prevRect != self.rect:
+                            self.prevRect = self.rect
+                        else:
+                            self.resizeDelay = DelayTicks
+                    except:
+                        self.noResize = True
+        except:
+            # Window became invalid while we operated on it.
+            pass
 
     def update(self):
         if not win32gui.IsWindow(self.window):

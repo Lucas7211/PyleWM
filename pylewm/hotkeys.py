@@ -3,6 +3,7 @@ from ctypes import windll, CFUNCTYPE, POINTER, c_int, c_uint, c_void_p, byref, c
 import win32con, win32api, win32gui, atexit
 
 import traceback, threading
+import copy
 
 class Mode:
     def __init__(self, hotkeys, captureAll=True):
@@ -17,7 +18,7 @@ class Mode:
         if key.key == "esc":
             # Escape always escapes out of modes
             queue(escape_mode)
-            return
+            return True
         for bnd in self.hotkeys:
             if bnd[0] == key:
                 queue(bnd[1])
@@ -27,6 +28,28 @@ class Mode:
     def __call__(self):
         with ModeLock:
             ModeStack.insert(0, self)
+
+class KeyPrompt(Mode):
+    def __init__(self, callback, escape_cancels=True):
+        self.callback = callback
+        self.escape_cancels = escape_cancels
+
+    def handle_key(self, key, isMod):
+        if not isMod:
+            if key.down:
+                prompt = self
+                storeKey = copy.deepcopy(key)
+                def handle():
+                    if not self.escape_cancels or key.key != "esc":
+                        prompt.callback(storeKey)
+                    escape_mode()
+                queue(handle)
+            return True
+        else:
+            return False
+
+def prompt_key(callback):
+    KeyPrompt(callback)()
 
 def escape_mode():
     """ Escape whatever hotkey mode we're currently in. """

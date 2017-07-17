@@ -15,6 +15,8 @@ Functionality includes:
   to control which windows are floating and to move and resize them.
 * Per-monitor "virtual desktop" emulation. Each virtual desktop has
   its own layout and set of windows.
+* Mark windows with a key, and then quickly focus those particular
+  windows again later, similar to vim m* and '* commands.
 
 Using
 =====

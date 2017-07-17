@@ -5,6 +5,7 @@ import pylewm.windows
 import pylewm.desktops
 import pylewm.tiles
 import pylewm.scratch
+import pylewm.marks
 
 import os
 
@@ -94,7 +95,23 @@ HOTKEYS = {
     (MOD, 'shift', 'd')     : pylewm.tiles.vextend,
     (MOD, 'shift', 'b')     : pylewm.tiles.hextend,
     (MOD, 'e')              : pylewm.tiles.extend,
-    (MOD, 'm')              : pylewm.tiles.cancel_pending,
+    (MOD, 'shift', 'e')     : pylewm.tiles.cancel_pending,
+
+    # Window marks
+    (MOD, 'm')              : pylewm.marks.mark_window,
+    (MOD, "'")              : pylewm.marks.goto_window,
+
+    # Default "control group" window marks
+    (MOD, '&')              : pylewm.marks.goto_window("&"),
+    (MOD, '[')              : pylewm.marks.goto_window("["),
+    (MOD, '{')              : pylewm.marks.goto_window("{"),
+    (MOD, '}')              : pylewm.marks.goto_window("}"),
+    (MOD, '(')              : pylewm.marks.goto_window("("),
+    (MOD, 'shift', '&')     : pylewm.marks.mark_window("&"),
+    (MOD, 'shift', '[')     : pylewm.marks.mark_window("["),
+    (MOD, 'shift', '{')     : pylewm.marks.mark_window("{"),
+    (MOD, 'shift', '}')     : pylewm.marks.mark_window("}"),
+    (MOD, 'shift', '(')     : pylewm.marks.mark_window("("),
 
     # Window management
     (MOD, '$')              : pylewm.windows.close,
@@ -106,7 +123,7 @@ HOTKEYS = {
     # Debug printing to console
     (MOD, '/')                 : pylewm.tiles.print_tree,
     (MOD, 'shift', '/')        : pylewm.floating.print_list,
-    (MOD, 'alt', '/')          : pylewm.tiles.print_window_info,
+    (MOD, 'alt', '/')          : pylewm.tiles.print_window_tree,
     (MOD, 'alt', 'shift', '/') : pylewm.tiles.print_rejected_windows,
 
     # Application management

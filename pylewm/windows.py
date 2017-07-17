@@ -4,6 +4,7 @@ import pylewm.rects
 import pylewm.selector
 import win32gui, win32con, win32api
 import ctypes
+import traceback
 
 IGNORED_CLASSES = {
     "windows.ui.core.corewindow", # Always directly under an ApplicationFrameWindow, so safe to ignore
@@ -93,7 +94,15 @@ def move(window, newScreenRect, topmost=False, bottom=False):
     if topmost:
         setting = win32con.HWND_TOPMOST
 
-    width = newScreenRect[2] - newScreenRect[0]
-    height = newScreenRect[3] - newScreenRect[1]
+    width = max(newScreenRect[2] - newScreenRect[0], 16)
+    height = max(newScreenRect[3] - newScreenRect[1], 16)
     clientPos = newScreenRect[0:2]
-    win32gui.SetWindowPos(window, setting, clientPos[0], clientPos[1], width, height, win32con.SWP_NOACTIVATE)
+    try:
+        win32gui.SetWindowPos(window, setting, clientPos[0], clientPos[1], width, height, win32con.SWP_NOACTIVATE)
+    except:
+        try:
+            print("Error setting window {win32gui.getWindowText(window)} to position {newScreenRect}")
+        except:
+            pass
+        traceback.print_exc()
+        traceback.print_stack()

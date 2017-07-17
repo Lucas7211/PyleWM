@@ -114,22 +114,22 @@ class StoredDesktop:
             if not self.focusedTile.isChildOf(self.tile):
                 self.focusedTile = None
         if self.focusedWindow is not None:
-            if not self.containsWindow(self.focusedWindow):
+            if not self.contains_window(self.focusedWindow):
                 self.focusedWindow = None
 
         self.monitor = monitor
 
-    def containsWindow(self, window):
+    def contains_window(self, window):
         for win in self.floating:
             if win.isChildOf(window) or win.isParentOf(window):
                 return True
-        return self.tileContains(self.tile, window)
+        return self.tile_contains(self.tile, window)
 
-    def tileContains(self, tile, window):
+    def tile_contains(self, tile, window):
         if hasattr(tile, "window") and tile.window == window:
             return True
         for child in tile.childList:
-            if self.tileContains(child, window):
+            if self.tile_contains(child, window):
                 return True
         return False
 
@@ -179,3 +179,30 @@ def getFocusMonitor():
         return mouseMonitor
     else:
         return pylewm.monitors.getMonitor(win32gui.GetWindowRect(win))
+
+def find_with_window(window):
+    """ Find the desktop that contains this window. """
+    for mon in pylewm.monitors.Monitors:
+        for desktop in mon.desktops:
+            if desktop.contains_window(window):
+                return desktop
+    return None
+
+def switch_to_containing(window):
+    """ Switch to the desktop that contains this window, if one exists. """
+    desktop = find_with_window(window)
+    if desktop is not None:
+        monitor = desktop.monitor
+
+        # Store the current desktop on that monitor
+        newDesktop = StoredDesktop(monitor)
+        if not newDesktop.empty():
+            monitor.desktops.append(newDesktop)
+
+        # Rotate through desktops until we get to the one we want to focus
+        while monitor.desktops[0] is not desktop:
+            monitor.desktops.append(monitor.desktops.pop(0))
+
+        # Show the desktop we want to focus
+        monitor.desktops.pop(0)
+        desktop.show()
