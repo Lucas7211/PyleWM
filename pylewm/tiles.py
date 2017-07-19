@@ -5,7 +5,7 @@ import pylewm.focus
 import pylewm.rects
 import pylewm.style
 import pylewm.floating
-import pylewm.selector
+import pylewm.filters
 import win32gui, win32con, win32api
 from ctypes import CFUNCTYPE, POINTER, c_uint, windll
 import atexit
@@ -1048,16 +1048,19 @@ def newMonitorTile(rect):
     RootTile.add(tile)
     PendingOpenTiles.insert(0, tile)
 
-def startTilingWindow(window):
-    # Find which tile to use for this window
+def startTilingWindow(window, monitorIndex=-1):
     InTile = None
-    if len(PendingOpenTiles) != 0:
+    # Use the monitor we've been passed
+    if monitorIndex != -1 and monitorIndex <= len(pylewm.monitors.Monitors):
+        InTile = getCurrentMonitorTile(pylewm.monitors.Monitors[monitorIndex].rect)
+    # Find which tile to use for this window
+    if InTile is None and len(PendingOpenTiles) != 0:
         InTile = PendingOpenTiles[0]
         del PendingOpenTiles[0]
     # If the mouse is on a monitor that doesn't have any windows yet,
     # open the window there
     monitor = getCurrentMonitorTile(win32gui.GetCursorPos())
-    if monitor is not None:
+    if InTile is None and monitor is not None:
         if len(monitor.childList) == 0:
             InTile = monitor
     if InTile is None:
@@ -1090,15 +1093,16 @@ def stopTilingWindow(window, keepTilingFocus=False):
         inParent.focus()
 
 def onWindowCreated(window):
-    if (isPopup(window) and not pylewm.selector.matches(window, pylewm.config.get("TilingWindows", []))) \
-            or pylewm.selector.matches(window, pylewm.config.get("FloatingWindows", [])):
+    pylewm.filters.trigger(window)
+
+    if isPopup(window) and not pylewm.filters.is_tiling(window) or pylewm.filters.is_floating(window):
         # Add window to our floating layout
         print(f"ADD FLOATING: {win32gui.GetWindowText(window)}")
         pylewm.floating.onWindowCreated(window)
     else:
         # Add window to automatic tiling management
         print(f"ADD TILING: {win32gui.GetWindowText(window)}")
-        startTilingWindow(window)
+        startTilingWindow(window, pylewm.filters.get_monitor(window))
 
 def isFocused(window):
     return FocusWindow == window

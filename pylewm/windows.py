@@ -2,6 +2,7 @@ from pylewm import pylecommand, queue, config
 import pylewm.focus
 import pylewm.rects
 import pylewm.selector
+import pylewm.filters
 import win32gui, win32con, win32api
 import ctypes
 import traceback
@@ -22,7 +23,7 @@ def isEmptyWindow(window):
     return rect[2] <= rect[0] or rect[3] <= rect[1]
     
 def isRelevantWindow(window):
-    if pylewm.selector.matches(window, config.get("IgnoreWindows", [])):
+    if pylewm.filters.is_ignored(window):
         return False
     cls = win32gui.GetClassName(window)
     title = win32gui.GetWindowText(window)
@@ -94,10 +95,15 @@ def move(window, newScreenRect, topmost=False, bottom=False):
     if topmost:
         setting = win32con.HWND_TOPMOST
 
-    width = max(newScreenRect[2] - newScreenRect[0], 16)
-    height = max(newScreenRect[3] - newScreenRect[1], 16)
-    clientPos = newScreenRect[0:2]
     try:
+        if len(newScreenRect) == 2:
+            curRect = win32gui.GetWindowRect(window)
+            width = max(curRect[2] - curRect[0], 16)
+            height = max(curRect[3] - curRect[1], 16)
+        else:
+            width = max(newScreenRect[2] - newScreenRect[0], 16)
+            height = max(newScreenRect[3] - newScreenRect[1], 16)
+        clientPos = newScreenRect[0:2]
         win32gui.SetWindowPos(window, setting, clientPos[0], clientPos[1], width, height, win32con.SWP_NOACTIVATE)
     except:
         try:

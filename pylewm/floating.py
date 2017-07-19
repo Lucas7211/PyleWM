@@ -372,9 +372,12 @@ def onWindowCreated(window):
     startFloatingWindow(window)
 
 def startFloatingWindow(window):
-    floating = FloatingWindow(window)
-    if not FloatingVisible:
-        floating.banish()
+    try:
+        floating = FloatingWindow(window)
+        if not FloatingVisible:
+            floating.banish()
+    except:
+        return # Window was destroyed while we were adding it
     FloatingWindows.append(floating)
 
 def stopFloatingWindow(window, keepFloatingFocus=False):

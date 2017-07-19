@@ -6,6 +6,7 @@ import pylewm.desktops
 import pylewm.tiles
 import pylewm.scratch
 import pylewm.marks
+from pylewm.filters import *
 
 import os
 
@@ -140,25 +141,12 @@ HOTKEYS = {
 # Teleport the mouse to any window that focus has been switched to
 pylewm.config["TeleportMouse"] = True
 
-# Window classes to remove the titlebar of
-pylewm.config["HideTitlebarWindows"] = [
-    {"class": "mintty"},
-    {"title": "qutebrowser"},
-]
-
-# Windows that should be completely ignored by the window manager
-pylewm.config["IgnoreWindows"] = [
-    {"title": "Windows Shell Experience Host"},
-    {"title": "Store"},
-]
-
-# Windows that should always start floating
-pylewm.config["FloatingWindows"] = [
-]
-
-# Windows that should always start tiling
-pylewm.config["TilingWindows"] = [
-    {"title": "*qutebrowser*", "class": "QT5QWindowIcon"},
+# Filters that determine properties of newly spawned windows
+pylewm.config["Filters"] = [
+    ({"title": "*qutebrowser*", "class": "QT5QWindowIcon"}, Tiling, NoTitlebar),
+    ({"class": "mintty"}, NoTitlebar),
+    ({"title": "Windows Shell Experience Host"}, Ignore),
+    ({"title": "Store"}, Ignore),
 ]
 
 if __name__ == "__main__":
