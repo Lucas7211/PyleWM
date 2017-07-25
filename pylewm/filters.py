@@ -8,11 +8,18 @@ FiltersByFunction = {}
 FunctionsByFilter = []
 
 class Filter:
+    @staticmethod
+    def post(fun):
+        filt = Filter(fun)
+        filt.isPost = True
+        return filt
+
     def __init__(self, fun):
         self.base = self
         self.fun = fun
         self.args = []
         self.kwargs = {}
+        self.isPost = False
 
     def __call__(self, *args, **kwargs):
         inst = Filter(self.fun)
@@ -21,8 +28,9 @@ class Filter:
         inst.base = self
         return inst
 
-    def trigger(self, hwnd):
-        self.fun(hwnd, *self.args, **self.kwargs)
+    def trigger(self, hwnd, post=False):
+        if post == self.isPost:
+            self.fun(hwnd, *self.args, **self.kwargs)
 
     def __str__(self):
         return str(self.fun)
@@ -94,12 +102,17 @@ def Monitor(hwnd, monitor):
     """ Move the window to a specific monitor when spawned. """
     pass
 
-def trigger(hwnd):
+@Filter.post
+def NewDesktop(hwnd):
+    """ The window gets a new desktop on its monitor when spawned. """
+    pylewm.desktops.new_desktop_with_window(hwnd)
+
+def trigger(hwnd, post=False):
     for f in FunctionsByFilter:
         if pylewm.selector.matches(hwnd, f[0]):
             print("MATCH -- "+repr(f))
             for flt in f[1:]:
-                flt.trigger(hwnd)
+                flt.trigger(hwnd, post=post)
 
 def is_ignored(hwnd):
     if Ignore in FiltersByFunction:

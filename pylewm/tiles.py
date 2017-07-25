@@ -51,8 +51,9 @@ def focus_dir(dir):
         fromTile = fromTile.parent
 
     # Fall back on a window-based focus_dir if no tile supports the operation
-    if not pylewm.windows.focus_dir(dir)():
-        RootTile.focus()
+    #  Disabled because it breaks multi-window tiles
+    #if not pylewm.windows.focus_dir(dir)():
+        #RootTile.focus()
 
 @pylecommand
 def focus_floating():
@@ -484,7 +485,6 @@ class TileRoot(TileBase):
             dir, fromChild.rect, self.childList, lambda tile: tile.rect,
             wrap = True, ignore = fromChild
         )
-        print(f"SELECT {dir} = {fromChild.title} -> {sel.title}")
         return sel
 
     def focus(self):
@@ -1074,7 +1074,7 @@ def startTilingWindow(window, monitorIndex=-1):
     newTile.originalRect = win32gui.GetWindowRect(window)
     InTile.add(newTile)
 
-def stopTilingWindow(window, keepTilingFocus=False):
+def stopTilingWindow(window, keepTilingFocus=False, reposition=True):
     windowTile = getWindowTile(window)
     if windowTile is None:
         return
@@ -1087,7 +1087,8 @@ def stopTilingWindow(window, keepTilingFocus=False):
     newPos = pylewm.rects.moveRelativeInto(windowTile.originalRect, 
         getCurrentMonitorTile(windowTile.originalRect).rect,
         getCurrentMonitorTile(curRect).rect)
-    pylewm.windows.move(window, newPos)
+    if reposition:
+        pylewm.windows.move(window, newPos)
     if keepTilingFocus and inParent.focused:
         print(f"KEEP FOCUS TILE")
         inParent.focus()
@@ -1103,6 +1104,8 @@ def onWindowCreated(window):
         # Add window to automatic tiling management
         print(f"ADD TILING: {win32gui.GetWindowText(window)}")
         startTilingWindow(window, pylewm.filters.get_monitor(window))
+
+    pylewm.filters.trigger(window, post=True)
 
 def isFocused(window):
     return FocusWindow == window

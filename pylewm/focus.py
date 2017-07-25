@@ -17,7 +17,7 @@ def set(window, num=10):
         # makes windows determine we have the power to change
         # window focus. Somehow.
         shell = win32com.client.Dispatch("WScript.Shell")
-        shell.SendKeys('%')
+        shell.SendKeys('^')
 
         win32gui.SetForegroundWindow(window)
         return True

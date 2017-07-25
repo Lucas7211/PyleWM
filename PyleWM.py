@@ -77,6 +77,7 @@ HOTKEYS = {
     (MOD, 'w')              : pylewm.desktops.next_desktop,
     (MOD, 'v')              : pylewm.desktops.prev_desktop,
     (MOD, 'z')              : pylewm.desktops.new_desktop,
+    (MOD, 'shift', 'z')     : pylewm.desktops.window_new_desktop,
 
     # Move virtual desktops between monitors
     (MOD, 'lctrl', 'h')     : pylewm.desktops.move_dir_monitor("left"),
@@ -143,10 +144,11 @@ pylewm.config["TeleportMouse"] = True
 
 # Filters that determine properties of newly spawned windows
 pylewm.config["Filters"] = [
-    ({"title": "*qutebrowser*", "class": "QT5QWindowIcon"}, Tiling, NoTitlebar),
+    ({"class": "QT5QWindowIcon"}, Tiling, NoTitlebar),
     ({"class": "mintty"}, NoTitlebar),
     ({"title": "Windows Shell Experience Host"}, Ignore),
     ({"title": "Store"}, Ignore),
+    ({"title": "*Unreal Editor*", "child": False}, Tiling, Monitor(0), NewDesktop),
 ]
 
 if __name__ == "__main__":

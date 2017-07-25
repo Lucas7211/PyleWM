@@ -88,6 +88,43 @@ def move_dir_monitor(dir="left"):
     pylewm.floating.print_list()
     pylewm.tiles.teleportMouse(curDesktop.tile)
 
+@pylecommand
+def window_new_desktop():
+    """ Move the active window to a new desktop of its own. """
+    curWindow = win32gui.GetForegroundWindow()
+    if not win32gui.IsWindow(curWindow):
+        return
+
+    new_desktop_with_window(curWindow)
+
+def new_desktop_with_window(curWindow):
+    # Remove the window from the system
+    isFloating = pylewm.floating.isFloatingWindow(curWindow)
+    if isFloating:
+        pylewm.floating.stopFloatingWindow(curWindow, keepFloatingFocus=False)
+    else:
+        pylewm.tiles.stopTilingWindow(curWindow, keepTilingFocus=False, reposition=False)
+
+    # Create a new desktop on the window's monitor
+    monitorIndex = pylewm.filters.get_monitor(curWindow)
+    if monitorIndex == -1:
+        monitor = pylewm.monitors.getMonitor(win32gui.GetWindowRect(curWindow))
+        monitorIndex = pylewm.monitors.Monitors.index(monitor)
+    else:
+        monitor = pylewm.monitors.Monitors[monitorIndex]
+
+    if monitor is not None:
+        curDesktop = StoredDesktop(monitor)
+        if not curDesktop.empty():
+            monitor.desktops.append(curDesktop)
+        pylewm.tiles.newMonitorTile(monitor.rect)
+
+    # Re-add the window back
+    if isFloating:
+        pylewm.floating.startFloatingWindow(curWindow)
+    else:
+        pylewm.tiles.startTilingWindow(curWindow)
+
 class StoredDesktop:
     def __init__(self, monitor, banish=True):
         print(f"STORE DESKTOP {monitor.rect}")
