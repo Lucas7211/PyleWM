@@ -6,6 +6,7 @@ import pylewm.rects
 import pylewm.style
 import pylewm.floating
 import pylewm.filters
+import pylewm.desktops
 import win32gui, win32con, win32api
 from ctypes import CFUNCTYPE, POINTER, c_uint, windll
 import atexit
@@ -1048,7 +1049,7 @@ def newMonitorTile(rect):
     RootTile.add(tile)
     PendingOpenTiles.insert(0, tile)
 
-def startTilingWindow(window, monitorIndex=-1):
+def startTilingWindow(window, monitorIndex=-1, secondary=False):
     InTile = None
     # Use the monitor we've been passed
     if monitorIndex != -1 and monitorIndex <= len(pylewm.monitors.Monitors):
@@ -1069,10 +1070,22 @@ def startTilingWindow(window, monitorIndex=-1):
         InTile = PrevFocusTile
     if InTile is None:
         InTile = getCurrentMonitorTile(win32gui.GetWindowRect(window))
+    # If the tile we want to put it in is a fullscreen monitor tile,
+    # instead put the new window in a separate desktop.
+    moveToDesktop = False
+    if pylewm.config.get("AutomaticDesktops", True):
+        if InTile in RootTile.childList:
+            if isinstance(InTile, TileSingular):
+                if len(InTile.childList) != 0:
+                    moveToDesktop = True
+        
     pylewm.style.applyTiled(window)
     newTile = TileWindow(window)
     newTile.originalRect = win32gui.GetWindowRect(window)
     InTile.add(newTile)
+
+    if moveToDesktop and not secondary:
+        pylewm.desktops.new_desktop_with_window(window)
 
 def stopTilingWindow(window, keepTilingFocus=False, reposition=True):
     windowTile = getWindowTile(window)

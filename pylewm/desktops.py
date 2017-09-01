@@ -109,7 +109,10 @@ def new_desktop_with_window(curWindow):
     monitorIndex = pylewm.filters.get_monitor(curWindow)
     if monitorIndex == -1:
         monitor = pylewm.monitors.getMonitor(win32gui.GetWindowRect(curWindow))
-        monitorIndex = pylewm.monitors.Monitors.index(monitor)
+        if monitor is None:
+            monitorIndex = 0
+        else:
+            monitorIndex = pylewm.monitors.Monitors.index(monitor)
     else:
         monitor = pylewm.monitors.Monitors[monitorIndex]
 
@@ -123,7 +126,7 @@ def new_desktop_with_window(curWindow):
     if isFloating:
         pylewm.floating.startFloatingWindow(curWindow)
     else:
-        pylewm.tiles.startTilingWindow(curWindow)
+        pylewm.tiles.startTilingWindow(curWindow, secondary=True)
 
 class StoredDesktop:
     def __init__(self, monitor, banish=True):

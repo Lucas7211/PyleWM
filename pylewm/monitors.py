@@ -40,4 +40,8 @@ def initMonitors():
         DesktopArea[2] = max(DesktopArea[2], info['Monitor'][2])
         DesktopArea[3] = max(DesktopArea[3], info['Monitor'][3])
         Monitors.append(monitor)
+
+    # Sort monitors by position so their order stays the same
+    Monitors.sort(key=lambda x: x.rect[0])
+
     pylewm.rects.DesktopArea = DesktopArea

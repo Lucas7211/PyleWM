@@ -142,9 +142,12 @@ HOTKEYS = {
 # Teleport the mouse to any window that focus has been switched to
 pylewm.config["TeleportMouse"] = True
 
+# Any windows opened on a fullscreen tile automatically become new virtual desktops
+pylewm.config["AutomaticDesktops"] = True
+
 # Filters that determine properties of newly spawned windows
 pylewm.config["Filters"] = [
-    ({"class": "QT5QWindowIcon"}, Tiling, NoTitlebar),
+    ({"title": "*qutebrowser*", "class": "QT5QWindowIcon"}, Tiling, NoTitlebar),
     ({"class": "mintty"}, NoTitlebar),
     ({"title": "Windows Shell Experience Host"}, Ignore),
     ({"title": "Store"}, Ignore),
