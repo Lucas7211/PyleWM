@@ -21,6 +21,17 @@ def ignoreWindowClass(cls):
 def isEmptyWindow(window):
     rect = win32gui.GetWindowRect(window)
     return rect[2] <= rect[0] or rect[3] <= rect[1]
+
+def isChildWindow(window):
+    parent = win32api.GetWindowLong(window, win32con.GWL_HWNDPARENT)
+    return win32gui.IsWindow(parent)
+
+def isVisible(window):
+    if not win32gui.IsWindow(window):
+        return False
+    if win32gui.IsIconic(window):
+        return False
+    return win32gui.IsWindowVisible(window)
     
 def isRelevantWindow(window):
     if pylewm.filters.is_ignored(window):
@@ -98,13 +109,43 @@ def move(window, newScreenRect, topmost=False, bottom=False):
     try:
         if len(newScreenRect) == 2:
             curRect = win32gui.GetWindowRect(window)
-            width = max(curRect[2] - curRect[0], 16)
-            height = max(curRect[3] - curRect[1], 16)
+            width = curRect[2] - curRect[0]
+            height = curRect[3] - curRect[1]
         else:
-            width = max(newScreenRect[2] - newScreenRect[0], 16)
-            height = max(newScreenRect[3] - newScreenRect[1], 16)
+            width = newScreenRect[2] - newScreenRect[0]
+            height = newScreenRect[3] - newScreenRect[1]
         clientPos = newScreenRect[0:2]
+
+        if width < 16 or height < 16:
+            return
+        if not pylewm.rects.overlapsDesktopArea((clientPos[0], clientPos[1], clientPos[0]+width, clientPos[1]+height)):
+            return
+
         win32gui.SetWindowPos(window, setting, clientPos[0], clientPos[1], width, height, win32con.SWP_NOACTIVATE)
+    except:
+        try:
+            print("Error setting window {win32gui.getWindowText(window)} to position {newScreenRect}")
+        except:
+            pass
+        traceback.print_exc()
+        traceback.print_stack()
+
+def set_top(window):
+    try:
+        win32gui.SetWindowPos(window, win32con.HWND_TOPMOST, 0, 0, 0, 0,
+                win32con.SWP_NOACTIVATE | win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
+    except:
+        try:
+            print("Error setting window {win32gui.getWindowText(window)} to position {newScreenRect}")
+        except:
+            pass
+        traceback.print_exc()
+        traceback.print_stack()
+
+def set_bottom(window):
+    try:
+        win32gui.SetWindowPos(window, win32con.HWND_BOTTOM, 0, 0, 0, 0,
+                win32con.SWP_NOACTIVATE | win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
     except:
         try:
             print("Error setting window {win32gui.getWindowText(window)} to position {newScreenRect}")

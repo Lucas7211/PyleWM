@@ -142,7 +142,8 @@ class StoredDesktop:
             # Don't grab child windows, the parent handles them for us
             if win32gui.IsWindow(win32api.GetWindowLong(win.window, win32con.GWL_HWNDPARENT)):
                 continue
-
+            if not pylewm.windows.isVisible(win.window):
+                continue
             # Check if this is our monitor
             if pylewm.monitors.getMonitor(win32gui.GetWindowRect(win.window)) is monitor:
                 pylewm.floating.takeFloatingWindow(win)
@@ -191,6 +192,8 @@ class StoredDesktop:
 
     def empty(self):
         if len(self.tile.childList) != 0:
+            return False
+        if len(self.floating) != 0:
             return False
         return True
 

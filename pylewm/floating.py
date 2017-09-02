@@ -341,14 +341,14 @@ class FloatingWindow:
         self.rect = win32gui.GetWindowRect(self.window)
         if win32gui.IsIconic(self.window):
             win32gui.ShowWindow(self.window, win32con.SW_RESTORE)
-        pylewm.windows.move(self.window, self.rect, topmost=True)
+        pylewm.windows.set_top(self.window)
         self.hidden = False
         self.wasGone = False
         
     def hide(self):
         print(f"HIDE FLOATING {self.title}")
         self.rect = win32gui.GetWindowRect(self.window)
-        pylewm.windows.move(self.window, self.rect, bottom=True)
+        pylewm.windows.set_bottom(self.window)
         self.hidden = True
         self.wasGone = False
 

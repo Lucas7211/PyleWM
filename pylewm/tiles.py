@@ -1049,7 +1049,7 @@ def newMonitorTile(rect):
     RootTile.add(tile)
     PendingOpenTiles.insert(0, tile)
 
-def startTilingWindow(window, monitorIndex=-1, secondary=False):
+def startTilingWindow(window, monitorIndex=-1, secondary=True):
     InTile = None
     # Use the monitor we've been passed
     if monitorIndex != -1 and monitorIndex <= len(pylewm.monitors.Monitors):
@@ -1077,7 +1077,8 @@ def startTilingWindow(window, monitorIndex=-1, secondary=False):
         if InTile in RootTile.childList:
             if isinstance(InTile, TileSingular):
                 if len(InTile.childList) != 0:
-                    moveToDesktop = True
+                    if not pylewm.windows.isChildWindow(window):
+                        moveToDesktop = True
         
     pylewm.style.applyTiled(window)
     newTile = TileWindow(window)
@@ -1116,7 +1117,7 @@ def onWindowCreated(window):
     else:
         # Add window to automatic tiling management
         print(f"ADD TILING: {win32gui.GetWindowText(window)}")
-        startTilingWindow(window, pylewm.filters.get_monitor(window))
+        startTilingWindow(window, pylewm.filters.get_monitor(window), secondary=False)
 
     pylewm.filters.trigger(window, post=True)
 
