@@ -76,7 +76,7 @@ def move_dir_monitor(dir="left"):
 
     # Open or create a remaining desktop on the source monitor
     if monitor.desktops:
-        remainingDesktop = monitor.desktops.pop(0)
+        remainingDesktop = monitor.desktops.pop()
         remainingDesktop.show()
     else:
         pylewm.tiles.newMonitorTile(monitor.rect)
