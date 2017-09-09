@@ -128,6 +128,23 @@ def new_desktop_with_window(curWindow):
     else:
         pylewm.tiles.startTilingWindow(curWindow, secondary=True)
 
+def isWindowValidForDesktop(window, monitor):
+    try:
+        if not win32gui.IsWindow(window):
+            return False
+        if not win32gui.IsWindowVisible(window):
+            return False
+        rect = win32gui.GetWindowRect(window)
+        if rect[2] - rect[0] <= 30:
+            return False
+        if rect[3] - rect[1] <= 30:
+            return False
+        if pylewm.monitors.getMonitor(rect, fullyContained=True) is not monitor:
+            return False
+        return True
+    except:
+        return True
+
 class StoredDesktop:
     def __init__(self, monitor, banish=True):
         print(f"STORE DESKTOP {monitor.rect}")
@@ -144,8 +161,10 @@ class StoredDesktop:
                 continue
             if not pylewm.windows.isVisible(win.window):
                 continue
+            if not isWindowValidForDesktop(win.window, monitor):
+                continue
             # Check if this is our monitor
-            if pylewm.monitors.getMonitor(win32gui.GetWindowRect(win.window)) is monitor:
+            if pylewm.monitors.getMonitor(win32gui.GetWindowRect(win.window), fullyContained=True) is monitor:
                 pylewm.floating.takeFloatingWindow(win)
                 if banish:
                     win.banish()
@@ -177,6 +196,8 @@ class StoredDesktop:
     def show(self, summon=True):
         print(f"SHOW DESKTOP {self.monitor.rect}")
         for win in self.floating:
+            if not isWindowValidForDesktop(win, self.monitor):
+                continue
             if summon:
                 win.summon()
             pylewm.floating.returnFloatingWindow(win)
@@ -216,7 +237,7 @@ def getFocusMonitor():
     cursorPos = win32gui.GetCursorPos()
     mouseMonitor = pylewm.monitors.getMonitor(cursorPos)
 
-    if win is None:
+    if not win32gui.IsWindow(win):
         return mouseMonitor
     elif len(pylewm.tiles.getCurrentMonitorTile(cursorPos).childList) == 0:
         return mouseMonitor

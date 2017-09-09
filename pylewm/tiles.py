@@ -233,6 +233,11 @@ def extend():
     tile_bubble(FocusTile, "extend")
 
 @pylecommand
+def float_next():
+    """ Make the next window opened floating. """
+    PendingOpenTiles.insert(0, None)
+
+@pylecommand
 def cancel_pending():
     """ Cancel any pending tiles that were opened. """
     global PendingOpenTiles
@@ -1110,7 +1115,12 @@ def stopTilingWindow(window, keepTilingFocus=False, reposition=True):
 def onWindowCreated(window):
     pylewm.filters.trigger(window)
 
-    if isPopup(window) and not pylewm.filters.is_tiling(window) or pylewm.filters.is_floating(window):
+    pendingFloat = False
+    if PendingOpenTiles and PendingOpenTiles[0] is None:
+        PendingOpenTiles.pop(0)
+        pendingFloat = True
+
+    if isPopup(window) and not pylewm.filters.is_tiling(window) or pylewm.filters.is_floating(window) or pendingFloat:
         # Add window to our floating layout
         print(f"ADD FLOATING: {win32gui.GetWindowText(window)}")
         pylewm.floating.onWindowCreated(window)

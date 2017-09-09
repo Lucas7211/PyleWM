@@ -13,9 +13,12 @@ class Monitor:
         self.rect = info['Monitor']
         self.desktops = []
 
-def getMonitor(forPos):
+def getMonitor(forPos, fullyContained=False):
     if len(forPos) == 4:
-        return pylewm.rects.getMostOverlapping(forPos, Monitors, lambda mon: mon.rect)
+        if fullyContained:
+            return pylewm.rects.getFullyContained(forPos, Monitors, lambda mon: mon.rect)
+        else:
+            return pylewm.rects.getMostOverlapping(forPos, Monitors, lambda mon: mon.rect)
     elif len(forPos) == 2:
         for mon in Monitors:
             if mon.rect[0] <= forPos[0] and mon.rect[2] >= forPos[0] \

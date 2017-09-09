@@ -54,7 +54,8 @@ def prompt_key(callback):
 def escape_mode():
     """ Escape whatever hotkey mode we're currently in. """
     with ModeLock:
-        ModeStack.pop(0)
+        if ModeStack:
+            ModeStack.pop(0)
 
 class ModPair:
     def __init__(self, left=False, right=False, either=False):

@@ -98,6 +98,7 @@ HOTKEYS = {
     (MOD, 'shift', 'b')     : pylewm.tiles.hextend,
     (MOD, 'e')              : pylewm.tiles.extend,
     (MOD, 'shift', 'e')     : pylewm.tiles.cancel_pending,
+    (MOD, 'x')              : pylewm.tiles.float_next,
 
     # Window marks
     (MOD, 'm')              : pylewm.marks.mark_window,
@@ -116,6 +117,7 @@ HOTKEYS = {
     (MOD, 'shift', '(')     : pylewm.marks.mark_window("("),
 
     # Window management
+    (MOD, ']')              : pylewm.windows.poke_size,
     (MOD, '$')              : pylewm.windows.close,
 
     # Windows that are 'forgotten' are completely ignored by PyleWM until discovered again
@@ -152,6 +154,10 @@ pylewm.config["Filters"] = [
     ({"title": "Windows Shell Experience Host"}, Ignore),
     ({"title": "Store"}, Ignore),
     ({"title": "*Unreal Editor*", "child": False}, Tiling, Monitor(0), NewDesktop),
+    ({"title": "Steam"}, Tiling),
+    ({"title": "Friends"}, Tiling),
+    ({"title": "Transmission"}, Tiling),
+    ({"title": "*clumsy*"}, Floating),
 ]
 
 if __name__ == "__main__":

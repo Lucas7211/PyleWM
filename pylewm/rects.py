@@ -92,6 +92,23 @@ def getMostOverlapping(fromRect, toList, rectFun = lambda x: x, ignore = None):
             sel = other
     return sel
 
+def getFullyContained(fromRect, toList, rectFun = lambda x: x, ignore = None):
+    """ Get the first rect in the list that fully contains fromRect. """
+    for other in toList:
+        if other == ignore:
+            continue
+        otherRect = rectFun(other)
+        if fromRect[0] < otherRect[0]:
+            continue
+        if fromRect[2] > otherRect[2]:
+            continue;
+        if fromRect[1] < otherRect[1]:
+            continue
+        if fromRect[3] > otherRect[3]:
+            continue;
+        return other
+    return None
+
 def getClosestTo(fromRect, toList, rectFun = lambda x: x, ignore = None):
     """ Get the rect in the list that is the closest. """
     # TODO: Use something better than manhattan distance between top left corners

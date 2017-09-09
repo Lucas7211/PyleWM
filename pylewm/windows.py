@@ -9,6 +9,7 @@ import traceback
 
 IGNORED_CLASSES = {
     "windows.ui.core.corewindow", # Always directly under an ApplicationFrameWindow, so safe to ignore
+    "progman",
 }
 
 IGNORED_WINDOWS = {
@@ -90,6 +91,17 @@ def focus_dir(dir="left"):
         return True
     else:
         return False
+
+@pylecommand
+def poke_size():
+    """ Change the current window's size back and forth to make it update. """
+    curWindow = win32gui.GetForegroundWindow()
+    if not win32gui.IsWindow(curWindow):
+        return
+
+    curRect = win32gui.GetWindowRect(curWindow)
+    move(curWindow, (curRect[0]+2, curRect[1]+2, curRect[2]-2, curRect[3]-2))
+    move(curWindow, curRect)
 
 def banish(window):
     if not win32gui.IsIconic(window):
