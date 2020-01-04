@@ -67,8 +67,13 @@ class CommandQueue:
         self.queuedFunctions = []
         self.queue_lock = threading.RLock()
         self.queue_event = threading.Event()
+        self.stopped = False
 
         threading.Thread(target=self.process_commands_thread, daemon=True).start()
+    
+    def stop(self):
+        self.stopped = True
+        self.queue_event.set()
 
     def queue_command(self, fun):
         with self.queue_lock:
@@ -77,7 +82,7 @@ class CommandQueue:
         
     def process_commands_thread(self):
         global stopped
-        while not stopped:
+        while not stopped and not self.stopped:
             self.queue_event.wait()
 
             run = None

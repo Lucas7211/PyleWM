@@ -1,49 +1,43 @@
-from pylewm.window import Window
+import pylewm.monitors
+import pylewm.window
 
 import win32gui
 import win32api
 import win32con
 
-Ignore = 0
-Manage = 1
-Postpone = 2
-
-IGNORED_CLASSES = {
-    "windows.ui.core.corewindow", # Always directly under an ApplicationFrameWindow, so safe to ignore
-    "progman",
-}
-
-IGNORED_WINDOWS = {
-    "program manager", # The desktop window
-}
+IgnorePermanent = 0
+IgnoreTemporary = 1
+Manage = 2
 
 def classify_window(hwnd):
     # Invisible windows are ignored until they become visible
     if not win32gui.IsWindowVisible(hwnd):
-        return None, Postpone, "Invisible"
+        return None, IgnoreTemporary, "Invisible"
 
-    window = Window(hwnd)
+    # Cloaked windows are not handled
+    if pylewm.window.is_window_handle_cloaked(hwnd):
+        return None, IgnoreTemporary, "Cloaked"
+
     style = win32api.GetWindowLong(hwnd, win32con.GWL_STYLE)
     exStyle = win32api.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
+    window = pylewm.window.Window(hwnd)
+
+    # Don't bother with windows that don't overlap the desktop at all
+    if not window.rect.overlaps(pylewm.monitors.DesktopArea):
+        return None, IgnoreTemporary, "Off Screen"
 
     # Windows with 0 size are not managed
     if window.rect.height == 0 or window.rect.width == 0:
-        return window, Ignore, "Zero Size"
-
-    # Some hard-coded ignore classes and titles
-    if window.window_class.lower() in IGNORED_CLASSES:
-        return window, Ignore, "Ignored Class"
-    if window.window_title.lower() in IGNORED_CLASSES:
-        return window, Ignore, "Ignored Title"
+        return window, IgnorePermanent, "Zero Size"
 
     # Windows that aren't resizable are ignored,
     # we can usually assume these aren't available for tiling.
     if not (style & win32con.WS_SIZEBOX):
-        return window, Ignore, "No Resize"
+        return window, IgnorePermanent, "No Resize"
 
     # NOACTIVATE windows that aren't APPWINDOW are ignored by
     # the taskbar, so we probably should ignore them as well
     if (exStyle & win32con.WS_EX_NOACTIVATE) and not (exStyle & win32con.WS_EX_APPWINDOW):
-        return window, Ignore, "Not AppWindow"
+        return window, IgnorePermanent, "Not AppWindow"
 
     return window, Manage, None

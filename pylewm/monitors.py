@@ -15,6 +15,9 @@ class Monitor:
         self.spaces = [Space(self.rect), Space(self.rect)]
         self.temp_spaces = []
 
+        self.visible_space = self.spaces[0]
+        self.visible_space.visible = True
+
 def get_monitor_at(position):
     for monitor in Monitors:
         if monitor.rect.contains(position):
@@ -37,3 +40,6 @@ def initMonitors():
 
     # Sort monitors by position so their order stays the same
     Monitors.sort(key=lambda x: x.rect.left)
+
+    for i, monitor in enumerate(Monitors):
+        print(f"Monitor {i}: {monitor.rect}")

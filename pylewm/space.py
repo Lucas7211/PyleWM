@@ -5,6 +5,7 @@ class Space:
         self.windows = []
         self.rect = rect.copy()
         self.layout = SidebarLayout()
+        self.visible = False
 
     def update_layout(self):
         self.layout.window_count = len(self.windows)
