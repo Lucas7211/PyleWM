@@ -5,6 +5,8 @@ import win32con, win32api, win32gui, atexit
 import traceback, threading
 import copy
 
+queue_command = None
+
 class Mode:
     def __init__(self, hotkeys, captureAll=True):
         self.hotkeys = []
@@ -17,11 +19,11 @@ class Mode:
     def handle_key(self, key, isMod):
         if key.key == "esc":
             # Escape always escapes out of modes
-            queue(escape_mode)
+            queue_command(escape_mode)
             return True
         for bnd in self.hotkeys:
             if bnd[0] == key:
-                queue(bnd[1])
+                queue_command(bnd[1])
                 return True
         return self.captureAll and not isMod
 
@@ -43,7 +45,7 @@ class KeyPrompt(Mode):
                     if not self.escape_cancels or key.key != "esc":
                         prompt.callback(storeKey)
                     escape_mode()
-                queue(handle)
+                queue_command(handle)
             return True
         else:
             return False
@@ -153,7 +155,6 @@ KeyBindings = []
 ModeStack = []
 ModeLock = threading.RLock()
 ActiveKey = KeySpec('')
-queue = None
 
 def register(key, callback):
     registerSpec(KeySpec.fromTuple(key), callback)
@@ -186,7 +187,7 @@ def handle_python(isKeyDown, keyCode, scanCode):
     # Check keybinds
     for bnd in KeyBindings:
         if bnd[0] == ActiveKey:
-            queue(bnd[1])
+            queue_command(bnd[1])
             absorbKey = True
     return absorbKey
 
@@ -208,7 +209,7 @@ def VKToChr(vk, sc):
         traceback.print_exc()
         sys.exit()
     
-def waitForHotkeys():
+def wait_for_hotkeys():
     def handle_windows(nCode, wParam, lParam):
             isKeyDown = False
             isKeyUp = False

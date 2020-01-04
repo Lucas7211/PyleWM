@@ -4,66 +4,24 @@ import traceback, os
 import subprocess
 
 import pylewm.hotkeys
-from threading import RLock
-QueueLock = RLock()
+import pylewm.commands
+import pylewm.monitors
+import pylewm.execution
+import pylewm.windows
+import pylewm.window
+import pylewm.window_classification
+import pylewm.space
+import pylewm.spaces
 
-InitFunctions = []
-TickFunctions = []
-config = {}
+from pylewm.commands import PyleCommand, InitFunctions, CommandQueue
 
-def pylecommand(fun):
-    out = lambda *args, **kwargs: partial(fun, *args, **kwargs)
-    out.pylewm_callback = fun
-    return out
+from threading import RLock, Event
 
-def runpylecommand(fun, *args, **kwargs):
-    if hasattr(fun, "pylewm_callback"):
-        fun = fun.pylewm_callback
-    fun(*args, **kwargs)
-
-def getpylecommand(fun, *args, **kwargs):
-    if hasattr(fun, "pylewm_callback"):
-        return fun.pylewm_callback
-    return fun
- 
-def pyleinit(fun):
-    InitFunctions.append(fun)
-    return fun
-    
-def pyletick(fun):
-    TickFunctions.append(fun)
-    return fun
+global_queue = CommandQueue()
   
-stopped = False
-queuedFunctions = []
-def queue(fun):
-    with QueueLock:
-        global queuedFunctions
-        queuedFunctions.append(fun)
-    
-def tick():
-    run = None
-    with QueueLock:
-        global queuedFunctions
-        run = list(queuedFunctions)
-        queuedFunctions = []
-    try:
-        for fun in TickFunctions:
-            fun()
-        for fun in run:
-            fun()
-    except Exception as ex:
-        traceback.print_exc()
-
-def runThread():
-    global stopped
-    while not stopped:
-        tick()
-        time.sleep(0.05)
-        
 def start():
     import ctypes
-    if not ctypes.windll.shell32.IsUserAnAdmin() and config.get("RunAsAdmin", True):
+    if not ctypes.windll.shell32.IsUserAnAdmin() and False:
         ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
         sys.exit()
         return
@@ -76,15 +34,20 @@ def start():
         subprocess.call(args, shell=True)
     for fun in InitFunctions:
         fun()
-    threading.Thread(target=runThread).start()
-    pylewm.hotkeys.queue = queue
-    pylewm.hotkeys.waitForHotkeys()
+    pylewm.hotkeys.queue_command = global_queue.queue_command
+    pylewm.hotkeys.wait_for_hotkeys()
 
+def stop_threads():
+    pylewm.commands.stopped = True
+    global_queue.queue_event.set()
+
+@PyleCommand
 def restart():
+    stop_threads()
     subprocess.call([sys.executable, *sys.argv])
-    quit()
+    os._exit(0)
     
+@PyleCommand
 def quit():
-    global stopped
-    stopped = True
+    stop_threads()
     os._exit(0)

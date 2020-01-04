@@ -1,6 +1,5 @@
 from pylewm.hotkeys import KeySpec
-
-from pylewm import pylecommand
+from pylewm.commands import PyleCommand
 
 import ctypes
 import win32api, win32con
@@ -40,12 +39,12 @@ def sendKeySpec(keySpec):
         elif mod[0].right:
             ctypes.windll.user32.keybd_event(mod[2], 0, win32con.KEYEVENTF_KEYUP, 0)
 
-@pylecommand
+@PyleCommand.Threaded
 def sendkey(keys):
     """ Generate a single keypress. """
     sendKeySpec(KeySpec.fromTuple(keys))
 
-@pylecommand
+@PyleCommand.Threaded
 def sendkeys(keys):
     """ Generate a list of keys to be pressed in sequence. """
     for key in keys:

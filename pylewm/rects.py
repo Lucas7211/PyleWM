@@ -1,144 +1,121 @@
-DesktopArea = [0,0,0,0]
-
-def isInDesktopArea(pos):
-    if len(pos) == 4:
-        return isInDesktopArea(pos[0:2]) and isInDesktopArea(pos[2:4])
-    return pos[0] >= DesktopArea[0] and pos[0] <= DesktopArea[2] and \
-           pos[1] >= DesktopArea[1] and pos[1] <= DesktopArea[3]
-
-def overlapsDesktopArea(rect):
-    if rect[0] > DesktopArea[2] or rect[1] > DesktopArea[3]:
-        return False
-    if rect[2] < DesktopArea[0] or rect[3] < DesktopArea[1]:
-        return False
-    return True
-
-def getClosestInDirection(dir, fromRect, toList, rectFun = lambda x: x, wrap = True, ignore = None):
-    """ Get the closest rect in the list in the direction from fromRect. """
-    def getDim(rect):
-        if dir == "left": return rect[0]
-        if dir == "up": return rect[1]
-        if dir == "right": return rect[0]
-        return rect[1]
-    def getOppositeEnd(rect):
-        if dir == "left": return rect[2]
-        if dir == "up": return rect[3]
-        if dir == "right": return rect[0]
-        return rect[1]
-    def getOtherDim(rect):
-        if dir == "left": return rect[1]
-        if dir == "up": return rect[0]
-        if dir == "right": return rect[1]
-        return rect[0]
-    def isAfter(A, B):
-        if dir == "left" or dir == "up":
-            return B <= A
+class Rect:
+    def __init__(self, position=None):
+        if not position:
+            self.position = [0,0,0,0]
         else:
-            return A <= B
-    curStart = getDim(fromRect)
-    curOtherDim = getOtherDim(fromRect)
-    maxDiff = float(1e20)
-    sel = None
+            self.position = position
 
-    # Find which rect is the closest in the particular direction
-    def checkRects():
-        nonlocal maxDiff
-        nonlocal sel
-        for other in toList:
-            if other == ignore:
+    def __str__(self):
+        return repr(self.position)
+
+    def copy(self):
+        return Rect(self.position)
+
+    @property
+    def width(self):
+        return self.position[2] - self.position[0]
+
+    @property
+    def height(self):
+        return self.position[3] - self.position[1]
+
+    @property
+    def coordinates(self):
+        return self.position
+
+    @coordinates.setter
+    def set_coordinates(self, newcoords):
+        self.position = newcoords
+
+    @property
+    def topleft(self):
+        return (self.position[0], self.position[1])
+
+    @topleft.setter
+    def set_topleft(self, coord):
+        self.position[0] = coord[0]
+        self.position[1] = coord[1]
+
+    @property
+    def bottomright(self):
+        return (self.position[2], self.position[3])
+
+    @bottomright.setter
+    def set_bottomright(self, coord):
+        self.position[2] = coord[0]
+        self.position[3] = coord[1]
+
+    @property
+    def left(self):
+        return self.position[0]
+
+    @left.setter
+    def set_left(self, pos):
+        self.position[0] = pos
+
+    @property
+    def top(self):
+        return self.position[1]
+
+    @top.setter
+    def set_top(self, pos):
+        self.position[1] = pos
+
+    @property
+    def right(self):
+        return self.position[2]
+
+    @right.setter
+    def set_right(self, pos):
+        self.position[2] = pos
+
+    @property
+    def bottom(self):
+        return self.position[3]
+
+    @bottom.setter
+    def set_bottom(self, pos):
+        self.position[3] = pos
+
+    def contains(self, pos):
+        return (pos[0] >= self.position[0] and pos[0] <= self.position[2] and
+                pos[1] >= self.position[1] and pos[1] <= self.position[3])
+
+    def overlaps(self, rect):
+        other_position = rect.position
+        if other_position[0] > self.position[2] or other_position[1] > self.position[3]:
+            return False
+        if other_position[2] < self.position[0] or other_position[3] < self.position[1]:
+            return False
+        return True
+
+    def extend_to_cover(self, rect):
+        other_position = rect.position
+        self.position[0] = min(self.position[0], other_position[0])
+        self.position[1] = min(self.position[1], other_position[1])
+        self.position[2] = max(self.position[2], other_position[2])
+        self.position[3] = max(self.position[3], other_position[3])
+
+    def get_overlap_area(self, rect):
+        other_position = rect.position
+        return ((min(self.position[2], other_position[2]) - max(self.position[0], other_position[0]))
+             * (min(self.position[3], other_position[3]) - max(self.position[1], other_position[1])))
+
+    def get_most_overlapping(self, rect_list, rect_function = None):
+        most_area = 0
+        sel = None
+
+        for other_elem in rect_list:
+            other_rect = None
+            if rect_function:
+                other_rect = rect_function(other_elem)
+            else:
+                other_rect = other_elem
+            if not other_rect.overlaps(self):
                 continue
-            otherRect = rectFun(other)
-            otherStart = getDim(otherRect)
-            otherOtherDim = getOtherDim(otherRect)
-
-            # Skip windows not at all extended in the right direction
-            if not isAfter(curStart, otherStart):
-                continue
-
-            diff = float(abs(curStart - otherStart)) + float(abs(curOtherDim - otherOtherDim) / 10000.0)
-            if diff < maxDiff:
-                # Closer to the window's starting edge
-                maxDiff = diff
-                sel = other
-
-    # Return the element with the closest rect
-    checkRects()
-    if sel is not None:
+            area = self.get_overlap_area(other_rect)
+            if area > most_area:
+                most_area = area
+                sel = other_elem
+                
         return sel
-    else:
-        # Wrap around to the other side
-        if wrap:
-            curStart = getOppositeEnd(DesktopArea)
-            curOtherDim = curStart
-            checkRects()
-        return sel
-
-def getMostOverlapping(fromRect, toList, rectFun = lambda x: x, ignore = None):
-    """ Get the rect in the list that fromRect overlaps the most. """
-    mostOverlap = 0
-    sel = None
-    for other in toList:
-        if other == ignore:
-            continue
-        otherRect = rectFun(other)
-        if fromRect[0] > otherRect[2] or fromRect[1] > otherRect[3]:
-            continue
-        if fromRect[2] < otherRect[0] or fromRect[3] < otherRect[1]:
-            continue
-
-        overlap = (min(fromRect[2], otherRect[2]) - max(fromRect[0], otherRect[0])) * (min(fromRect[3], otherRect[3]) - max(fromRect[1], otherRect[1]))
-        if overlap > mostOverlap:
-            mostOverlap = overlap
-            sel = other
-    return sel
-
-def getFullyContained(fromRect, toList, rectFun = lambda x: x, ignore = None):
-    """ Get the first rect in the list that fully contains fromRect. """
-    for other in toList:
-        if other == ignore:
-            continue
-        otherRect = rectFun(other)
-        if fromRect[0] < otherRect[0]:
-            continue
-        if fromRect[2] > otherRect[2]:
-            continue;
-        if fromRect[1] < otherRect[1]:
-            continue
-        if fromRect[3] > otherRect[3]:
-            continue;
-        return other
-    return None
-
-def getClosestTo(fromRect, toList, rectFun = lambda x: x, ignore = None):
-    """ Get the rect in the list that is the closest. """
-    # TODO: Use something better than manhattan distance between top left corners
-    leastDistance = 1e8
-    sel = None
-    for other in toList:
-        if other == ignore:
-            continue
-        otherRect = rectFun(other)
-        dist = abs(otherRect[0] - fromRect[0]) + abs(otherRect[1] - fromRect[1])
-        if dist < leastDistance:
-            sel = other
-            leastDistance = dist
-    return sel
-
-def overlaps(fromRect, toRect):
-    if fromRect[0] > toRect[2] or fromRect[1] > toRect[3]:
-        return False
-    if fromRect[2] < toRect[0] or fromRect[3] < toRect[1]:
-        return False
-    return True
-
-def moveRelativeInto(rect, outerRect, targetRect):
-    """ Move the rectangle inside outerRect to the same relative position inside targetRect."""
-    moved = [0,0,0,0]
-    for i in range(0,4):
-        outerOffset = outerRect[(i%2)]
-        outerSize = outerRect[2+(i%2)] - outerOffset
-        relPos = float(rect[i] - outerOffset) / float(outerSize)
-        targetOffset = targetRect[(i%2)]
-        targetSize = targetRect[2+(i%2)] - targetOffset
-        moved[i] = int(relPos * float(targetSize)) + targetOffset
-    return tuple(moved)

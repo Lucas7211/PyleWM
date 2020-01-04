@@ -1,50 +1,39 @@
-from pylewm import pyleinit, pylecommand
-import win32gui, win32con, win32api
+from pylewm.rects import Rect
+from pylewm.commands import PyleInit, PyleCommand
+from pylewm.space import Space
 
-import pylewm.rects
-import pylewm.focus
+import ctypes
+import win32api, win32con
 
 Monitors = []
-DesktopArea = [0,0,0,0]
+DesktopArea = Rect()
 
 class Monitor:
     def __init__(self, info):
         self.info = info
-        self.rect = info['Monitor']
-        self.desktops = []
+        self.rect = Rect(info['Monitor'])
+        self.spaces = [Space(self.rect), Space(self.rect)]
+        self.temp_spaces = []
 
-def getMonitor(forPos, fullyContained=False):
-    if len(forPos) == 4:
-        if fullyContained:
-            return pylewm.rects.getFullyContained(forPos, Monitors, lambda mon: mon.rect)
-        else:
-            return pylewm.rects.getMostOverlapping(forPos, Monitors, lambda mon: mon.rect)
-    elif len(forPos) == 2:
-        for mon in Monitors:
-            if mon.rect[0] <= forPos[0] and mon.rect[2] >= forPos[0] \
-                    and mon.rect[1] <= forPos[1] and mon.rect[3] >= forPos[1]:
-                return mon
+def get_monitor_at(position):
+    for monitor in Monitors:
+        if monitor.rect.contains(position):
+            return monitor
     return None
 
-def getMonitorInDirection(forPos, dir):
-    forMonitor = getMonitor(forPos)
+def get_covering_monitor(rect):
+    monitor = rect.get_most_overlapping(Monitors, lambda mon: mon.rect)
+    if monitor:
+        return monitor
+    return Monitors[0]
 
-    return pylewm.rects.getClosestInDirection(dir, forMonitor.rect,
-        Monitors, lambda mon: mon.rect, wrap=True,
-        ignore=forMonitor)
-
-@pyleinit
+@PyleInit
 def initMonitors():
     for mhnd in win32api.EnumDisplayMonitors(None, None):
         info = win32api.GetMonitorInfo(mhnd[0])
         monitor = Monitor(info)
-        DesktopArea[0] = min(DesktopArea[0], info['Monitor'][0])
-        DesktopArea[1] = min(DesktopArea[1], info['Monitor'][1])
-        DesktopArea[2] = max(DesktopArea[2], info['Monitor'][2])
-        DesktopArea[3] = max(DesktopArea[3], info['Monitor'][3])
+        DesktopArea.extend_to_cover(monitor.rect)
         Monitors.append(monitor)
 
     # Sort monitors by position so their order stays the same
-    Monitors.sort(key=lambda x: x.rect[0])
-
-    pylewm.rects.DesktopArea = DesktopArea
+    Monitors.sort(key=lambda x: x.rect.left)

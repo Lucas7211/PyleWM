@@ -1,14 +1,15 @@
 from pylewm.sendkeys import sendKey
-from pylewm import pylecommand
+from pylewm.commands import PyleCommand
+
 import os, ctypes
 import subprocess
 
-@pylecommand
+@PyleCommand.Threaded
 def start_menu():
     """ Open the start menu. """
     sendKey(('ctrl', 'esc'))
     
-@pylecommand
+@PyleCommand
 def run(args, cwd=None):
     """ Run an arbitrary command. """
     if isinstance(args, str):
@@ -18,11 +19,9 @@ def run(args, cwd=None):
     if cwd is None:
         cwd = os.getenv("USERPROFILE")
     
-    
     if ctypes.windll.shell32.IsUserAnAdmin():
         # Drop privileges back to the normal user for execution
         USER = os.environ["USERDOMAIN"] + "\\" + os.environ["USERNAME"]
         args = ["runas", "/user:"+USER, "/savecred"] + args
     
-    print(f"RUN {args} AT cwd={cwd}")
     subprocess.call(args, shell=True, cwd=cwd)
