@@ -32,12 +32,14 @@ class Window:
         self.window_title = win32gui.GetWindowText(hwnd)
         self.space = None
         self.closed = False
+        self.focused = False
 
     def manage(self):
         self.command_queue = pylewm.commands.CommandQueue()
         if self.is_maximized():
             self.remove_maximize()
             self.last_window_pos = win32gui.GetWindowRect(self.handle)
+        self.set_layer_bottom()
 
     def trigger_update(self):
         self.command_queue.queue_command(self.update)
@@ -78,13 +80,14 @@ class Window:
         # If the window has been moved outside of PyleWM we 'unsnap' it from the layout
         #  This is the same operation as 'closing' it since we are no longer managing it
         if new_rect != self.last_window_pos or self.is_maximized():
+            self.set_layer_alwaystop()
             self.closed = True
             return
 
         # Move the window to the wanted rect if it has changed
         if self.rect.coordinates != new_rect:
             try:
-                win32gui.SetWindowPos(self.handle, win32con.HWND_TOP,
+                win32gui.SetWindowPos(self.handle, win32con.HWND_BOTTOM,
                     self.rect.left, self.rect.top,
                     self.rect.width, self.rect.height,
                     win32con.SWP_NOACTIVATE)
@@ -92,3 +95,21 @@ class Window:
                 pass
 
             self.last_window_pos = self.get_actual_rect()
+
+        # Set it to the bottom if it's focused
+        #if self.focused:
+            #self.set_layer_bottom()
+
+    def set_layer_bottom(self):
+        try:
+            win32gui.SetWindowPos(self.handle, win32con.HWND_BOTTOM, 0, 0, 0, 0,
+                    win32con.SWP_NOACTIVATE | win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
+        except:
+            pass
+
+    def set_layer_alwaystop(self):
+        try:
+            win32gui.SetWindowPos(self.handle, win32con.HWND_TOPMOST, 0, 0, 0, 0,
+                    win32con.SWP_NOACTIVATE | win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
+        except:
+            pass

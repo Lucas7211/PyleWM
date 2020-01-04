@@ -6,7 +6,7 @@ MOD =                       'rctrl'
 HOTKEYS = {
     # Window management
     (MOD, '$')    : pylewm.windows.close,
-    (MOD, 'f')    : pylewm.windows.drop_window_into_layout,
+    (MOD, 'x')    : pylewm.windows.drop_window_into_layout,
 
     # Space management
 

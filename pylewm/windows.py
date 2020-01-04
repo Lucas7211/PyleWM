@@ -174,8 +174,14 @@ def tick_windows():
 
     focus_hwnd = win32gui.GetForegroundWindow()
     if focus_hwnd in Windows and Windows[focus_hwnd]:
+        if FocusWindow:
+            FocusWindow.focused = False
         FocusWindow = Windows[focus_hwnd]
+        if FocusWindow:
+            FocusWindow.focused = True
     else:
+        if FocusWindow:
+            FocusWindow.focused = False
         FocusWindow = None
 
     if FocusWindow and not FocusWindow.closed:
@@ -191,6 +197,7 @@ def tick_windows():
     if LastFocusWindow and LastFocusWindow.closed:
         LastFocusWindow = None
     if FocusWindow and FocusWindow.closed:
+        FocusWindow.focused = False
         FocusWindow = None
 
     # We are no longer in initial placement mode
