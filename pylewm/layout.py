@@ -178,3 +178,9 @@ class SidebarLayout(Layout):
             return (drop_index+1), force_drop
         else:
             return 0, force_drop
+
+    def get_focus_slot_after_removing(self, remove_slot):
+        if remove_slot == 0 or self.window_count <= 1:
+            return 0
+        else:
+            return max(1, remove_slot-1)

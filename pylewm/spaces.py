@@ -73,15 +73,15 @@ def move_to_new_temporary_space():
     ''' Move the active window to a new temporary space. '''
     if not pylewm.focus.FocusWindow:
         return
+    move_window_to_new_temporary_space(pylewm.focus.FocusWindow)
+    delay_pyle_command(0.05, lambda: pylewm.focus.set_focus(pylewm.focus.FocusWindow))
 
-    window = pylewm.focus.FocusWindow
-
+def move_window_to_new_temporary_space(window):
     temp_space = window.space.monitor.new_temp_space()
     window.space.remove_window(window)
     temp_space.add_window(window)
 
     temp_space.monitor.switch_to_space(temp_space)
-    delay_pyle_command(0.05, lambda: pylewm.focus.set_focus(window))
 
 @PyleCommand
 def focus_left():

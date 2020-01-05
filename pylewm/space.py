@@ -93,18 +93,19 @@ class Space:
     def remove_window(self, window):
         assert window.space == self
 
+        lost_index = self.windows.index(window)
         self.windows.remove(window)
         window.space = None
 
         if self.focus is window:
             if self.windows:
-                self.focus = self.windows[0]
+                self.focus = self.windows[self.layout.get_focus_slot_after_removing(lost_index)]
             else:
                 self.focus = None
 
         if self.last_focus is window:
             if self.windows:
-                self.last_focus = self.windows[0]
+                self.last_focus = self.windows[self.layout.get_focus_slot_after_removing(lost_index)]
             else:
                 self.last_focus = None
 

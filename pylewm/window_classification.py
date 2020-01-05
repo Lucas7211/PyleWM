@@ -1,5 +1,6 @@
 import pylewm.monitors
 import pylewm.window
+import pylewm.filters
 
 import win32gui
 import win32api
@@ -26,6 +27,10 @@ def classify_window(hwnd):
     # Windows with no title are temporary and should be ignored
     if window.window_title == '':
         return None, IgnoreTemporary, "Empty Title"
+
+    # Check if any filters ignore this
+    if pylewm.filters.is_ignored(window):
+        return None, IgnorePermanent, "Ignored by Filter"
 
     # Don't bother with windows that don't overlap the desktop at all
     if not window.rect.overlaps(pylewm.monitors.DesktopArea):

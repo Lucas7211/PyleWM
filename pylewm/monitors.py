@@ -50,6 +50,7 @@ class Monitor:
         return temp_space
 
     def remove_temp_space(self, temp_space):
+        temp_space.monitor = None
         self.temp_spaces.remove(temp_space)
         if self.last_used_temp_space == temp_space:
             if len(self.temp_spaces) != 0:
@@ -103,14 +104,25 @@ def get_monitor_in_direction(from_monitor, direction):
 
 @PyleInit
 def initMonitors():
+    global Monitors
+
     for mhnd in win32api.EnumDisplayMonitors(None, None):
         info = win32api.GetMonitorInfo(mhnd[0])
+
         monitor = Monitor(info)
+        monitor.primary = info["Flags"] & 1
+
         DesktopArea.extend_to_cover(monitor.rect)
         Monitors.append(monitor)
 
     # Sort monitors by position so their order stays the same
     Monitors.sort(key=lambda x: x.rect.left)
+
+    # Rotate monitors so the default monitor is at index 0
+    #for i, monitor in enumerate(Monitors):
+    #    if monitor.primary:
+    #        Monitors = Monitors[i:] + Monitors[:i]
+    #        break
 
     for i, monitor in enumerate(Monitors):
         print(f"Monitor {i}: {monitor.rect}")

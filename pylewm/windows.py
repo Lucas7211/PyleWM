@@ -24,7 +24,19 @@ InitialPlacement = True
 @PyleCommand.Threaded
 def close():
     ''' Close the window that currently has focus. Whether that window is in a layout or not. '''
-    win32gui.PostMessage(win32gui.GetForegroundWindow(), win32con.WM_CLOSE, 0, 0)
+    hwnd = win32gui.GetForegroundWindow()
+    if hwnd in Windows and Windows[hwnd]:
+        window = Windows[hwnd]
+        window.force_closed = True
+
+        space = window.space
+        if space:
+            space.remove_window(window)
+            pylewm.focus.set_focus_space(space)
+
+        win32gui.PostMessage(win32gui.GetForegroundWindow(), win32con.WM_CLOSE, 0, 0)
+    else:
+        win32gui.PostMessage(win32gui.GetForegroundWindow(), win32con.WM_CLOSE, 0, 0)
 
 @PyleCommand
 def drop_window_into_layout():
@@ -43,6 +55,14 @@ def drop_window_into_layout():
     else:
         window = Window(hwnd)
         NewWindows.append(window)
+
+@PyleCommand
+def minimize():
+    hwnd = win32gui.GetForegroundWindow()
+    if hwnd in Windows and Windows[hwnd]:
+        Windows[hwnd].minimize()
+    else:
+        pylewm.window.minimize_window_handle(hwnd)
 
 @PyleCommand
 def poke():
@@ -93,7 +113,12 @@ def print_window_info(window=None, text=None, indent=""):
 def add_window_to_space(window):
     # Find the monitor that this window is most on
     space = None
-    if InitialPlacement or window.handle in MinimizedWindows:
+
+    filter_monitor = pylewm.filters.get_monitor(window)
+    if filter_monitor != -1:
+        filter_monitor = min(filter_monitor, len(pylewm.monitors.Monitors)-1)
+        space = pylewm.monitors.Monitors[filter_monitor].visible_space
+    elif InitialPlacement or window.handle in MinimizedWindows:
         monitor = pylewm.monitors.get_covering_monitor(window.rect)
         space = monitor.visible_space
     else:
@@ -103,6 +128,8 @@ def add_window_to_space(window):
     space.add_window(window)
 
 def manage_window(window):
+    pylewm.filters.trigger_all_filters(window, post=False)
+
     if not window.floating:
         add_window_to_space(window)
 
@@ -111,6 +138,8 @@ def manage_window(window):
     # Start managing the window
     if window.handle in MinimizedWindows:
         MinimizedWindows.remove(window.handle)
+
+    pylewm.filters.trigger_all_filters(window, post=True)
 
 @PyleThread(0.05)
 def tick_windows():
@@ -162,8 +191,13 @@ def tick_windows():
         if not window:
             continue
         if window.closed:
-            if window.space:
-                window.space.remove_window(window)
+            space = window.space
+            if space:
+                lost_index = space.windows.index(window)
+                space.remove_window(window)
+                if not window.force_closed and space.windows and space == pylewm.focus.get_cursor_space():
+                    focus_window = space.windows[space.layout.get_focus_slot_after_removing(lost_index)]
+                    pylewm.focus.set_focus(focus_window)
             window.stop_managing()
             Windows[window.handle] = None
         if window.floating and window.space:

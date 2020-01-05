@@ -25,6 +25,9 @@ def is_window_handle_minimized(hwnd):
     except:
         return False
 
+def minimize_window_handle(hwnd):
+    ctypes.windll.user32.ShowWindowAsync(hwnd, win32con.SW_FORCEMINIMIZE)
+
 def is_left_mouse_held():
     return win32api.GetAsyncKeyState(win32con.VK_LBUTTON) != 0
 
@@ -42,6 +45,10 @@ class Window:
         self.floating = False
         self.can_tile = True
         self.take_new_rect = False
+        self.force_closed = False
+
+        parent_handle = win32api.GetWindowLong(self.handle, win32con.GWL_HWNDPARENT)
+        self.is_child_window = win32gui.IsWindow(parent_handle)
 
         self.dragging = False
         self.drag_ticks_with_movement = 0
@@ -56,7 +63,7 @@ class Window:
         self.closed = True
         if self.hidden:
             self.hidden = False
-            win32gui.ShowWindow(self.handle, win32con.SW_SHOWNOACTIVATE)
+            ctypes.windll.user32.ShowWindowAsync(self.handle, win32con.SW_SHOWNOACTIVATE)
         if self.floating:
             self.floating = False
             self.set_layer_bottom()
@@ -66,7 +73,7 @@ class Window:
             if not self.hidden:
                 return
             self.hidden = False
-            win32gui.ShowWindow(self.handle, win32con.SW_SHOWNOACTIVATE)
+            ctypes.windll.user32.ShowWindowAsync(self.handle, win32con.SW_SHOWNOACTIVATE)
 
             #if win32gui.IsIconic(self.handle):
                 #win32gui.ShowWindow(self.handle, win2con.SW_RESTORE)
@@ -80,11 +87,24 @@ class Window:
                 return
             self.hidden = True
             time.sleep(0.05)
-            win32gui.ShowWindow(self.handle, win32con.SW_HIDE)
+            ctypes.windll.user32.ShowWindowAsync(self.handle, win32con.SW_HIDE)
 
             #if not win32gui.IsIconic(self.handle):
                 #win32gui.ShowWindow(self.handle, win32con.SW_FORCEMINIMIZE)
         self.command_queue.queue_command(hide_cmd)
+
+    def minimize(self):
+        def minimize_cmd():
+            minimize_window_handle(self.handle)
+        self.command_queue.queue_command(minimize_cmd)
+
+    def remove_titlebar(self):
+        def remove_titlebar_cmd():
+            style = win32api.GetWindowLong(self.handle, win32con.GWL_STYLE)
+            if style & win32con.WS_CAPTION:
+                style = style & ~win32con.WS_CAPTION
+                win32api.SetWindowLong(self.handle, win32con.GWL_STYLE, style)
+        self.command_queue.queue_command(remove_titlebar_cmd)
 
     def manage(self):
         self.command_queue = pylewm.commands.CommandQueue()

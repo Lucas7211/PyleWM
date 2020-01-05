@@ -1,4 +1,5 @@
 import pylewm
+from pylewm.filters import NoTitlebar, Tiling, Floating, Monitor, TemporarySpace
 
 # Main modifier key that all the hotkeys are behind
 MOD =                       'rctrl'
@@ -20,6 +21,7 @@ HOTKEYS = {
     (MOD, '$')    : pylewm.windows.close,
     (MOD, ']')    : pylewm.windows.poke,
     (MOD, 'x')    : pylewm.windows.drop_window_into_layout,
+    (MOD, 'shift', 'm')    : pylewm.windows.minimize,
 
     (MOD, 'y')    : pylewm.yank.yank_window,
     (MOD, 'i')    : pylewm.yank.drop_window,
@@ -43,6 +45,11 @@ HOTKEYS = {
     (MOD, 'shift', 'q')     : pylewm.restart,
     (MOD, '\\')             : pylewm.spaces.print_state,
 }
+
+pylewm.filters.Filters = [
+    ({"class": "mintty"}, NoTitlebar),
+    ({"title": "*Unreal Editor*", "child": False}, Tiling, Monitor(0), TemporarySpace),
+]
 
 if __name__ == "__main__":
     for key, val in HOTKEYS.items():

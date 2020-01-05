@@ -16,6 +16,8 @@ import pylewm.window_classification
 import pylewm.space
 import pylewm.spaces
 import pylewm.yank
+import pylewm.selector
+import pylewm.filters
 
 from pylewm.commands import PyleCommand, InitFunctions, CommandQueue, run_pyle_command
 
