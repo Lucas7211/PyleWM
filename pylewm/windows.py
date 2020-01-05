@@ -1,6 +1,6 @@
 from pylewm.commands import PyleThread, PyleCommand
 from pylewm.window import Window
-import pylewm.spaces
+import pylewm.focus
 import pylewm.window
 import pylewm.monitors
 
@@ -77,7 +77,7 @@ def manage_window(window):
         monitor = pylewm.monitors.get_covering_monitor(window.rect)
         space = monitor.spaces[0]
     else:
-        space = pylewm.spaces.get_focused_space()
+        space = pylewm.focus.get_focused_space()
 
     # Add the window to the space that is visible on that monitor
     space.add_window(window)

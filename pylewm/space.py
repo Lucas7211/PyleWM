@@ -9,6 +9,17 @@ class Space:
         self.focus = None
         self.last_focus = None
         self.monitor = monitor
+        self.temporary = False
+
+    def show(self):
+        self.visible = True
+        for window in self.windows:
+            window.show()
+
+    def hide(self):
+        self.visible = False
+        for window in self.windows:
+            window.hide()
 
     def update_focus(self, focus_window):
         if focus_window in self.windows:

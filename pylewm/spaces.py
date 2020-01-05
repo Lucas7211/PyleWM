@@ -1,9 +1,82 @@
 import pylewm.window
 import pylewm.layout
 import pylewm.focus
-from pylewm.commands import PyleCommand
+from pylewm.commands import PyleCommand, delay_pyle_command
 
 import win32gui
+
+def goto_space(other_space):
+    other_space.monitor.switch_to_space(other_space)
+    delay_pyle_command(0.05, lambda: pylewm.focus.set_focus_space(other_space))
+
+@PyleCommand
+def flip():
+    space = pylewm.focus.get_focused_space()
+    monitor = space.monitor
+
+    other_space = None
+    if space == monitor.spaces[0]:
+        other_space = monitor.spaces[1]
+    elif space == monitor.spaces[1]:
+        other_space = monitor.spaces[0]
+    elif monitor.last_used_space:
+        other_space = monitor.last_used_space
+    else:
+        other_space = monitor.spaces[0]
+
+    goto_space(other_space)
+
+@PyleCommand
+def goto_temporary():
+    space = pylewm.focus.get_focused_space()
+    monitor = space.monitor
+
+    temp_space = None
+    if space.temporary:
+        # We want an -empty- temporary space now, since we are
+        # already no a temporary space.
+        temp_space = monitor.new_temp_space()
+    elif len(monitor.temp_spaces) == 0:
+        # Create the first temporary space
+        temp_space = monitor.new_temp_space()
+    else:
+        # Switch to the last temporary space we had active
+        temp_space = monitor.get_last_used_temp_space()
+
+    goto_space(temp_space)
+
+@PyleCommand
+def next_temporary():
+    space = pylewm.focus.get_focused_space()
+    monitor = space.monitor
+    if not space.temporary:
+        return
+
+    goto_space(monitor.get_adjacent_temp_space(space, +1))
+
+@PyleCommand
+def previous_temporary():
+    space = pylewm.focus.get_focused_space()
+    monitor = space.monitor
+    if not space.temporary:
+        return
+
+    goto_space(monitor.get_adjacent_temp_space(space, -1))
+
+@PyleCommand
+def move_to_new_temporary_space():
+    ''' Move the active window to a new temporary space. '''
+    if not pylewm.focus.FocusWindow:
+        return
+
+    window = pylewm.focus.FocusWindow
+
+    temp_space = window.space.monitor.new_temp_space()
+    window.space.remove_window(window)
+    temp_space.add_window(window)
+
+    temp_space.monitor.switch_to_space(temp_space)
+    delay_pyle_command(0.05, lambda: pylewm.focus.set_focus(window))
 
 @PyleCommand
 def focus_left():
@@ -30,7 +103,7 @@ def focus_previous():
     focus_direction(pylewm.layout.Direction.Previous)
 
 def focus_direction(direction):
-    current_space = get_focused_space()
+    current_space = pylewm.focus.get_focused_space()
     current_slot = current_space.get_last_focused_slot()
     new_slot, escape_direction = current_space.move_from_slot(current_slot, direction)
 
@@ -72,7 +145,7 @@ def move_previous():
     move_direction(pylewm.layout.Direction.Previous)
 
 def move_direction(direction):
-    current_space = get_focused_space()
+    current_space = pylewm.focus.get_focused_space()
     current_slot = current_space.get_last_focused_slot()
     if current_slot == -1:
         return
@@ -94,17 +167,3 @@ def move_direction(direction):
                 new_monitor.visible_space.insert_slot(target_slot, escape_direction, focus_window)
             else:
                 new_monitor.visible_space.add_window(focus_window)
-
-def get_cursor_position():
-    return win32gui.GetCursorPos()
-
-def get_cursor_space():
-    monitor = pylewm.monitors.get_monitor_at(get_cursor_position())
-    if not monitor:
-        monitor = pylewm.monitors.get_default_monitor()
-    return monitor.visible_space
-
-def get_focused_space():
-    if pylewm.focus.FocusWindow and pylewm.focus.FocusWindow.space and pylewm.focus.FocusWindow.space.visible:
-        return pylewm.focus.FocusWindow.space
-    return get_cursor_space()

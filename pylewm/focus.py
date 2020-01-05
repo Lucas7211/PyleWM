@@ -17,10 +17,39 @@ def set_focus(window):
     rect = window.rect.copy()
     FocusQueue.queue_command(lambda: focus_window_handle(hwnd, rect))
 
+def set_focus_space(space):
+    if space.last_focus:
+        set_focus(space.last_focus)
+    else:
+        set_focus_monitor(space.monitor)
+
 def set_focus_monitor(monitor):
     hwnd = ctypes.windll.user32.GetShellWindow()
     rect = monitor.rect.copy()
     FocusQueue.queue_command(lambda: focus_window_handle(hwnd, rect))
+
+def get_cursor_position():
+    return win32gui.GetCursorPos()
+
+def get_cursor_space():
+    monitor = pylewm.monitors.get_monitor_at(get_cursor_position())
+    if not monitor:
+        monitor = pylewm.monitors.get_default_monitor()
+    return monitor.visible_space
+
+def get_focused_space():
+    cursor_space = get_cursor_space()
+    # If the mouse is on an empty space, use that space instead of the one that has a focused window
+    # this is because random windows get focused when the last window loses focus.
+    if len(cursor_space.windows) == 0:
+        return cursor_space
+    if pylewm.focus.FocusWindow and pylewm.focus.FocusWindow.space and pylewm.focus.FocusWindow.space.visible:
+        return pylewm.focus.FocusWindow.space
+    return cursor_space
+
+def get_focused_monitor():
+    space = get_focused_space()
+    return space.monitor
 
 ComInitialized = False
 def focus_window_handle(hwnd, rect=None, num=10):

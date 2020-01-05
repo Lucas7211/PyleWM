@@ -136,5 +136,7 @@ class SidebarLayout(Layout):
         else:
             if direction == Direction.Right:
                 return 0
+            elif direction == Direction.Down:
+                return 1
             else:
                 return self.window_count

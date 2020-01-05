@@ -5,6 +5,7 @@ import win32gui
 import win32api
 import win32con
 import ctypes
+import time
 
 import threading
 
@@ -33,6 +34,24 @@ class Window:
         self.space = None
         self.closed = False
         self.focused = False
+        self.hidden = False
+
+    def show(self):
+        self.hidden = False
+        def show_cmd():
+            if win32gui.IsIconic(self.handle):
+                win32gui.ShowWindow(self.handle, win32con.SW_RESTORE)
+                self.set_layer_top()
+            self.last_window_pos = self.get_actual_rect()
+        self.command_queue.queue_command(show_cmd)
+
+    def hide(self):
+        self.hidden = True
+        def hide_cmd():
+            time.sleep(0.05)
+            if not win32gui.IsIconic(self.handle):
+                win32gui.ShowWindow(self.handle, win32con.SW_MINIMIZE)
+        self.command_queue.queue_command(hide_cmd)
 
     def manage(self):
         self.command_queue = pylewm.commands.CommandQueue()
@@ -69,6 +88,8 @@ class Window:
             return self.rect.coordinates
 
     def update(self):
+        if self.hidden:
+            return
         if self.closed:
             return
         if not win32gui.IsWindow(self.handle) or self.is_cloaked():
@@ -85,8 +106,9 @@ class Window:
             return
 
         # Move the window to the wanted rect if it has changed
-        if self.rect.coordinates != new_rect:
+        if not self.rect.equal_coordinates(new_rect):
             try:
+                #print(f"move {self.window_title} {new_rect} -> {self.rect}")
                 win32gui.SetWindowPos(self.handle, win32con.HWND_BOTTOM,
                     self.rect.left, self.rect.top,
                     self.rect.width, self.rect.height,
@@ -96,9 +118,12 @@ class Window:
 
             self.last_window_pos = self.get_actual_rect()
 
-        # Set it to the bottom if it's focused
-        #if self.focused:
-            #self.set_layer_bottom()
+    def set_layer_top(self):
+        try:
+            win32gui.SetWindowPos(self.handle, win32con.HWND_TOP, 0, 0, 0, 0,
+                    win32con.SWP_NOACTIVATE | win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
+        except:
+            pass
 
     def set_layer_bottom(self):
         try:

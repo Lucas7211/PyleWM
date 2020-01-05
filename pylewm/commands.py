@@ -10,6 +10,15 @@ stopped = False
 
 ThreadPool = ThreadPoolExecutor(max_workers=64)
 
+def delay_pyle_command(timer, fun):
+    def timed_cmd():
+        time.sleep(timer)
+        fun()
+    ThreadPool.submit(timed_cmd)
+
+def queue_pyle_command(fun):
+    ThreadPool.submit(fun)
+
 class PyleCommand:
     @staticmethod
     def Threaded(func):

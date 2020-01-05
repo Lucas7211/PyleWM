@@ -21,6 +21,14 @@ HOTKEYS = {
     (MOD, 'x')    : pylewm.windows.drop_window_into_layout,
 
     # Space management
+    (MOD, 'j')    : pylewm.spaces.flip,
+    (MOD, ' ')    : pylewm.spaces.flip,
+
+    (MOD, 'z')    : pylewm.spaces.goto_temporary,
+    (MOD, 'w')    : pylewm.spaces.next_temporary,
+    (MOD, 'v')    : pylewm.spaces.previous_temporary,
+
+    (MOD, 'shift', 'z')    : pylewm.spaces.move_to_new_temporary_space,
 
     # Tiling management
 
