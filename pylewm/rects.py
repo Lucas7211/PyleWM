@@ -40,12 +40,18 @@ class Rect:
         for i in range(0, 4):
             self.position[i] = newcoords[i]
 
-    def equal_coordinates(self, coords):
-        return (coords[0] == self.position[0]
-                and coords[1] == self.position[1]
-                and coords[2] == self.position[2]
-                and coords[3] == self.position[3])
+    @staticmethod
+    def equal_coordinates(A, B):
+        return (A[0] == B[0]
+                and A[1] == B[1]
+                and A[2] == B[2]
+                and A[3] == B[3])
 
+    def equals(self, rect):
+        return (rect.position[0] == self.position[0]
+                and rect.position[1] == self.position[1]
+                and rect.position[2] == self.position[2]
+                and rect.position[3] == self.position[3])
     @property
     def topleft(self):
         return (self.position[0], self.position[1])
@@ -104,6 +110,9 @@ class Rect:
     def contains(self, pos):
         return (pos[0] >= self.position[0] and pos[0] <= self.position[2] and
                 pos[1] >= self.position[1] and pos[1] <= self.position[3])
+
+    def fully_contains(self, rect):
+        return self.contains(rect.topleft) and self.contains(rect.bottomright)
 
     def overlaps(self, rect):
         other_position = rect.position

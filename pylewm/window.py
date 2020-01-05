@@ -35,7 +35,9 @@ class Window:
     def __init__(self, hwnd):
         self.handle = hwnd
         self.last_window_pos = win32gui.GetWindowRect(self.handle)
+        self.last_received_pos = self.last_window_pos
         self.rect = Rect(self.last_window_pos)
+        self.last_set_rect = self.rect.copy()
         self.window_class = win32gui.GetClassName(hwnd)
         self.window_title = win32gui.GetWindowText(hwnd)
         self.space = None
@@ -254,17 +256,32 @@ class Window:
             return
 
         # Move the window to the wanted rect if it has changed
-        if not self.dragging and not self.rect.equal_coordinates(self.last_window_pos):
-            try:
-                #print(f"move {self.window_title} {new_rect} -> {self.rect}")
-                win32gui.SetWindowPos(self.handle, win32con.HWND_BOTTOM,
-                    self.rect.left, self.rect.top,
-                    self.rect.width, self.rect.height,
-                    win32con.SWP_NOACTIVATE)
-            except:
-                pass
+        if not self.dragging and (
+                not Rect.equal_coordinates(self.last_window_pos, self.last_received_pos)
+                or not self.rect.equals(self.last_set_rect)):
 
+            try_position = [self.rect.left, self.rect.top, self.rect.width, self.rect.height]
+            for tries in range(0, 10):
+                try:
+                    win32gui.SetWindowPos(self.handle, win32con.HWND_BOTTOM,
+                        try_position[0], try_position[1],
+                        try_position[2], try_position[3],
+                        win32con.SWP_NOACTIVATE)
+                except:
+                    pass
+
+                self.last_window_pos = self.get_actual_rect()
+
+                # Reduce height of window until it fits within the allocated space
+                if (not self.rect.contains(self.last_window_pos[0:2])
+                    or not self.rect.contains(self.last_window_pos[2:4])):
+                    try_position[3] -= 10
+                else:
+                    break
+
+            self.last_set_rect.assign(self.rect)
             self.last_window_pos = self.get_actual_rect()
+            self.last_received_pos = self.last_window_pos
 
     def poke(self):
         def poke_cmd():

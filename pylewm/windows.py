@@ -57,6 +57,18 @@ def drop_window_into_layout():
         NewWindows.append(window)
 
 @PyleCommand
+def move_to_monitor(monitor_index):
+    window = pylewm.focus.FocusWindow
+    if not window or not window.space:
+        return
+
+    space = window.space
+    monitor = pylewm.monitors.get_monitor_by_index(monitor_index)
+
+    space.remove_window(window)
+    monitor.visible_space.add_window(window)
+
+@PyleCommand
 def minimize():
     hwnd = win32gui.GetForegroundWindow()
     if hwnd in Windows and Windows[hwnd]:
@@ -168,12 +180,12 @@ def tick_windows():
             elif classification == pylewm.window_classification.Tiled:
                 window.floating = False
                 NewWindows.append(window)
-                print_window_info(window.handle, f"Classify as Tiled")
+                print_window_info(window.handle, f"Classify as Tiled: "+str(reason))
             elif classification == pylewm.window_classification.Floating:
                 window.floating = True
                 window.can_tile = False
                 NewWindows.append(window)
-                print_window_info(window.handle, f"Classify as Floating")
+                print_window_info(window.handle, f"Classify as Floating: "+str(reason))
         except Exception as ex:
             # The window got destroyed in some way, so we should just ignore it
             IgnoredWindows.add(hwnd)

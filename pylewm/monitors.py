@@ -102,6 +102,10 @@ def get_monitor_in_direction(from_monitor, direction):
         DesktopArea
     )
 
+def get_monitor_by_index(index):
+    monitor_index = min(index, len(Monitors)-1)
+    return Monitors[monitor_index]
+
 @PyleInit
 def initMonitors():
     global Monitors

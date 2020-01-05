@@ -1,16 +1,24 @@
 import pylewm.commands
 import pylewm.window
+import pylewm.monitors
 import pythoncom
 import win32gui, win32com.client
 import win32api
 import traceback
 import ctypes
 
+from pylewm.commands import PyleCommand
+
 FocusQueue = pylewm.commands.CommandQueue()
 
 FocusSpace = None
 FocusWindow = None
 LastFocusWindow = None
+
+@PyleCommand
+def focus_monitor(monitor_index):
+    monitor = pylewm.monitors.get_monitor_by_index(monitor_index)
+    set_focus_space(monitor.visible_space)
 
 def set_focus(window):
     print(f"Focus Window {window.window_title}")
@@ -21,6 +29,8 @@ def set_focus(window):
 def set_focus_space(space):
     if space.last_focus:
         set_focus(space.last_focus)
+    elif space.windows:
+        set_focus(space.windows[0])
     else:
         set_focus_monitor(space.monitor)
 

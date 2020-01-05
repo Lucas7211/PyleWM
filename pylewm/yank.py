@@ -26,14 +26,13 @@ def yank_window():
 
     YankStack.append(window)
 
-@PyleCommand
-def drop_window():
+def drop_one_window():
     if not YankStack:
-        return
+        return None
 
     space = pylewm.focus.get_focused_space()
     if not space:
-        return
+        return None
 
     window = YankStack.pop()
 
@@ -46,4 +45,23 @@ def drop_window():
         space.add_window(window)
 
     window.show()
-    pylewm.focus.set_focus(window)
+    return window
+
+@PyleCommand
+def drop_window():
+    window = drop_one_window()
+    if window:
+        pylewm.focus.set_focus(window)
+
+@PyleCommand
+def drop_all_windows():
+    global YankStack
+
+    focus_window = None
+    for window in range(0, len(YankStack)):
+        focus_window = drop_one_window()
+
+    YankStack = []
+
+    if focus_window:
+        pylewm.focus.set_focus(focus_window)

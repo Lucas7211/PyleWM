@@ -70,6 +70,10 @@ def TemporarySpace(window):
     """ The window gets a new desktop on its monitor when spawned. """
     pylewm.spaces.move_window_to_new_temporary_space(window)
 
+@Filter.post
+def AutoPoke(window):
+    window.poke()
+
 def trigger_all_filters(window, post=False):
     for f in FunctionsByFilter:
         if pylewm.selector.matches(window, f[0]):

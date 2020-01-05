@@ -18,6 +18,7 @@ import pylewm.spaces
 import pylewm.yank
 import pylewm.selector
 import pylewm.filters
+import pylewm.wsltty
 
 from pylewm.commands import PyleCommand, InitFunctions, CommandQueue, run_pyle_command
 

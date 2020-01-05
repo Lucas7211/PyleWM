@@ -9,7 +9,7 @@ def start_menu():
     """ Open the start menu. """
     sendKey(('ctrl', 'esc'))
     
-@PyleCommand
+@PyleCommand.Threaded
 def run(args, cwd=None):
     """ Run an arbitrary command. """
     if isinstance(args, str):
@@ -24,4 +24,5 @@ def run(args, cwd=None):
         USER = os.environ["USERDOMAIN"] + "\\" + os.environ["USERNAME"]
         args = ["runas", "/user:"+USER, "/savecred"] + args
     
+    print("ARGS: "+repr(args))
     subprocess.call(args, shell=True, cwd=cwd)

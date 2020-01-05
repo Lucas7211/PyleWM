@@ -11,11 +11,13 @@ def goto_space(other_space):
     if other_space.last_focus:
         focus_window = other_space.last_focus
         delay_pyle_command(0.05, lambda: pylewm.focus.set_focus(focus_window))
+    elif other_space.windows:
+        focus_window = other_space.windows[0]
+        delay_pyle_command(0.05, lambda: pylewm.focus.set_focus(focus_window))
     else:
         delay_pyle_command(0.05, lambda: pylewm.focus.set_focus_monitor(other_space.monitor))
 
-@PyleCommand
-def flip():
+def get_flipped_space():
     space = pylewm.focus.get_focused_space()
     monitor = space.monitor
 
@@ -29,7 +31,50 @@ def flip():
     else:
         other_space = monitor.spaces[0]
 
-    goto_space(other_space)
+    return other_space
+
+@PyleCommand
+def flip():
+    goto_space(get_flipped_space())
+
+@PyleCommand
+def move_flip():
+    window = pylewm.focus.FocusWindow
+    if not window:
+        return
+
+    space = get_flipped_space()
+    if window.space:
+        window.space.remove_window(window)
+        space.add_window(window)
+
+    space.monitor.switch_to_space(space)
+
+@PyleCommand
+def focus_space(monitor_index, space_index):
+    monitor = pylewm.monitors.get_monitor_by_index(monitor_index)
+    space = monitor.spaces[space_index]
+
+    if space.visible:
+        pylewm.focus.set_focus_space(space)
+    else:
+        goto_space(space)
+
+@PyleCommand
+def move_to_space(monitor_index, space_index):
+    window = pylewm.focus.FocusWindow
+    if not window or not window.space:
+        return
+
+    prev_space = window.space
+    prev_space.remove_window(window)
+
+    monitor = pylewm.monitors.get_monitor_by_index(monitor_index)
+    space = monitor.spaces[space_index]
+    space.add_window(window)
+
+    if not space.visible:
+        space.monitor.switch_to_space(space)
 
 @PyleCommand
 def goto_temporary():
