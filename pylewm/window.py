@@ -52,21 +52,38 @@ class Window:
         self.drop_slot = 0
         self.drop_ticks_inside_slot = 0
 
+    def reset(self):
+        self.closed = True
+        if self.hidden:
+            self.hidden = False
+            win32gui.ShowWindow(self.handle, win32con.SW_SHOWNOACTIVATE)
+        if self.floating:
+            self.floating = False
+            self.set_layer_bottom()
+
     def show(self):
-        self.hidden = False
         def show_cmd():
-            if win32gui.IsIconic(self.handle):
-                win32gui.ShowWindow(self.handle, win32con.SW_RESTORE)
-                self.set_layer_top()
+            if not self.hidden:
+                return
+            self.hidden = False
+            win32gui.ShowWindow(self.handle, win32con.SW_SHOWNOACTIVATE)
+
+            #if win32gui.IsIconic(self.handle):
+                #win32gui.ShowWindow(self.handle, win2con.SW_RESTORE)
+                #self.set_layer_top()
             self.last_window_pos = self.get_actual_rect()
         self.command_queue.queue_command(show_cmd)
 
     def hide(self):
-        self.hidden = True
         def hide_cmd():
+            if self.hidden:
+                return
+            self.hidden = True
             time.sleep(0.05)
-            if not win32gui.IsIconic(self.handle):
-                win32gui.ShowWindow(self.handle, win32con.SW_MINIMIZE)
+            win32gui.ShowWindow(self.handle, win32con.SW_HIDE)
+
+            #if not win32gui.IsIconic(self.handle):
+                #win32gui.ShowWindow(self.handle, win32con.SW_FORCEMINIMIZE)
         self.command_queue.queue_command(hide_cmd)
 
     def manage(self):
@@ -94,7 +111,6 @@ class Window:
             style = win32api.GetWindowLong(self.handle, win32con.GWL_STYLE)
             return style & win32con.WS_MAXIMIZE
         except:
-            self.closed = True
             return False
 
     def is_minimized(self):
@@ -102,7 +118,6 @@ class Window:
             style = win32api.GetWindowLong(self.handle, win32con.GWL_STYLE)
             return style & win32con.WS_MINIMIZE
         except:
-            self.closed = True
             return False
 
     def remove_maximize(self):
@@ -112,7 +127,6 @@ class Window:
         try:
             return win32gui.GetWindowRect(self.handle)
         except:
-            self.closed = True
             return self.rect.coordinates
 
     def update_drag(self):
@@ -231,6 +245,24 @@ class Window:
                 pass
 
             self.last_window_pos = self.get_actual_rect()
+
+    def poke(self):
+        def poke_cmd():
+            try:
+                win32gui.SetWindowPos(self.handle, win32con.HWND_BOTTOM,
+                    self.rect.left+2, self.rect.top+2,
+                    self.rect.width-4, self.rect.height-4,
+                    win32con.SWP_NOACTIVATE)
+            except:
+                pass
+            try:
+                win32gui.SetWindowPos(self.handle, win32con.HWND_BOTTOM,
+                    self.rect.left, self.rect.top,
+                    self.rect.width, self.rect.height,
+                    win32con.SWP_NOACTIVATE)
+            except:
+                pass
+        self.command_queue.queue_command(poke_cmd)
 
     def set_layer_top(self):
         try:

@@ -7,7 +7,12 @@ import win32gui
 
 def goto_space(other_space):
     other_space.monitor.switch_to_space(other_space)
-    delay_pyle_command(0.05, lambda: pylewm.focus.set_focus_space(other_space))
+
+    if other_space.last_focus:
+        focus_window = other_space.last_focus
+        delay_pyle_command(0.05, lambda: pylewm.focus.set_focus(focus_window))
+    else:
+        delay_pyle_command(0.05, lambda: pylewm.focus.set_focus_monitor(other_space.monitor))
 
 @PyleCommand
 def flip():
@@ -167,3 +172,16 @@ def move_direction(direction):
                 new_monitor.visible_space.insert_slot(target_slot, escape_direction, focus_window)
             else:
                 new_monitor.visible_space.add_window(focus_window)
+
+@PyleCommand
+def print_state():
+    for monitor in pylewm.monitors.Monitors:
+        print(f"=== Monitor {monitor.rect} ===")
+        for i, space in enumerate(monitor.spaces):
+            print(f"  Space {i} (Visible: {space.visible})")
+            for window in space.windows:
+                print(f"    {window.window_title}")
+        for i, space in enumerate(monitor.temp_spaces):
+            print(f"  Temp Space {i} (Visible: {space.visible})")
+            for window in space.windows:
+                print(f"    {window.window_title}")

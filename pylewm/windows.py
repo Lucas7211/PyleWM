@@ -44,6 +44,18 @@ def drop_window_into_layout():
         window = Window(hwnd)
         NewWindows.append(window)
 
+@PyleCommand
+def poke():
+    if pylewm.focus.FocusWindow:
+        pylewm.focus.FocusWindow.poke()
+
+def reset_all():
+    global Windows
+    for window in Windows.values():
+        if window:
+            window.reset()
+    Windows = {}
+
 def print_window_info(window=None, text=None, indent=""):
     if window is None:
         window = win32gui.GetForegroundWindow()
@@ -83,7 +95,7 @@ def add_window_to_space(window):
     space = None
     if InitialPlacement or window.handle in MinimizedWindows:
         monitor = pylewm.monitors.get_covering_monitor(window.rect)
-        space = monitor.spaces[0]
+        space = monitor.visible_space
     else:
         space = pylewm.focus.get_focused_space()
 

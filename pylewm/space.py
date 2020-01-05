@@ -1,4 +1,5 @@
 from pylewm.layout import SidebarLayout
+import traceback
 
 class Space:
     def __init__(self, monitor, rect):
@@ -23,11 +24,17 @@ class Space:
             window.hide()
 
     def update_focus(self, focus_window):
-        if focus_window in self.windows:
-            self.focus = focus_window
-            self.last_focus = self.focus
+        if self.visible:
+            if focus_window in self.windows:
+                self.focus = focus_window
+                if self.focus != self.last_focus:
+                    #print(f"UPDATE LAST FOCUS {self.focus.window_title}")
+                    self.last_focus = self.focus
+            else:
+                self.focus = None
         else:
             self.focus = None
+
         if self.last_focus and self.last_focus.closed:
             self.last_focus = None
         if self.last_focus and self.last_focus not in self.windows:

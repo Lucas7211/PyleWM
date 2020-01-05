@@ -18,6 +18,7 @@ HOTKEYS = {
 
     # Window management
     (MOD, '$')    : pylewm.windows.close,
+    (MOD, ']')    : pylewm.windows.poke,
     (MOD, 'x')    : pylewm.windows.drop_window_into_layout,
 
     # Space management
@@ -37,6 +38,7 @@ HOTKEYS = {
 
     # PyleWM management
     (MOD, 'shift', 'q')     : pylewm.restart,
+    (MOD, '\\')             : pylewm.spaces.print_state,
 }
 
 if __name__ == "__main__":
