@@ -122,3 +122,19 @@ class SidebarLayout(Layout):
 
             # Didn't find any, escape in the specified direction
             return -1, direction 
+
+    def on_slots_swapped(self, from_slot, to_slot):
+        # Also swap sidebar focus if we're swapping in and out of the sidebar
+        if self.windows[from_slot] == self.last_sidebar_focus and from_slot < 1:
+            self.last_sidebar_focus = self.windows[to_slot]
+        if self.windows[to_slot] == self.last_sidebar_focus and to_slot < 1:
+            self.last_sidebar_focus = self.windows[from_slot]
+
+    def get_insert_slot(self, at_slot, direction):
+        if self.window_count == 0:
+            return 0
+        else:
+            if direction == Direction.Right:
+                return 0
+            else:
+                return self.window_count

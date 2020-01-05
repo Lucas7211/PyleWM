@@ -44,6 +44,21 @@ class Space:
     def move_from_slot(self, slot, direction):
         return self.layout.move_from_slot(slot, direction)
 
+    def swap_slots(self, from_slot, to_slot):
+        from_window = self.windows[from_slot]
+        to_window = self.windows[to_slot]
+
+        self.windows[to_slot] = from_window
+        self.windows[from_slot] = to_window
+        self.layout.on_slots_swapped(from_slot, to_slot)
+
+    def insert_slot(self, at_slot, direction, window):
+        self.add_window(window)
+        self.windows.remove(window)
+
+        insert_position = self.layout.get_insert_slot(at_slot, direction)
+        self.windows.insert(insert_position, window)
+
     def add_window(self, window):
         assert not window.space
 

@@ -10,6 +10,12 @@ HOTKEYS = {
     (MOD, 't')    : pylewm.spaces.focus_next,
     (MOD, 'n')    : pylewm.spaces.focus_previous,
 
+    # Move window slots
+    (MOD, 'shift', 'h')    : pylewm.spaces.move_left,
+    (MOD, 'shift', 's')    : pylewm.spaces.move_right,
+    (MOD, 'shift', 't')    : pylewm.spaces.move_next,
+    (MOD, 'shift', 'n')    : pylewm.spaces.move_previous,
+
     # Window management
     (MOD, '$')    : pylewm.windows.close,
     (MOD, 'x')    : pylewm.windows.drop_window_into_layout,
