@@ -31,10 +31,18 @@ def drop_window_into_layout():
     ''' Drop a previously unmanaged window into the layout of the monitor it's on. '''
     hwnd = win32gui.GetForegroundWindow()
     if hwnd in Windows and Windows[hwnd]:
-        return
+        window = Windows[hwnd]
+        if window.floating:
+            window.floating = False
+            window.can_tile = True
+            window.take_new_rect = True
 
-    window = Window(hwnd)
-    NewWindows.append(window)
+            space = pylewm.focus.get_cursor_space()
+            drop_slot, force_drop = space.get_drop_slot(window.rect.center, window.rect)
+            space.drop_into_slot(window, drop_slot)
+    else:
+        window = Window(hwnd)
+        NewWindows.append(window)
 
 def print_window_info(window=None, text=None, indent=""):
     if window is None:
@@ -70,7 +78,7 @@ def print_window_info(window=None, text=None, indent=""):
         + f"  ExStyle: {show_flags(win32api.GetWindowLong(window, win32con.GWL_EXSTYLE), WINDOW_STYLE_EX_FLAGS)}")
     print(f"{indent}  Pos: {win32gui.GetWindowRect(window)}")
 
-def manage_window(window):
+def add_window_to_space(window):
     # Find the monitor that this window is most on
     space = None
     if InitialPlacement or window.handle in MinimizedWindows:
@@ -81,12 +89,16 @@ def manage_window(window):
 
     # Add the window to the space that is visible on that monitor
     space.add_window(window)
-    print_window_info(window.handle, "MANAGE ON DESKTOP "+str(space.rect)+" -- "+str(id(window)))
+
+def manage_window(window):
+    if not window.floating:
+        add_window_to_space(window)
+
+    window.manage()
 
     # Start managing the window
     if window.handle in MinimizedWindows:
         MinimizedWindows.remove(window.handle)
-    window.manage()
 
 @PyleThread(0.05)
 def tick_windows():
@@ -112,8 +124,15 @@ def tick_windows():
             elif classification == pylewm.window_classification.IgnorePermanent:
                 #print_window_info(hwnd, "IGNORE "+reason)
                 IgnoredWindows.add(hwnd)
-            elif classification == pylewm.window_classification.Manage:
+            elif classification == pylewm.window_classification.Tiled:
+                window.floating = False
                 NewWindows.append(window)
+                print_window_info(window.handle, f"Classify as Tiled")
+            elif classification == pylewm.window_classification.Floating:
+                window.floating = True
+                window.can_tile = False
+                NewWindows.append(window)
+                print_window_info(window.handle, f"Classify as Floating")
         except Exception as ex:
             # The window got destroyed in some way, so we should just ignore it
             IgnoredWindows.add(hwnd)
@@ -135,6 +154,8 @@ def tick_windows():
                 window.space.remove_window(window)
             window.stop_managing()
             Windows[window.handle] = None
+        if window.floating and window.space:
+            window.space.remove_window(window)
 
     # Update focus
     focus_hwnd = win32gui.GetForegroundWindow()
@@ -152,7 +173,7 @@ def tick_windows():
     if pylewm.focus.FocusWindow and not pylewm.focus.FocusWindow.closed:
         pylewm.focus.LastFocusWindow = pylewm.focus.FocusWindow
         pylewm.focus.FocusSpace = pylewm.focus.FocusWindow.space
-        if not pylewm.focus.FocusSpace.visible:
+        if pylewm.focus.FocusSpace and not pylewm.focus.FocusSpace.visible:
             pylewm.focus.FocusSpace = None
     else:
         pylewm.focus.FocusSpace = None

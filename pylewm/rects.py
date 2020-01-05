@@ -36,7 +36,7 @@ class Rect:
         return self.position
 
     @coordinates.setter
-    def set_coordinates(self, newcoords):
+    def coordinates(self, newcoords):
         for i in range(0, 4):
             self.position[i] = newcoords[i]
 
@@ -63,6 +63,11 @@ class Rect:
     def bottomright(self, coord):
         self.position[2] = coord[0]
         self.position[3] = coord[1]
+
+    @property
+    def center(self):
+        return ((self.position[0] + self.position[2]) / 2,
+                (self.position[1] + self.position[3]) / 2)
 
     @property
     def left(self):

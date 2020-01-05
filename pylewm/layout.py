@@ -21,6 +21,7 @@ class SidebarLayout(Layout):
         self.split = 0.5
         self.last_focus = None
         self.last_sidebar_focus = None
+        self.pending_drop_slot = -1
 
     def update_layout(self):
         self.update_focus()
@@ -45,20 +46,40 @@ class SidebarLayout(Layout):
     def update_slots(self):
         if self.window_count == 0:
             return
-        if self.window_count == 1:
+
+        sidebar_windows = self.window_count - 1
+        show_gap = False
+
+        if self.pending_drop_slot >= 1:
+            sidebar_windows += 1
+            show_gap = True
+        elif self.pending_drop_slot == 0 and sidebar_windows == 0:
+            sidebar_windows += 1
+            show_gap = True
+
+        if sidebar_windows == 0:
             self.slots[0].assign(self.rect)
             return
 
         horiz_split = int(float(self.rect.width) * self.split)
-        vert_split = int(float(self.rect.height) / float(self.window_count - 1))
+        vert_split = int(float(self.rect.height) / float(sidebar_windows))
 
-        self.slots[0].topleft = (self.rect.left, self.rect.top)
-        self.slots[0].bottomright = (self.rect.left + horiz_split, self.rect.bottom)
+        for window_index in range(0, self.window_count):
+            window_position = window_index
+            if self.pending_drop_slot >= 0 and window_index >= self.pending_drop_slot and show_gap:
+                window_position += 1
 
-        for window_index in range(1, self.window_count):
-            vert_pos = vert_split * (window_index - 1)
-            self.slots[window_index].topleft = (self.rect.left + horiz_split, self.rect.top + vert_pos)
-            self.slots[window_index].bottomright = (self.rect.right, self.rect.top + vert_pos + vert_split)
+            if window_position == 0:
+                if self.pending_drop_slot == 0 and not show_gap:
+                    self.slots[window_index].topleft = (self.rect.left + 25, self.rect.top + 25)
+                    self.slots[window_index].bottomright = (self.rect.left + horiz_split - 25, self.rect.bottom - 25)
+                else:
+                    self.slots[window_index].topleft = (self.rect.left, self.rect.top)
+                    self.slots[window_index].bottomright = (self.rect.left + horiz_split, self.rect.bottom)
+            else:
+                vert_pos = vert_split * (window_position - 1)
+                self.slots[window_index].topleft = (self.rect.left + horiz_split, self.rect.top + vert_pos)
+                self.slots[window_index].bottomright = (self.rect.right, self.rect.top + vert_pos + vert_split)
 
     def get_focusable_slot(self):
         focus_index = 0
@@ -140,3 +161,20 @@ class SidebarLayout(Layout):
                 return 1
             else:
                 return self.window_count
+
+    def get_drop_slot(self, position, rect):
+        horiz_split_pos = self.rect.left + int(float(self.rect.width) * self.split)
+        force_drop = abs(horiz_split_pos - position[0]) < 100
+
+        if len(self.windows) == 0:
+            return 0, (position[1] < self.rect.top + 100)
+
+        if position[0] > horiz_split_pos:
+            sidebar_windows = len(self.windows)
+
+            vert_split = int(float(self.rect.height) / float(sidebar_windows))
+            drop_index = int((position[1] - self.rect.top) / vert_split)
+
+            return (drop_index+1), force_drop
+        else:
+            return 0, force_drop

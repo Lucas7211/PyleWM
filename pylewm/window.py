@@ -1,4 +1,5 @@
 import pylewm.commands
+import pylewm.focus
 from pylewm.rects import Rect
 
 import win32gui
@@ -24,6 +25,9 @@ def is_window_handle_minimized(hwnd):
     except:
         return False
 
+def is_left_mouse_held():
+    return win32api.GetAsyncKeyState(win32con.VK_LBUTTON) != 0
+
 class Window:
     def __init__(self, hwnd):
         self.handle = hwnd
@@ -35,6 +39,18 @@ class Window:
         self.closed = False
         self.focused = False
         self.hidden = False
+        self.floating = False
+        self.can_tile = True
+        self.take_new_rect = False
+
+        self.dragging = False
+        self.drag_ticks_with_movement = 0
+        self.drag_ticks_since_start = 0
+        self.drag_ticks_since_last_movement = 0
+
+        self.drop_space = None
+        self.drop_slot = 0
+        self.drop_ticks_inside_slot = 0
 
     def show(self):
         self.hidden = False
@@ -58,13 +74,17 @@ class Window:
         if self.is_maximized():
             self.remove_maximize()
             self.last_window_pos = win32gui.GetWindowRect(self.handle)
-        self.set_layer_bottom()
+        if self.floating:
+            self.set_layer_alwaystop()
+        else:
+            self.set_layer_bottom()
 
     def trigger_update(self):
         self.command_queue.queue_command(self.update)
 
     def stop_managing(self):
         self.command_queue.stop()
+        self.set_drop_space(None)
 
     def is_cloaked(self):
         return is_window_handle_cloaked(self.handle)
@@ -73,6 +93,14 @@ class Window:
         try:
             style = win32api.GetWindowLong(self.handle, win32con.GWL_STYLE)
             return style & win32con.WS_MAXIMIZE
+        except:
+            self.closed = True
+            return False
+
+    def is_minimized(self):
+        try:
+            style = win32api.GetWindowLong(self.handle, win32con.GWL_STYLE)
+            return style & win32con.WS_MINIMIZE
         except:
             self.closed = True
             return False
@@ -87,6 +115,81 @@ class Window:
             self.closed = True
             return self.rect.coordinates
 
+    def update_drag(self):
+        new_rect = self.get_actual_rect()
+        if self.take_new_rect:
+            self.last_window_pos = new_rect
+            self.take_new_rect = False
+            self.dragging = False
+            self.set_drop_space(None)
+
+        # Some rudimentary tracking for when windows are being dragged
+        if new_rect != self.last_window_pos:
+            if is_left_mouse_held():
+                if self.dragging:
+                    self.drag_ticks_since_last_movement = 0
+                    self.drag_ticks_since_start += 1
+                    self.drag_ticks_with_movement += 1
+                else:
+                    self.dragging = True
+                    self.drag_ticks_since_last_movement = 0
+                    self.drag_ticks_since_start = 1
+                    self.drag_ticks_with_movement = 1
+        else:
+            if self.dragging:
+                self.drag_ticks_since_start += 1
+                self.drag_ticks_since_last_movement += 1
+
+                if not is_left_mouse_held():
+                    self.dragging = False
+
+        self.last_window_pos = new_rect
+        if self.floating:
+            self.rect.coordinates = new_rect
+
+    def update_float_drop(self):
+        if not self.can_tile:
+            return
+        if self.dragging and self.drag_ticks_with_movement > 5:
+            hover_space = pylewm.focus.get_cursor_space()
+            if hover_space:
+                hover_slot, force_drop = hover_space.get_drop_slot(pylewm.focus.get_cursor_position(), self.rect)
+
+                # Only allow forced drops when drag&dropping
+                if not force_drop:
+                    hover_slot = -1
+
+            self.set_drop_space(hover_space)
+
+            if hover_slot == -1:
+                self.drop_slot = 1
+                self.set_drop_space(None)
+            elif hover_slot == self.drop_slot:
+                self.drop_ticks_inside_slot += 1
+                if self.drop_ticks_inside_slot > 3:
+                    if self.drop_space:
+                        self.drop_space.set_pending_drop_slot(hover_slot)
+            else:
+                self.drop_slot = hover_slot
+                self.drop_ticks_inside_slot = 0
+
+        elif not self.dragging and self.drop_space and self.drop_space.pending_drop_slot != -1:
+            self.floating = False
+            self.take_new_rect = True
+            self.drop_space.drop_into_slot(self, self.drop_slot)
+            self.set_drop_space(None)
+        else:
+            self.set_drop_space(None)
+
+    def set_drop_space(self, new_space):
+        if self.drop_space == new_space:
+            return
+        if self.drop_space:
+            self.drop_space.set_pending_drop_slot(-1)
+        self.drop_space = new_space
+        self.drop_ticks_inside_slot = 0
+        self.drop_slot = -1
+
     def update(self):
         if self.hidden:
             return
@@ -95,18 +198,29 @@ class Window:
         if not win32gui.IsWindow(self.handle) or self.is_cloaked():
             self.closed = True
             return
+        if self.floating:
+            self.update_drag()
+            if self.dragging or self.drop_space:
+                self.update_float_drop()
+            return
 
-        new_rect = self.get_actual_rect()
+        self.update_drag()
 
         # If the window has been moved outside of PyleWM we 'unsnap' it from the layout
         #  This is the same operation as 'closing' it since we are no longer managing it
-        if new_rect != self.last_window_pos or self.is_maximized():
+        if self.is_maximized() or (self.dragging and self.drag_ticks_with_movement > 2):
             self.set_layer_alwaystop()
+            self.floating = True
+            self.dragging = False
+            return
+
+        # Manually minimized windows are considered closed
+        if self.is_minimized():
             self.closed = True
             return
 
         # Move the window to the wanted rect if it has changed
-        if not self.rect.equal_coordinates(new_rect):
+        if not self.dragging and not self.rect.equal_coordinates(self.last_window_pos):
             try:
                 #print(f"move {self.window_title} {new_rect} -> {self.rect}")
                 win32gui.SetWindowPos(self.handle, win32con.HWND_BOTTOM,

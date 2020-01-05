@@ -10,6 +10,7 @@ class Space:
         self.last_focus = None
         self.monitor = monitor
         self.temporary = False
+        self.pending_drop_slot = -1
 
     def show(self):
         self.visible = True
@@ -44,6 +45,7 @@ class Space:
     def update_layout(self, focus_window):
         self.update_focus(focus_window)
 
+        self.layout.pending_drop_slot = self.pending_drop_slot
         self.layout.set_windows(self.windows)
         self.layout.focus = self.focus
         self.layout.rect.assign(self.rect)
@@ -70,6 +72,11 @@ class Space:
         insert_position = self.layout.get_insert_slot(at_slot, direction)
         self.windows.insert(insert_position, window)
 
+    def drop_into_slot(self, window, slot):
+        self.add_window(window)
+        self.windows.remove(window)
+        self.windows.insert(slot, window)
+
     def add_window(self, window):
         assert not window.space
 
@@ -81,3 +88,9 @@ class Space:
 
         self.windows.remove(window)
         window.space = None
+
+    def set_pending_drop_slot(self, slot):
+        self.pending_drop_slot = slot
+
+    def get_drop_slot(self, position, rect):
+        return self.layout.get_drop_slot(position, rect)
