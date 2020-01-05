@@ -13,7 +13,7 @@ FocusWindow = None
 LastFocusWindow = None
 
 def set_focus(window):
-    #print(f"Focus Window {window.window_title}")
+    print(f"Focus Window {window.window_title}")
     hwnd = window.handle
     rect = window.rect.copy()
     FocusQueue.queue_command(lambda: focus_window_handle(hwnd, rect))

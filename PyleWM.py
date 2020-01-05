@@ -21,6 +21,9 @@ HOTKEYS = {
     (MOD, ']')    : pylewm.windows.poke,
     (MOD, 'x')    : pylewm.windows.drop_window_into_layout,
 
+    (MOD, 'y')    : pylewm.yank.yank_window,
+    (MOD, 'i')    : pylewm.yank.drop_window,
+
     # Space management
     (MOD, 'j')    : pylewm.spaces.flip,
     (MOD, ' ')    : pylewm.spaces.flip,

@@ -96,6 +96,18 @@ class Space:
         self.windows.remove(window)
         window.space = None
 
+        if self.focus is window:
+            if self.windows:
+                self.focus = self.windows[0]
+            else:
+                self.focus = None
+
+        if self.last_focus is window:
+            if self.windows:
+                self.last_focus = self.windows[0]
+            else:
+                self.last_focus = None
+
     def set_pending_drop_slot(self, slot):
         self.pending_drop_slot = slot
 
