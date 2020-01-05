@@ -1,5 +1,6 @@
 from pylewm.commands import PyleThread, PyleCommand
 from pylewm.window import Window
+import pylewm.spaces
 import pylewm.window
 import pylewm.monitors
 
@@ -20,12 +21,9 @@ MinimizedWindows = set()
 
 InitialPlacement = True
 
-FocusSpace = None
-FocusWindow = None
-LastFocusWindow = None
-
 @PyleCommand.Threaded
 def close():
+    ''' Close the window that currently has focus. Whether that window is in a layout or not. '''
     win32gui.PostMessage(win32gui.GetForegroundWindow(), win32con.WM_CLOSE, 0, 0)
 
 @PyleCommand
@@ -37,21 +35,6 @@ def drop_window_into_layout():
 
     window = Window(hwnd)
     NewWindows.append(window)
-
-def get_cursor_position():
-    return win32gui.GetCursorPos()
-
-def get_cursor_space():
-    print(f"Space from cursor")
-    monitor = pylewm.monitors.get_monitor_at(get_cursor_position())
-    if not monitor:
-        monitor = get_default_monitor()
-    return monitor.visible_space
-
-def get_focused_space():
-    if FocusWindow and FocusWindow.space and FocusWindow.space.visible:
-        return FocusWindow.space
-    return get_cursor_space()
 
 def print_window_info(window=None, text=None, indent=""):
     if window is None:
@@ -94,7 +77,7 @@ def manage_window(window):
         monitor = pylewm.monitors.get_covering_monitor(window.rect)
         space = monitor.spaces[0]
     else:
-        space = get_focused_space()
+        space = pylewm.spaces.get_focused_space()
 
     # Add the window to the space that is visible on that monitor
     space.add_window(window)
@@ -153,52 +136,45 @@ def tick_windows():
             window.stop_managing()
             Windows[window.handle] = None
 
+    # Update focus
+    focus_hwnd = win32gui.GetForegroundWindow()
+    if focus_hwnd in Windows and Windows[focus_hwnd]:
+        if pylewm.focus.FocusWindow:
+            pylewm.focus.FocusWindow.focused = False
+        pylewm.focus.FocusWindow = Windows[focus_hwnd]
+        if pylewm.focus.FocusWindow:
+            pylewm.focus.FocusWindow.focused = True
+    else:
+        if pylewm.focus.FocusWindow:
+            pylewm.focus.FocusWindow.focused = False
+        pylewm.focus.FocusWindow = None
+
+    if pylewm.focus.FocusWindow and not pylewm.focus.FocusWindow.closed:
+        pylewm.focus.LastFocusWindow = pylewm.focus.FocusWindow
+        pylewm.focus.FocusSpace = pylewm.focus.FocusWindow.space
+        if not pylewm.focus.FocusSpace.visible:
+            pylewm.focus.FocusSpace = None
+    else:
+        pylewm.focus.FocusSpace = None
+
+    if pylewm.focus.LastFocusWindow and pylewm.focus.LastFocusWindow.closed:
+        pylewm.focus.LastFocusWindow = None
+    if pylewm.focus.FocusWindow and pylewm.focus.FocusWindow.closed:
+        pylewm.focus.FocusWindow.focused = False
+        pylewm.focus.FocusWindow = None
+
     # Update spaces on all monitors
     for monitor in pylewm.monitors.Monitors:
         for space in monitor.spaces:
-            space.update_layout()
+            space.update_layout(pylewm.focus.FocusWindow)
         for space in monitor.temp_spaces:
-            space.update_layout()
+            space.update_layout(pylewm.focus.FocusWindow)
 
     # Update all windows
     for window in Windows.values():
         if not window:
             continue
         window.trigger_update()
-
-    # Update focus
-    global FocusWindow
-    global LastFocusWindow
-    global FocusSpace
-    global LastFocusSpace
-
-    focus_hwnd = win32gui.GetForegroundWindow()
-    if focus_hwnd in Windows and Windows[focus_hwnd]:
-        if FocusWindow:
-            FocusWindow.focused = False
-        FocusWindow = Windows[focus_hwnd]
-        if FocusWindow:
-            FocusWindow.focused = True
-    else:
-        if FocusWindow:
-            FocusWindow.focused = False
-        FocusWindow = None
-
-    if FocusWindow and not FocusWindow.closed:
-        LastFocusWindow = FocusWindow
-        FocusSpace = FocusWindow.space
-        if not FocusSpace.visible:
-            FocusSpace = None
-        if FocusSpace:
-            LastFocusSpace = FocusSpace
-    else:
-        FocusSpace = None
-
-    if LastFocusWindow and LastFocusWindow.closed:
-        LastFocusWindow = None
-    if FocusWindow and FocusWindow.closed:
-        FocusWindow.focused = False
-        FocusWindow = None
 
     # We are no longer in initial placement mode
     global InitialPlacement

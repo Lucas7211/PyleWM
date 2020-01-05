@@ -4,6 +4,12 @@ import pylewm
 MOD =                       'rctrl'
 
 HOTKEYS = {
+    # Focus managament
+    (MOD, 'h')    : pylewm.spaces.focus_left,
+    (MOD, 's')    : pylewm.spaces.focus_right,
+    (MOD, 't')    : pylewm.spaces.focus_next,
+    (MOD, 'n')    : pylewm.spaces.focus_previous,
+
     # Window management
     (MOD, '$')    : pylewm.windows.close,
     (MOD, 'x')    : pylewm.windows.drop_window_into_layout,

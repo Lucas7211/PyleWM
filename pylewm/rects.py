@@ -1,15 +1,27 @@
+class Direction:
+    Left = 0
+    Up = 1
+    Right = 2
+    Down = 3
+    Next = 4
+    Previous = 5
+
 class Rect:
     def __init__(self, position=None):
         if not position:
             self.position = [0,0,0,0]
         else:
-            self.position = position
+            self.position = list(position)
 
     def __str__(self):
         return repr(self.position)
 
     def copy(self):
         return Rect(self.position)
+
+    def assign(self, other):
+        for i in range(0, 4):
+            self.position[i] = other.position[i]
 
     @property
     def width(self):
@@ -25,14 +37,15 @@ class Rect:
 
     @coordinates.setter
     def set_coordinates(self, newcoords):
-        self.position = newcoords
+        for i in range(0, 4):
+            self.position[i] = newcoords[i]
 
     @property
     def topleft(self):
         return (self.position[0], self.position[1])
 
     @topleft.setter
-    def set_topleft(self, coord):
+    def topleft(self, coord):
         self.position[0] = coord[0]
         self.position[1] = coord[1]
 
@@ -41,7 +54,7 @@ class Rect:
         return (self.position[2], self.position[3])
 
     @bottomright.setter
-    def set_bottomright(self, coord):
+    def bottomright(self, coord):
         self.position[2] = coord[0]
         self.position[3] = coord[1]
 
@@ -50,7 +63,7 @@ class Rect:
         return self.position[0]
 
     @left.setter
-    def set_left(self, pos):
+    def left(self, pos):
         self.position[0] = pos
 
     @property
@@ -58,7 +71,7 @@ class Rect:
         return self.position[1]
 
     @top.setter
-    def set_top(self, pos):
+    def top(self, pos):
         self.position[1] = pos
 
     @property
@@ -66,7 +79,7 @@ class Rect:
         return self.position[2]
 
     @right.setter
-    def set_right(self, pos):
+    def right(self, pos):
         self.position[2] = pos
 
     @property
@@ -74,7 +87,7 @@ class Rect:
         return self.position[3]
 
     @bottom.setter
-    def set_bottom(self, pos):
+    def bottom(self, pos):
         self.position[3] = pos
 
     def contains(self, pos):
@@ -119,3 +132,62 @@ class Rect:
                 sel = other_elem
                 
         return sel
+
+    def get_closest_in_direction(self, direction, rect_list, rect_function = None, wrap_area = None):
+        """ Get the closest rect in the list in the direction from fromRect. """
+        def getDim(rect):
+            if direction == Direction.Left or direction == Direction.Previous: return rect.coordinates[0]
+            if direction == Direction.Up: return rect.coordinates[1]
+            if direction == Direction.Right or direction == Direction.Next: return rect.coordinates[0]
+            return rect.coordinates[1]
+        def getOppositeEnd(rect):
+            if direction == Direction.Left or direction == Direction.Previous: return rect.coordinates[2]
+            if direction == Direction.Up: return rect.coordinates[3]
+            if direction == Direction.Right or direction == Direction.Next: return rect.coordinates[0]
+            return rect.coordinates[1]
+        def getOtherDim(rect):
+            if direction == Direction.Left or direction == Direction.Previous: return rect.coordinates[1]
+            if direction == Direction.Up: return rect.coordinates[0]
+            if direction == Direction.Right or direction == Direction.Next: return rect.coordinates[1]
+            return rect.coordinates[0]
+        def isAfter(A, B):
+            if direction == Direction.Left or direction == Direction.Previous or direction == Direction.Up:
+                return B <= A
+            else:
+                return A <= B
+
+        curStart = getDim(self)
+        curOtherDim = getOtherDim(self)
+        maxDiff = float(1e20)
+        sel = None
+
+        # Find which rect is the closest in the particular direction
+        def checkRects():
+            nonlocal maxDiff
+            nonlocal sel
+            for other in rect_list:
+                otherRect = rect_function(other) if rect_function else other
+                otherStart = getDim(otherRect)
+                otherOtherDim = getOtherDim(otherRect)
+
+                # Skip windows not at all extended in the right direction
+                if not isAfter(curStart, otherStart):
+                    continue
+
+                diff = float(abs(curStart - otherStart)) + float(abs(curOtherDim - otherOtherDim) / 10000.0)
+                if diff < maxDiff:
+                    # Closer to the window's starting edge
+                    maxDiff = diff
+                    sel = other
+
+        # Return the element with the closest rect
+        checkRects()
+        if sel is not None:
+            return sel
+        else:
+            # Wrap around to the other side
+            if wrap_area:
+                curStart = getOppositeEnd(wrap_area)
+                curOtherDim = curStart
+                checkRects()
+            return sel
