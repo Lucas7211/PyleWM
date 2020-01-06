@@ -6,17 +6,12 @@ of the features I wanted, I decided to write my own pseudo-tiling window
 manager for Windows.
 
 Functionality includes:
-* Binding arbitrary global hotkeys to various builtin / any python functions.
-* Switching which window is focused based on a direction. (Similar to i3's
-  mod+hjkl / "focus left" command)
-* Windows are automatically tiled, with manual layout control using
-  vsplit/hsplit shortcuts and directional movement.
-* Full support for a floating layer of windows on top, with keybinds
-  to control which windows are floating and to move and resize them.
-* Per-monitor "virtual desktop" emulation. Each virtual desktop has
-  its own layout and set of windows.
-* Mark windows with a key, and then quickly focus those particular
-  windows again later, similar to vim m* and '* commands.
+* Binding arbitrary global hotkeys to various builtins or any python function.
+* Switching which window is focused based on a direction input.
+* Windows are automatically tiled into a main window and stacked sidebar layout.
+  A column-based layout is also available.
+* Double-sided workspaces per monitor, allowing for easy flipping back and forth.
+* Any number of temporary workspaces per monitor, created as needed.
 
 Using
 =====
@@ -24,13 +19,14 @@ Edit PyleWM.py to set whatever window management hotkeys you'd like,
 then execute it from its directory to activate the PyleWM window
 management shortcuts.
 
-The default shortcuts are my personal preferred ones, so you will
-have to edit them heavily to get anything halfway sane.
+The default shortcuts are my personal preferred ones based on a customized
+dvorak keyboard layout, so you will have to edit them heavily to get anything
+halfway sane.
 
 Dependencies
 ============
 Written for minimum Python version 3.6.
-Requires pypiwin32.
+Requires pypiwin32 and pystray.
 
 Focus Stealing
 ==============
@@ -56,7 +52,7 @@ As an additional bonus, Windows does not allow spawning applications as
 a regular user without having prompted for that user's password at least
 once. EVEN if you are admin, it still needs that user's credentials.
 So, in order to be able to spawn new windows without giving them admin,
-after the UAC prompt PyleWM will ask for the user's password in its command
+after the UAC prompt PyleWM will ask for the user's password in a command
 line window.
 
 Windows permissions are weird.
