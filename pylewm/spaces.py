@@ -230,14 +230,24 @@ def previous_layout():
         current_space.switch_layout(-1)
 
 @PyleCommand
-def print_state():
-    for monitor in pylewm.monitors.Monitors:
-        print(f"=== Monitor {monitor.rect} ===")
+def show_spaces_info():
+    text = ""
+    for monitor_index, monitor in enumerate(pylewm.monitors.Monitors):
+        text += f"Monitor {monitor_index} at {monitor.rect}\n"
+        text += f"===================\n"
         for i, space in enumerate(monitor.spaces):
-            print(f"  Space {i} (Visible: {space.visible})")
+            text += f"[ Space {i} (Visible: {space.visible}) ]\n"
+            text += f"-------------------\n"
             for window in space.windows:
-                print(f"    {window.window_title}")
+                text += f"{window.window_title}\n"
+            text += f"\n"
         for i, space in enumerate(monitor.temp_spaces):
-            print(f"  Temp Space {i} (Visible: {space.visible})")
+            text += f"[ Temp Space {i} (Visible: {space.visible}) ]\n"
+            text += f"-------------------\n"
             for window in space.windows:
-                print(f"    {window.window_title}")
+                text += f"* {window.window_title}\n"
+            text += f"\n"
+        text += "\n\n"
+
+    import ctypes
+    ctypes.windll.user32.MessageBoxW(None, text, 'PyleWM: Spaces Info', 0)

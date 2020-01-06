@@ -30,7 +30,7 @@ HOTKEYS = {
 
     # Window management
     (MOD, '$')              : pylewm.windows.close,
-    (MOD, '!')              : pylewm.windows.poke,
+    (MOD, '\\')             : pylewm.windows.poke,
     (MOD, "'")              : pylewm.windows.drop_window_into_layout,
     (MOD, 'x')              : pylewm.windows.make_window_floating,
 
@@ -73,8 +73,8 @@ HOTKEYS = {
     (MOD, 'shift', '+')     : pylewm.spaces.move_to_space(2, 1),
     (MOD, 'shift', ']')     : pylewm.spaces.move_to_space(3, 1),
 
-    (MOD, '=')              : pylewm.spaces.next_layout,
-    (MOD, 'shift', '=')     : pylewm.spaces.previous_layout,
+    (MOD, '!')              : pylewm.spaces.next_layout,
+    (MOD, 'shift', '!')     : pylewm.spaces.previous_layout,
 
     # Application management
     (MOD, ';')              : pylewm.wsltty.open_wsltty,
@@ -83,16 +83,18 @@ HOTKEYS = {
     (MOD, ',')              : pylewm.execution.start_menu,
     (MOD, 'p')              : pylewm.execution.run(r'C:\Program Files\Mozilla Firefox\firefox.exe'),
     (MOD, 'k')              : pylewm.wsltty.open_wsltty(["ranger", pylewm.wsltty.wsl_path(os.environ["USERPROFILE"])]),
-    (MOD, 'u')     : pylewm.execution.run(r'explorer.exe'),
+    (MOD, 'u')              : pylewm.execution.run(r'explorer.exe'),
 
     # PyleWM management
     (MOD, 'shift', 'q')     : pylewm.restart,
-    (MOD, '\\')             : pylewm.spaces.print_state,
+    (MOD, 'shift', '\\')    : pylewm.windows.show_window_info,
+    (MOD, 'shift', '=')     : pylewm.spaces.show_spaces_info,
 }
 
 pylewm.filters.Filters = [
     ({"class": "mintty"}, NoTitlebar, AutoPoke),
     ({"title": "Slack *"}, Tiling, Monitor(0)),
+    ({"title": "*Media Player Classic*"}, Floating),
 
     # Visual Studio
     ({"class": "HwndWrapper[*"}, KeepStartMonitor),

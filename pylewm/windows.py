@@ -105,6 +105,22 @@ def poke():
     if pylewm.focus.FocusWindow:
         pylewm.focus.FocusWindow.poke()
 
+@PyleCommand
+def show_window_info():
+    hwnd = win32gui.GetForegroundWindow()
+
+    state = "Unmanaged"
+    if hwnd in Windows and Windows[hwnd]:
+        window = Windows[hwnd]
+        state = "Floating" if window.floating else "Tiled"
+
+    text = ""
+    text += f"Window Title:\t{win32gui.GetWindowText(hwnd)}\n"
+    text += f"Window Class:\t{win32gui.GetClassName(hwnd)}\n"
+    text += f"Current State:\t{state}\n"
+
+    ctypes.windll.user32.MessageBoxW(None, text, 'PyleWM: Window Info', 0)
+
 def reset_all():
     global Windows
     for window in Windows.values():
