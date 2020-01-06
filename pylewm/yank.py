@@ -40,7 +40,7 @@ def drop_one_window():
         drop_slot, force_drop = space.get_drop_slot(
             pylewm.focus.FocusWindow.rect.center,
             pylewm.focus.FocusWindow.rect)
-        space.drop_into_slot(window, drop_slot)
+        space.add_window(window, at_slot=drop_slot)
     else:
         space.add_window(window)
 

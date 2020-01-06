@@ -42,7 +42,7 @@ def start():
         #  Apparently we can't spawn stuff as a user without getting their password,
         #  even if we're elevated. Windows.
         print("Prompting for user credentials, since windows won't let us spawn as user without them even when we're admin:")
-        args = ["runas", "/user:"+os.environ["USERDOMAIN"]+"\\"+os.environ["USERNAME"], "/savecred", "cmd.exe /c echo Credentials Saved..."]
+        args = ["start", "cmd.exe", "/c", "runas", "/user:"+os.environ["USERDOMAIN"]+"\\"+os.environ["USERNAME"], "/savecred", "cmd.exe /c echo Credentials Saved..."]
         subprocess.call(args, shell=True)
 
     for fun in InitFunctions:

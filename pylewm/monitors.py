@@ -13,6 +13,7 @@ class Monitor:
     def __init__(self, info):
         self.info = info
         self.rect = Rect(info['Monitor'])
+        self.primary = info["Flags"] & 1
 
         self.spaces = [Space(self, self.rect), Space(self, self.rect)]
         self.last_used_space = None
@@ -114,8 +115,6 @@ def initMonitors():
         info = win32api.GetMonitorInfo(mhnd[0])
 
         monitor = Monitor(info)
-        monitor.primary = info["Flags"] & 1
-
         DesktopArea.extend_to_cover(monitor.rect)
         Monitors.append(monitor)
 

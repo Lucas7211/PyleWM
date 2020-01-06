@@ -154,19 +154,20 @@ def focus_previous():
 
 def focus_direction(direction):
     current_space = pylewm.focus.get_focused_space()
-    current_slot = current_space.get_last_focused_slot()
-    new_slot, escape_direction = current_space.move_from_slot(current_slot, direction)
+    current_window = current_space.get_last_focus()
 
-    if new_slot != -1:
+    new_window, escape_direction = current_space.get_window_in_direction(current_window, direction)
+
+    if new_window:
         # Focus a different slot within this space
-        pylewm.focus.set_focus(current_space.windows[new_slot])
+        pylewm.focus.set_focus(new_window)
     else:
         # Escape into a different monitor's space
         new_monitor = pylewm.monitors.get_monitor_in_direction(current_space.monitor, escape_direction)
         if new_monitor:
-            new_slot, escape_direction = new_monitor.visible_space.move_from_slot(-1, escape_direction)
-            if new_slot != -1:
-                pylewm.focus.set_focus(new_monitor.visible_space.windows[new_slot])
+            new_window, escape_direction = new_monitor.visible_space.get_window_in_direction(None, escape_direction)
+            if new_window:
+                pylewm.focus.set_focus(new_window)
             else:
                 pylewm.focus.set_focus_monitor(new_monitor)
 
@@ -196,27 +197,29 @@ def move_previous():
 
 def move_direction(direction):
     current_space = pylewm.focus.get_focused_space()
-    current_slot = current_space.get_last_focused_slot()
-    if current_slot == -1:
+    focus_window = pylewm.focus.FocusWindow
+    if not focus_window:
         return
 
-    new_slot, escape_direction = current_space.move_from_slot(current_slot, direction)
-    if new_slot != -1:
-        # Swap window to a different slot
-        current_space.swap_slots(current_slot, new_slot)
-    else:
+    handled, escape_direction = current_space.move_window_in_direction(focus_window, direction)
+    if not handled:
         # Escape into a different monitor's space
         new_monitor = pylewm.monitors.get_monitor_in_direction(current_space.monitor, escape_direction)
         if new_monitor:
-            target_slot, target_direction = new_monitor.visible_space.move_from_slot(-1, escape_direction)
-
-            focus_window = current_space.windows[current_slot]
             current_space.remove_window(focus_window)
+            new_monitor.visible_space.add_window(focus_window, direction=escape_direction)
 
-            if target_slot != -1:
-                new_monitor.visible_space.insert_slot(target_slot, escape_direction, focus_window)
-            else:
-                new_monitor.visible_space.add_window(focus_window)
+@PyleCommand
+def next_layout():
+    current_space = pylewm.focus.get_focused_space()
+    if current_space:
+        current_space.switch_layout(+1)
+
+@PyleCommand
+def previous_layout():
+    current_space = pylewm.focus.get_focused_space()
+    if current_space:
+        current_space.switch_layout(-1)
 
 @PyleCommand
 def print_state():

@@ -1,6 +1,6 @@
 import pylewm
 import os
-from pylewm.filters import NoTitlebar, Tiling, Floating, Monitor, TemporarySpace, Ignore, AutoPoke
+from pylewm.filters import NoTitlebar, Tiling, Floating, Monitor, TemporarySpace, Ignore, AutoPoke, AlwaysOnTop
 
 # Main modifier key that all the hotkeys are behind
 MOD =                       'rctrl'
@@ -31,8 +31,11 @@ HOTKEYS = {
     # Window management
     (MOD, '$')              : pylewm.windows.close,
     (MOD, '!')              : pylewm.windows.poke,
-    (MOD, 'x')              : pylewm.windows.drop_window_into_layout,
+    (MOD, "'")              : pylewm.windows.drop_window_into_layout,
+    (MOD, 'x')              : pylewm.windows.make_window_floating,
+
     (MOD, 'shift', 'm')     : pylewm.windows.minimize,
+    (MOD, 'shift', 'b')     : pylewm.windows.vanish,
 
     (MOD, 'y')              : pylewm.yank.yank_window,
     (MOD, 'i')              : pylewm.yank.drop_window,
@@ -70,7 +73,8 @@ HOTKEYS = {
     (MOD, 'shift', '+')     : pylewm.spaces.move_to_space(2, 1),
     (MOD, 'shift', ']')     : pylewm.spaces.move_to_space(3, 1),
 
-    # Tiling management
+    (MOD, '=')              : pylewm.spaces.next_layout,
+    (MOD, 'shift', '=')     : pylewm.spaces.previous_layout,
 
     # Application management
     (MOD, ';')              : pylewm.wsltty.open_wsltty,

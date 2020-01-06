@@ -48,6 +48,8 @@ class Window:
         self.can_tile = True
         self.take_new_rect = False
         self.force_closed = False
+        self.always_top = False
+        self.force_always_top = False
 
         parent_handle = win32api.GetWindowLong(self.handle, win32con.GWL_HWNDPARENT)
         self.is_child_window = win32gui.IsWindow(parent_handle)
@@ -66,8 +68,8 @@ class Window:
         if self.hidden:
             self.hidden = False
             ctypes.windll.user32.ShowWindowAsync(self.handle, win32con.SW_SHOWNOACTIVATE)
-        if self.floating:
-            self.floating = False
+        if self.always_top:
+            self.always_top = False
             self.set_layer_bottom()
 
     def show(self):
@@ -114,6 +116,8 @@ class Window:
             self.remove_maximize()
             self.last_window_pos = win32gui.GetWindowRect(self.handle)
         if self.floating:
+            self.set_layer_alwaystop()
+        elif self.force_always_top:
             self.set_layer_alwaystop()
         else:
             self.set_layer_bottom()
@@ -193,12 +197,12 @@ class Window:
 
                 # Only allow forced drops when drag&dropping
                 if not force_drop:
-                    hover_slot = -1
+                    hover_slot = None
 
             self.set_drop_space(hover_space)
 
-            if hover_slot == -1:
-                self.drop_slot = 1
+            if hover_slot is None:
+                self.drop_slot = None
                 self.set_drop_space(None)
             elif hover_slot == self.drop_slot:
                 self.drop_ticks_inside_slot += 1
@@ -212,7 +216,7 @@ class Window:
         elif not self.dragging and self.drop_space and self.drop_space.pending_drop_slot != -1:
             self.floating = False
             self.take_new_rect = True
-            self.drop_space.drop_into_slot(self, self.drop_slot)
+            self.drop_space.add_window(self, at_slot=self.drop_slot)
             self.set_drop_space(None)
         else:
             self.set_drop_space(None)
@@ -221,7 +225,7 @@ class Window:
         if self.drop_space == new_space:
             return
         if self.drop_space:
-            self.drop_space.set_pending_drop_slot(-1)
+            self.drop_space.set_pending_drop_slot(None)
         self.drop_space = new_space
         self.drop_ticks_inside_slot = 0
         self.drop_slot = -1
@@ -241,6 +245,10 @@ class Window:
             return
 
         self.update_drag()
+
+        # Move back to the bottom if we managed to get always on top
+        if self.always_top and not self.force_always_top:
+            self.set_layer_bottom()
 
         # If the window has been moved outside of PyleWM we 'unsnap' it from the layout
         #  This is the same operation as 'closing' it since we are no longer managing it
@@ -302,13 +310,21 @@ class Window:
         self.command_queue.queue_command(poke_cmd)
 
     def set_layer_top(self):
+        if self.force_always_top:
+            return
+        #print(f"Set to Top: {self.window_title}")
+        self.always_top = False
         try:
-            win32gui.SetWindowPos(self.handle, win32con.HWND_TOP, 0, 0, 0, 0,
+            win32gui.SetWindowPos(self.handle, win32con.HWND_NOTOPMOST, 0, 0, 0, 0,
                     win32con.SWP_NOACTIVATE | win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
         except:
             pass
 
     def set_layer_bottom(self):
+        if self.force_always_top:
+            return
+        #print(f"Set to Bottom: {self.window_title}")
+        self.always_top = False
         try:
             win32gui.SetWindowPos(self.handle, win32con.HWND_BOTTOM, 0, 0, 0, 0,
                     win32con.SWP_NOACTIVATE | win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
@@ -316,6 +332,8 @@ class Window:
             pass
 
     def set_layer_alwaystop(self):
+        #print(f"Set to ALWAYS Top: {self.window_title}")
+        self.always_top = True
         try:
             win32gui.SetWindowPos(self.handle, win32con.HWND_TOPMOST, 0, 0, 0, 0,
                     win32con.SWP_NOACTIVATE | win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)

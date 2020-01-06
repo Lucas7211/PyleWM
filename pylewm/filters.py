@@ -74,6 +74,10 @@ def TemporarySpace(window):
 def AutoPoke(window):
     window.poke()
 
+@Filter
+def AlwaysOnTop(window):
+    window.force_always_top = True
+
 def trigger_all_filters(window, post=False):
     for f in FunctionsByFilter:
         if pylewm.selector.matches(window, f[0]):

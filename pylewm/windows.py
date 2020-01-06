@@ -51,10 +51,22 @@ def drop_window_into_layout():
 
             space = pylewm.focus.get_cursor_space()
             drop_slot, force_drop = space.get_drop_slot(window.rect.center, window.rect)
-            space.drop_into_slot(window, drop_slot)
+            space.add_window(window, at_slot=drop_slot)
     else:
         window = Window(hwnd)
         NewWindows.append(window)
+    
+@PyleCommand
+def make_window_floating():
+    window = pylewm.focus.FocusWindow
+    if not window or not window.space:
+        return
+
+    space = window.space
+    space.remove_window(window)
+
+    window.floating = True
+    window.command_queue.queue_command(window.set_layer_alwaystop)
 
 @PyleCommand
 def move_to_monitor(monitor_index):
@@ -73,6 +85,17 @@ def minimize():
     hwnd = win32gui.GetForegroundWindow()
     if hwnd in Windows and Windows[hwnd]:
         Windows[hwnd].minimize()
+    else:
+        pylewm.window.minimize_window_handle(hwnd)
+
+@PyleCommand
+def vanish():
+    hwnd = win32gui.GetForegroundWindow()
+    if hwnd in Windows and Windows[hwnd]:
+        window = Windows[hwnd]
+        if window.space:
+            window.space.remove_window(window)
+        Windows[hwnd].hide()
     else:
         pylewm.window.minimize_window_handle(hwnd)
 
@@ -125,6 +148,7 @@ def print_window_info(window=None, text=None, indent=""):
 def add_window_to_space(window):
     # Find the monitor that this window is most on
     space = None
+    slot = None
 
     filter_monitor = pylewm.filters.get_monitor(window)
     if filter_monitor != -1:
@@ -133,11 +157,13 @@ def add_window_to_space(window):
     elif InitialPlacement or window.handle in MinimizedWindows:
         monitor = pylewm.monitors.get_covering_monitor(window.rect)
         space = monitor.visible_space
+        slot, force_drop = space.get_drop_slot(window.rect.center, window.rect)
     else:
         space = pylewm.focus.get_focused_space()
+    #print(f"add {window.window_title} to space {space.rect}")
 
     # Add the window to the space that is visible on that monitor
-    space.add_window(window)
+    space.add_window(window, at_slot=slot)
 
 def manage_window(window):
     pylewm.filters.trigger_all_filters(window, post=False)
@@ -205,10 +231,11 @@ def tick_windows():
         if window.closed:
             space = window.space
             if space:
-                lost_index = space.windows.index(window)
-                space.remove_window(window)
+                focus_window = None
                 if not window.force_closed and space.windows and space == pylewm.focus.get_cursor_space():
-                    focus_window = space.windows[space.layout.get_focus_slot_after_removing(lost_index)]
+                    focus_window = space.get_focus_window_after_removing(window)
+                space.remove_window(window)
+                if focus_window:
                     pylewm.focus.set_focus(focus_window)
             window.stop_managing()
             Windows[window.handle] = None
