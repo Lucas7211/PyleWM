@@ -6,6 +6,11 @@ import win32gui
 import win32api
 import win32con
 
+ALWAYS_FLOATING_CLASSES = {
+    "OperationStatusWindow",
+    "#32770"
+}
+
 IgnorePermanent = 0
 IgnoreTemporary = 1
 Tiled = 2
@@ -49,5 +54,9 @@ def classify_window(hwnd):
     # we can usually assume these aren't available for tiling.
     if not (style & win32con.WS_SIZEBOX):
         return window, Floating, "No Resize"
+
+    # Some classes that Windows uses should always be realistically floating
+    if window.window_class.lower() in ALWAYS_FLOATING_CLASSES:
+        return window, Floating, "Floating Class"
 
     return window, Tiled, None

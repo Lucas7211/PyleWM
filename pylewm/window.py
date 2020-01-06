@@ -80,8 +80,7 @@ class Window:
             ctypes.windll.user32.ShowWindowAsync(self.handle, win32con.SW_SHOWNOACTIVATE)
 
             #if win32gui.IsIconic(self.handle):
-                #win32gui.ShowWindow(self.handle, win2con.SW_RESTORE)
-                #self.set_layer_top()
+                #win32gui.ShowWindow(self.handle, win32con.SW_RESTORE)
             self.last_window_pos = self.get_actual_rect()
         self.command_queue.queue_command(show_cmd)
 
@@ -120,7 +119,7 @@ class Window:
         elif self.force_always_top:
             self.set_layer_alwaystop()
         else:
-            self.set_layer_bottom()
+            self.set_layer_top()
 
     def trigger_update(self):
         self.command_queue.queue_command(self.update)
@@ -146,6 +145,12 @@ class Window:
         except:
             return False
 
+    def is_window_hidden(self):
+        try:
+            return not win32gui.IsWindowVisible(self.handle)
+        except:
+            return False
+
     def remove_maximize(self):
         win32gui.ShowWindow(self.handle, win32con.SW_SHOWNOACTIVATE)
 
@@ -154,6 +159,11 @@ class Window:
             return win32gui.GetWindowRect(self.handle)
         except:
             return self.rect.coordinates
+
+    def can_move(self):
+        if ctypes.windll.user32.IsHungAppWindow(self.handle):
+            return False
+        return True
 
     def update_drag(self):
         new_rect = self.get_actual_rect()
@@ -259,7 +269,7 @@ class Window:
             return
 
         # Manually minimized windows are considered closed
-        if self.is_minimized():
+        if self.is_minimized() or self.is_window_hidden():
             self.closed = True
             return
 

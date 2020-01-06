@@ -1,6 +1,6 @@
 import pylewm
 import os
-from pylewm.filters import NoTitlebar, Tiling, Floating, Monitor, TemporarySpace, Ignore, AutoPoke, AlwaysOnTop
+from pylewm.filters import NoTitlebar, Tiling, Floating, Monitor, TemporarySpace, Ignore, AutoPoke, AlwaysOnTop, KeepStartMonitor
 
 # Main modifier key that all the hotkeys are behind
 MOD =                       'rctrl'
@@ -92,9 +92,14 @@ HOTKEYS = {
 
 pylewm.filters.Filters = [
     ({"class": "mintty"}, NoTitlebar, AutoPoke),
-    ({"class": "OperationStatusWindow"}, Floating),
-    ({"class": "TaskManagerWindow"}, Ignore),
+
+    # Visual Studio
+    ({"class": "HwndWrapper[*"}, KeepStartMonitor),
+
+    # Unreal Engine
     ({"title": "*Unreal Editor*", "child": False}, Tiling, Monitor(0), TemporarySpace),
+    ({"class": "SplashScreenClass"}, Ignore),
+    ({"class": "UnrealWindow", "child": True}, Floating),
 ]
 
 if __name__ == "__main__":

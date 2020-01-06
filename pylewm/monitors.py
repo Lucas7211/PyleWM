@@ -39,7 +39,8 @@ class Monitor:
 
         if new_space.temporary:
             # Record which temporary space we were viewing last
-            self.last_used_temp_space = new_space
+            if new_space.windows:
+                self.last_used_temp_space = new_space
         else:
             # Record which primary space we were viewing last
             self.last_used_space = new_space
@@ -120,6 +121,8 @@ def initMonitors():
 
     # Sort monitors by position so their order stays the same
     Monitors.sort(key=lambda x: x.rect.left)
+    for i, monitor in enumerate(Monitors):
+        monitor.monitor_index = i
 
     # Rotate monitors so the default monitor is at index 0
     #for i, monitor in enumerate(Monitors):

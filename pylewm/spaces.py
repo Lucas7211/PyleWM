@@ -42,6 +42,8 @@ def move_flip():
     window = pylewm.focus.FocusWindow
     if not window:
         return
+    if not window.can_move():
+        return
 
     space = get_flipped_space()
     if window.space:
@@ -65,6 +67,8 @@ def move_to_space(monitor_index, space_index):
     window = pylewm.focus.FocusWindow
     if not window or not window.space:
         return
+    if not window.can_move():
+        return
 
     prev_space = window.space
     prev_space.remove_window(window)
@@ -82,9 +86,9 @@ def goto_temporary():
     monitor = space.monitor
 
     temp_space = None
-    if space.temporary:
+    if space.temporary and space.windows:
         # We want an -empty- temporary space now, since we are
-        # already no a temporary space.
+        # already on a non-empty temporary space.
         temp_space = monitor.new_temp_space()
     elif len(monitor.temp_spaces) == 0:
         # Create the first temporary space
@@ -117,6 +121,8 @@ def previous_temporary():
 def move_to_new_temporary_space():
     ''' Move the active window to a new temporary space. '''
     if not pylewm.focus.FocusWindow:
+        return
+    if not pylewm.focus.FocusWindow.can_move():
         return
     move_window_to_new_temporary_space(pylewm.focus.FocusWindow)
     delay_pyle_command(0.05, lambda: pylewm.focus.set_focus(pylewm.focus.FocusWindow))
@@ -198,7 +204,9 @@ def move_previous():
 def move_direction(direction):
     current_space = pylewm.focus.get_focused_space()
     focus_window = pylewm.focus.FocusWindow
-    if not focus_window:
+    if not focus_window or focus_window.space != current_space:
+        return
+    if not focus_window.can_move():
         return
 
     handled, escape_direction = current_space.move_window_in_direction(focus_window, direction)

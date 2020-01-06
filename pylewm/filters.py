@@ -43,6 +43,7 @@ class Filter:
 def Floating(window):
     """ Start the window on the floating layer when spawned. """
     window.floating = True
+    window.can_tile = False
 
 @Filter
 def Tiling(window):
@@ -62,6 +63,11 @@ def NoTitlebar(window):
 
 @Filter
 def Monitor(window, monitor):
+    """ Move the window to a specific monitor when spawned. """
+    pass
+
+@Filter
+def KeepStartMonitor(window):
     """ Move the window to a specific monitor when spawned. """
     pass
 
@@ -108,6 +114,10 @@ def get_monitor(window):
                         if len(f.args) >= 1:
                             return f.args[0]
                 return -1
+    if KeepStartMonitor in FiltersByFunction:
+        for filt in FiltersByFunction[KeepStartMonitor]:
+            if pylewm.selector.matches(window, filt[0]):
+                return pylewm.monitors.get_covering_monitor(window.rect).monitor_index
     return -1
 
 @PyleInit

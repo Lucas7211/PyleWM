@@ -21,7 +21,7 @@ MinimizedWindows = set()
 
 InitialPlacement = True
 
-@PyleCommand.Threaded
+@PyleCommand
 def close():
     ''' Close the window that currently has focus. Whether that window is in a layout or not. '''
     hwnd = win32gui.GetForegroundWindow()
@@ -66,6 +66,7 @@ def make_window_floating():
     space.remove_window(window)
 
     window.floating = True
+    window.can_tile = False
     window.command_queue.queue_command(window.set_layer_alwaystop)
 
 @PyleCommand
