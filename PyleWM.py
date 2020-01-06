@@ -92,6 +92,7 @@ HOTKEYS = {
 
 pylewm.filters.Filters = [
     ({"class": "mintty"}, NoTitlebar, AutoPoke),
+    ({"title": "Slack *"}, Tiling, Monitor(0)),
 
     # Visual Studio
     ({"class": "HwndWrapper[*"}, KeepStartMonitor),
