@@ -10,7 +10,7 @@ def open_wsltty(cmd=""):
 
     if cmd:
         wsltty += [*cmd]
-    pylewm.execution.run(wsltty).run()
+    pylewm.execution.run(wsltty, drop_admin=False).run()
 
 # Turns a path from a windows path to the equivalent WSL path
 def wsl_path(path):

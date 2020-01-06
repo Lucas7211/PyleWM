@@ -78,11 +78,12 @@ HOTKEYS = {
 
     # Application management
     (MOD, ';')              : pylewm.wsltty.open_wsltty,
-    (MOD, 'shift', ';')     : pylewm.execution.run(['start', 'cmd.exe']),
+    (MOD, 'a')              : pylewm.execution.run(['cmd.exe']),
+    (MOD, 'shift', 'a')     : pylewm.execution.run(['start', 'cmd.exe'], drop_admin=False),
     (MOD, ',')              : pylewm.execution.start_menu,
     (MOD, 'p')              : pylewm.execution.run(r'C:\Program Files\Mozilla Firefox\firefox.exe'),
     (MOD, 'k')              : pylewm.wsltty.open_wsltty(["ranger", pylewm.wsltty.wsl_path(os.environ["USERPROFILE"])]),
-    (MOD, 'shift', 'k')     : pylewm.execution.run(r'explorer.exe'),
+    (MOD, 'u')     : pylewm.execution.run(r'explorer.exe'),
 
     # PyleWM management
     (MOD, 'shift', 'q')     : pylewm.restart,

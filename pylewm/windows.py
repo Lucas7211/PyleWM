@@ -159,7 +159,7 @@ def add_window_to_space(window):
         space = monitor.visible_space
         slot, force_drop = space.get_drop_slot(window.rect.center, window.rect)
     else:
-        space = pylewm.focus.get_focused_space()
+        space = pylewm.focus.get_cursor_space()
     #print(f"add {window.window_title} to space {space.rect}")
 
     # Add the window to the space that is visible on that monitor

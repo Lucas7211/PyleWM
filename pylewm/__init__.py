@@ -33,7 +33,7 @@ def key_process_thread():
 
 def start():
     import ctypes
-    if not ctypes.windll.shell32.IsUserAnAdmin() and False:
+    if not ctypes.windll.shell32.IsUserAnAdmin():
         ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
         sys.exit()
         return
