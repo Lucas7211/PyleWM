@@ -68,6 +68,12 @@ class Monitor:
         else:
             return None
 
+    def set_primary_temp_space(self, temp_space):
+        if not temp_space in self.temp_spaces:
+            return
+        index = self.temp_spaces.index(temp_space)
+        self.temp_spaces = self.temp_spaces[index:] + self.temp_spaces[:index]
+
     def get_adjacent_temp_space(self, temp_space, direction):
         assert temp_space in self.temp_spaces
         old_index = self.temp_spaces.index(temp_space)

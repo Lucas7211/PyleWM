@@ -78,10 +78,11 @@ class Window:
                 return
             self.hidden = False
             ctypes.windll.user32.ShowWindowAsync(self.handle, win32con.SW_SHOWNOACTIVATE)
+            self.set_layer_top()
 
             #if win32gui.IsIconic(self.handle):
                 #win32gui.ShowWindow(self.handle, win32con.SW_RESTORE)
-            self.last_window_pos = self.get_actual_rect()
+            #self.last_window_pos = self.get_actual_rect()
         self.command_queue.queue_command(show_cmd)
 
     def hide(self):
@@ -300,6 +301,8 @@ class Window:
             self.last_set_rect.assign(self.rect)
             self.last_window_pos = self.get_actual_rect()
             self.last_received_pos = self.last_window_pos
+
+            print(f"Received {self.last_received_pos} for {self.window_title} which wants {self.rect}")
 
     def poke(self):
         def poke_cmd():

@@ -110,6 +110,7 @@ def show_window_info():
     hwnd = win32gui.GetForegroundWindow()
 
     state = "Unmanaged"
+    window = None
     if hwnd in Windows and Windows[hwnd]:
         window = Windows[hwnd]
         state = "Floating" if window.floating else "Tiled"
@@ -117,7 +118,12 @@ def show_window_info():
     text = ""
     text += f"Window Title:\t{win32gui.GetWindowText(hwnd)}\n"
     text += f"Window Class:\t{win32gui.GetClassName(hwnd)}\n"
-    text += f"Current State:\t{state}\n"
+    text += f"Current State:\t{state}\n\n"
+    if window:
+        text += f"Actual Position:\t{window.get_actual_rect()}\n"
+        text += f"Wanted Position:\t{window.rect}\n"
+        text += f"Last Window Position:\t{window.last_window_pos}\n"
+        text += f"Last Received Position:\t{window.last_received_pos}\n"
 
     ctypes.windll.user32.MessageBoxW(None, text, 'PyleWM: Window Info', 0)
 

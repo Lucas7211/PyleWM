@@ -22,7 +22,7 @@ def yank_window():
         if prev_space:
             pylewm.focus.set_focus_space(prev_space)
         else:
-            plyewm.focus.set_focus_space(pylewm.focus.get_cursor_space())
+            pylewm.focus.set_focus_space(pylewm.focus.get_cursor_space())
 
     YankStack.append(window)
 

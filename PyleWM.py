@@ -95,14 +95,17 @@ pylewm.filters.Filters = [
     ({"class": "mintty"}, NoTitlebar, AutoPoke),
     ({"title": "Slack *"}, Tiling, Monitor(0)),
     ({"title": "*Media Player Classic*"}, Floating),
+    ({"title": "* One Manager"}, Tiling, Monitor(2), TemporarySpace),
 
     # Visual Studio
     ({"class": "HwndWrapper[*"}, KeepStartMonitor),
+    ({"class": "Ghost"}, Ignore),
 
     # Unreal Engine
-    ({"title": "*Unreal Editor*", "child": False}, Tiling, Monitor(0), TemporarySpace),
+    ({"title": "*Unreal Editor*", "child": False}, Tiling, Monitor(1), TemporarySpace),
     ({"class": "SplashScreenClass"}, Ignore),
     ({"class": "UnrealWindow", "child": True}, Floating),
+    ({"title": "*PCD3D_SM5*", "class": "UnrealWindow"}, Tiling, Monitor(1), TemporarySpace),
 ]
 
 if __name__ == "__main__":

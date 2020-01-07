@@ -6,8 +6,12 @@ import win32gui
 import win32api
 import win32con
 
+ALWAYS_IGNORE_CLASSES = {
+    "progman"
+}
+
 ALWAYS_FLOATING_CLASSES = {
-    "OperationStatusWindow",
+    "operationstatuswindow",
     "#32770"
 }
 
@@ -45,6 +49,11 @@ def classify_window(hwnd):
     if window.rect.height == 0 or window.rect.width == 0:
         return window, IgnorePermanent, "Zero Size"
 
+    # Special always ignored classes
+    window_class = window.window_class.lower()
+    if window_class in ALWAYS_IGNORE_CLASSES:
+        return window, IgnorePermanent, "Ignored Class"
+
     # NOACTIVATE windows that aren't APPWINDOW are ignored by
     # the taskbar, so we probably should ignore them as well
     if (exStyle & win32con.WS_EX_NOACTIVATE) and not (exStyle & win32con.WS_EX_APPWINDOW):
@@ -56,7 +65,7 @@ def classify_window(hwnd):
         return window, Floating, "No Resize"
 
     # Some classes that Windows uses should always be realistically floating
-    if window.window_class.lower() in ALWAYS_FLOATING_CLASSES:
+    if window_class in ALWAYS_FLOATING_CLASSES:
         return window, Floating, "Floating Class"
 
     return window, Tiled, None

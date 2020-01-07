@@ -169,11 +169,16 @@ class SidebarLayout(Layout):
             if ((not self.flipped and direction == Direction.Right)
                  or (self.flipped and direction == Direction.Left)):
                 return self.get_sidebar_mru(), direction
-                return self.get_sidebar_mru(), direction
-            elif self.sidebar and direction == Direction.Previous:
-                return self.sidebar[-1], direction
-            elif self.sidebar and direction == Direction.Next:
-                return self.sidebar[0], direction
+            elif direction == Direction.Previous:
+                if self.sidebar:
+                    return self.sidebar[-1], direction
+                else:
+                    return self.main_window, direction
+            elif direction == Direction.Next:
+                if self.sidebar:
+                    return self.sidebar[0], direction
+                else:
+                    return self.main_window, direction
         else:
             sidebar_index = self.sidebar.index(from_window)
 

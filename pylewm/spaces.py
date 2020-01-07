@@ -96,6 +96,7 @@ def goto_temporary():
     else:
         # Switch to the last temporary space we had active
         temp_space = monitor.get_last_used_temp_space()
+        monitor.set_primary_temp_space(temp_space)
 
     goto_space(temp_space)
 
@@ -123,6 +124,8 @@ def move_to_new_temporary_space():
     if not pylewm.focus.FocusWindow:
         return
     if not pylewm.focus.FocusWindow.can_move():
+        return
+    if not pylewm.focus.FocusWindow.space:
         return
     move_window_to_new_temporary_space(pylewm.focus.FocusWindow)
     delay_pyle_command(0.05, lambda: pylewm.focus.set_focus(pylewm.focus.FocusWindow))
