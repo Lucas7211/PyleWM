@@ -47,7 +47,7 @@ HOTKEYS = {
     (MOD, ' ')              : pylewm.spaces.flip,
     (MOD, 'shift', ' ')     : pylewm.spaces.move_flip,
 
-    (MOD, 'z')              : pylewm.spaces.goto_temporary,
+    (MOD, 'o')              : pylewm.spaces.goto_temporary,
     (MOD, 'w')              : pylewm.spaces.next_temporary,
     (MOD, 'v')              : pylewm.spaces.previous_temporary,
 
@@ -98,7 +98,7 @@ pylewm.filters.Filters = [
     ({"title": "* One Manager"}, Tiling, Monitor(2), TemporarySpace),
 
     # Visual Studio
-    ({"class": "HwndWrapper[*"}, KeepStartMonitor),
+    ({"class": "HwndWrapper[*"}, KeepStartMonitor, AutoPoke),
     ({"class": "Ghost"}, Ignore),
 
     # Unreal Engine

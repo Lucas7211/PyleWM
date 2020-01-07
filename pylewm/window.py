@@ -280,6 +280,7 @@ class Window:
                 or not self.rect.equals(self.last_set_rect)):
 
             try_position = [self.rect.left, self.rect.top, self.rect.width, self.rect.height]
+            set_position_allowed = True
             for tries in range(0, 10):
                 try:
                     win32gui.SetWindowPos(self.handle, win32con.HWND_BOTTOM,
@@ -287,7 +288,8 @@ class Window:
                         try_position[2], try_position[3],
                         win32con.SWP_NOACTIVATE)
                 except:
-                    pass
+                    set_position_allowed = False
+                    break
 
                 self.last_window_pos = self.get_actual_rect()
 
@@ -298,11 +300,14 @@ class Window:
                 else:
                     break
 
-            self.last_set_rect.assign(self.rect)
-            self.last_window_pos = self.get_actual_rect()
-            self.last_received_pos = self.last_window_pos
+            if set_position_allowed:
+                self.last_set_rect.assign(self.rect)
+                self.last_window_pos = self.get_actual_rect()
+                self.last_received_pos = self.last_window_pos
 
-            print(f"Received {self.last_received_pos} for {self.window_title} which wants {self.rect}")
+                print(f"Received {self.last_received_pos} for {self.window_title} which wants {self.rect}")
+            else:
+                print(f"Failed to set {self.rect} on {self.window_title}")
 
     def poke(self):
         def poke_cmd():
