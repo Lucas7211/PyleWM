@@ -50,6 +50,7 @@ class Window:
         self.force_closed = False
         self.always_top = False
         self.force_always_top = False
+        self.ignore_borders = False
 
         parent_handle = win32api.GetWindowLong(self.handle, win32con.GWL_HWNDPARENT)
         self.is_child_window = win32gui.IsWindow(parent_handle)
@@ -279,7 +280,14 @@ class Window:
                 not Rect.equal_coordinates(self.last_window_pos, self.last_received_pos)
                 or not self.rect.equals(self.last_set_rect)):
 
-            try_position = [self.rect.left, self.rect.top, self.rect.width, self.rect.height]
+            try_position = [
+                self.rect.left,
+                self.rect.top,
+                self.rect.width,
+                self.rect.height,
+            ]
+            self.adjust_position_for_window(try_position)
+
             set_position_allowed = True
             for tries in range(0, 10):
                 try:
@@ -293,12 +301,15 @@ class Window:
 
                 self.last_window_pos = self.get_actual_rect()
 
-                # Reduce height of window until it fits within the allocated space
-                if (not self.rect.contains(self.last_window_pos[0:2])
-                    or not self.rect.contains(self.last_window_pos[2:4])):
-                    try_position[3] -= 10
-                else:
-                    break
+                if (try_position[0] != self.last_window_pos[0]
+                    or try_position[1] != self.last_window_pos[1]
+                    or (try_position[2] - try_position[0]) != (self.last_window_pos[2] - self.last_window_pos[0])
+                    or (try_position[3] - try_position[1]) != (self.last_window_pos[3] - self.last_window_pos[1])
+                ):
+                    # Keep trying!
+                    continue
+
+                #break
 
             if set_position_allowed:
                 self.last_set_rect.assign(self.rect)
@@ -308,6 +319,38 @@ class Window:
                 print(f"Received {self.last_received_pos} for {self.window_title} which wants {self.rect}")
             else:
                 print(f"Failed to set {self.rect} on {self.window_title}")
+
+    def adjust_position_for_window(self, position):
+        if self.ignore_borders:
+            return
+
+        style = win32api.GetWindowLong(self.handle, win32con.GWL_STYLE)
+
+        if not (style & win32con.WS_SYSMENU):
+            position[0] += 2
+            position[2] -= 4
+            position[3] -= 3
+            return
+
+        exStyle = win32api.GetWindowLong(self.handle, win32con.GWL_EXSTYLE)
+
+        adjusted = ctypes.wintypes.RECT()
+        adjusted.left = position[0]
+        adjusted.top = position[1]
+        adjusted.right = position[0] + position[2]
+        adjusted.bottom = position[1] + position[3]
+
+        ctypes.windll.user32.AdjustWindowRectEx(
+            ctypes.pointer(adjusted),
+            ctypes.c_uint(style),
+            False,
+            ctypes.c_uint(exStyle),
+        )
+
+        position[0] = adjusted.left + 3
+        position[1] += 2
+        position[2] = adjusted.right - adjusted.left - 6
+        position[3] = adjusted.bottom - position[1] - 3
 
     def poke(self):
         def poke_cmd():

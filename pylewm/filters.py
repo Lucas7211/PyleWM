@@ -71,6 +71,11 @@ def KeepStartMonitor(window):
     """ Move the window to a specific monitor when spawned. """
     pass
 
+@Filter
+def IgnoreBorders(window):
+    """ Don't take into account window borders for this window's positioning. """
+    window.ignore_borders = True
+
 @Filter.post
 def TemporarySpace(window):
     """ The window gets a new desktop on its monitor when spawned. """

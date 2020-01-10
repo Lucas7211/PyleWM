@@ -1,6 +1,6 @@
 import pylewm
 import os
-from pylewm.filters import NoTitlebar, Tiling, Floating, Monitor, TemporarySpace, Ignore, AutoPoke, AlwaysOnTop, KeepStartMonitor
+from pylewm.filters import *
 
 # Main modifier key that all the hotkeys are behind
 MOD =                       'rctrl'

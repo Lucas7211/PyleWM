@@ -220,6 +220,8 @@ def move_direction(direction):
             current_space.remove_window(focus_window)
             new_monitor.visible_space.add_window(focus_window, direction=escape_direction)
 
+    delay_pyle_command(0.05, lambda: pylewm.focus.set_focus(focus_window))
+
 @PyleCommand
 def next_layout():
     current_space = pylewm.focus.get_focused_space()
