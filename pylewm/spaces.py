@@ -51,6 +51,7 @@ def move_flip():
         space.add_window(window)
 
     space.monitor.switch_to_space(space)
+    delay_pyle_command(0.05, lambda: pylewm.focus.set_focus(window))
 
 @PyleCommand
 def focus_space(monitor_index, space_index):
@@ -79,6 +80,8 @@ def move_to_space(monitor_index, space_index):
 
     if not space.visible:
         space.monitor.switch_to_space(space)
+
+    delay_pyle_command(0.05, lambda: pylewm.focus.set_focus(window))
 
 @PyleCommand
 def goto_temporary():

@@ -68,7 +68,7 @@ def make_window_floating():
 
     window.floating = True
     window.can_tile = False
-    window.command_queue.queue_command(window.set_layer_alwaystop)
+    window.command_queue.queue_command(lambda: window.set_always_top(True))
 
 @PyleCommand
 def move_to_monitor(monitor_index):

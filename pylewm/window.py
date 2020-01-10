@@ -70,8 +70,7 @@ class Window:
             self.hidden = False
             ctypes.windll.user32.ShowWindowAsync(self.handle, win32con.SW_SHOWNOACTIVATE)
         if self.always_top:
-            self.always_top = False
-            self.set_layer_bottom()
+            self.set_always_top(False)
 
     def show(self):
         def show_cmd():
@@ -79,7 +78,7 @@ class Window:
                 return
             self.hidden = False
             ctypes.windll.user32.ShowWindowAsync(self.handle, win32con.SW_SHOWNOACTIVATE)
-            self.set_layer_top()
+            self.bring_to_front()
 
             #if win32gui.IsIconic(self.handle):
                 #win32gui.ShowWindow(self.handle, win32con.SW_RESTORE)
@@ -117,11 +116,11 @@ class Window:
             self.remove_maximize()
             self.last_window_pos = win32gui.GetWindowRect(self.handle)
         if self.floating:
-            self.set_layer_alwaystop()
+            self.set_always_top(True)
         elif self.force_always_top:
-            self.set_layer_alwaystop()
+            self.set_always_top(True)
         else:
-            self.set_layer_top()
+            self.bring_to_front()
 
     def trigger_update(self):
         self.command_queue.queue_command(self.update)
@@ -260,12 +259,12 @@ class Window:
 
         # Move back to the bottom if we managed to get always on top
         if self.always_top and not self.force_always_top:
-            self.set_layer_bottom()
+            self.set_always_top(False)
 
         # If the window has been moved outside of PyleWM we 'unsnap' it from the layout
         #  This is the same operation as 'closing' it since we are no longer managing it
         if self.is_maximized() or (self.dragging and self.drag_ticks_with_movement > 2):
-            self.set_layer_alwaystop()
+            self.set_always_top(True)
             self.floating = True
             self.dragging = False
             return
@@ -370,35 +369,34 @@ class Window:
                 pass
         self.command_queue.queue_command(poke_cmd)
 
-    def set_layer_top(self):
+    def bring_to_front(self):
         if self.force_always_top:
             return
-        #print(f"Set to Top: {self.window_title}")
-        self.always_top = False
+
         try:
-            win32gui.SetWindowPos(self.handle, win32con.HWND_NOTOPMOST, 0, 0, 0, 0,
-                    win32con.SWP_NOACTIVATE | win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
             win32gui.SetWindowPos(self.handle, win32con.HWND_TOP, 0, 0, 0, 0,
                     win32con.SWP_NOACTIVATE | win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
         except:
             pass
 
-    def set_layer_bottom(self):
+    def send_to_bottom(self):
         if self.force_always_top:
             return
-        #print(f"Set to Bottom: {self.window_title}")
-        self.always_top = False
+
         try:
             win32gui.SetWindowPos(self.handle, win32con.HWND_BOTTOM, 0, 0, 0, 0,
                     win32con.SWP_NOACTIVATE | win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
         except:
             pass
 
-    def set_layer_alwaystop(self):
-        #print(f"Set to ALWAYS Top: {self.window_title}")
-        self.always_top = True
+    def set_always_top(self, always_top):
+        self.always_top = always_top
         try:
-            win32gui.SetWindowPos(self.handle, win32con.HWND_TOPMOST, 0, 0, 0, 0,
-                    win32con.SWP_NOACTIVATE | win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
+            if always_top:
+                win32gui.SetWindowPos(self.handle, win32con.HWND_TOPMOST, 0, 0, 0, 0,
+                        win32con.SWP_NOACTIVATE | win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
+            else:
+                win32gui.SetWindowPos(self.handle, win32con.HWND_NOTOPMOST, 0, 0, 0, 0,
+                        win32con.SWP_NOACTIVATE | win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
         except:
             pass
