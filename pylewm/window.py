@@ -275,7 +275,7 @@ class Window:
             return
 
         # Move the window to the wanted rect if it has changed
-        if not self.dragging and (
+        if not self.dragging and self.space and (
                 not Rect.equal_coordinates(self.last_window_pos, self.last_received_pos)
                 or not self.rect.equals(self.last_set_rect)):
 
@@ -334,6 +334,8 @@ class Window:
         self.always_top = False
         try:
             win32gui.SetWindowPos(self.handle, win32con.HWND_NOTOPMOST, 0, 0, 0, 0,
+                    win32con.SWP_NOACTIVATE | win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
+            win32gui.SetWindowPos(self.handle, win32con.HWND_TOP, 0, 0, 0, 0,
                     win32con.SWP_NOACTIVATE | win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
         except:
             pass

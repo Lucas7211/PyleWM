@@ -1,13 +1,13 @@
 from pylewm.layouts.sidebar import SidebarLayout
 from pylewm.layouts.columns import ColumnsLayout
+from pylewm.layouts.autogrid import AutoGridLayout
 import traceback
 import threading
 
 class Space:
     Layouts = [
         lambda: SidebarLayout(),
-        lambda: SidebarLayout(flipped=True),
-        lambda: ColumnsLayout(),
+        lambda: AutoGridLayout(),
     ]
 
     def __init__(self, monitor, rect):
@@ -123,6 +123,16 @@ class Space:
     def get_focus_window_after_removing(self, window_before_remove):
         with self.space_lock:
             return self.layout.get_focus_window_after_removing(window_before_remove)
+
+    def takeover_from_windows(self, window_list):
+        self.windows = list(window_list)
+        self.focus_mru = list(window_list)
+
+        for window in window_list:
+            window.space = self
+
+        with self.space_lock:
+            return self.layout.takeover_from_windows(window_list)
 
     def switch_layout(self, movement):
         with self.space_lock:

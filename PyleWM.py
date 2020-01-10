@@ -51,7 +51,7 @@ HOTKEYS = {
     (MOD, 'w')              : pylewm.spaces.next_temporary,
     (MOD, 'v')              : pylewm.spaces.previous_temporary,
 
-    (MOD, 'shift', 'z')     : pylewm.spaces.move_to_new_temporary_space,
+    (MOD, 'shift', 'o')     : pylewm.spaces.move_to_new_temporary_space,
 
     (MOD, 'g')              : pylewm.spaces.focus_space(0, 0),
     (MOD, 'c')              : pylewm.spaces.focus_space(1, 0),

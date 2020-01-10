@@ -17,9 +17,10 @@ import traceback
 IgnoredWindows = set()
 Windows = {}
 NewWindows = []
-MinimizedWindows = set()
+PreviouslyClosedWindows = set()
 
 InitialPlacement = True
+InitialWindowsBySpace = {}
 
 @PyleCommand
 def close():
@@ -177,16 +178,22 @@ def add_window_to_space(window):
     if filter_monitor != -1:
         filter_monitor = min(filter_monitor, len(pylewm.monitors.Monitors)-1)
         space = pylewm.monitors.Monitors[filter_monitor].visible_space
-    elif InitialPlacement or window.handle in MinimizedWindows:
+    elif InitialPlacement or window.handle in PreviouslyClosedWindows:
         monitor = pylewm.monitors.get_covering_monitor(window.rect)
         space = monitor.visible_space
         slot, force_drop = space.get_drop_slot(window.rect.center, window.rect)
     else:
         space = pylewm.focus.get_cursor_space()
-    #print(f"add {window.window_title} to space {space.rect}")
 
     # Add the window to the space that is visible on that monitor
-    space.add_window(window, at_slot=slot)
+    if InitialPlacement:
+        global InitialWindowsBySpace
+        if space in InitialWindowsBySpace:
+            InitialWindowsBySpace[space].append(window)
+        else:
+            InitialWindowsBySpace[space] = [window]
+    else:
+        space.add_window(window, at_slot=slot)
 
 def manage_window(window):
     pylewm.filters.trigger_all_filters(window, post=False)
@@ -195,10 +202,6 @@ def manage_window(window):
         add_window_to_space(window)
 
     window.manage()
-
-    # Start managing the window
-    if window.handle in MinimizedWindows:
-        MinimizedWindows.remove(window.handle)
 
     pylewm.filters.trigger_all_filters(window, post=True)
 
@@ -210,13 +213,7 @@ def tick_windows():
     def enumUnknown(hwnd, param):
         try:
             if hwnd in Windows:
-                if not Windows[hwnd] and pylewm.window.is_window_handle_minimized(hwnd):
-                    # If a window we previously tracked is minimized, we remove our tracking block,
-                    # this will make it pop back into the layout when we un-minimize automatically
-                    del Windows[hwnd]
-                    MinimizedWindows.add(hwnd)
-                else:
-                    return
+                return
             if hwnd in IgnoredWindows:
                 return
 
@@ -247,7 +244,20 @@ def tick_windows():
         manage_window(window)
     NewWindows = []
 
+    global InitialWindowsBySpace
+    if InitialWindowsBySpace:
+        for space, window_list in InitialWindowsBySpace.items():
+            assert space.monitor
+            assert space == space.monitor.visible_space
+
+            handled = space.takeover_from_windows(window_list)
+            if not handled:
+                for window in window_list:
+                    space.add_window(window)
+        InitialWindowsBySpace = None
+
     # Remove windows that have been closed
+    deleted_windows = []
     for window in Windows.values():
         if not window:
             continue
@@ -261,9 +271,14 @@ def tick_windows():
                 if focus_window:
                     pylewm.focus.set_focus(focus_window)
             window.stop_managing()
-            Windows[window.handle] = None
+            deleted_windows.append(window.handle)
         if window.floating and window.space:
             window.space.remove_window(window)
+
+    for hwnd in deleted_windows:
+        if win32gui.IsWindow(hwnd):
+            PreviouslyClosedWindows.add(hwnd)
+        del Windows[hwnd]
 
     # Update focus
     focus_hwnd = win32gui.GetForegroundWindow()
