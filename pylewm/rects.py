@@ -5,13 +5,20 @@ class Direction:
     Down = 3
     Next = 4
     Previous = 5
+    InsertLeft = 6
+    InsertRight = 7
+
+    ANY_Left = (Left, InsertLeft)
+    ANY_Right = (Right, InsertRight)
+    ANY_Up = (Up, Previous)
+    ANY_Down = (Down, Next)
 
 class Rect:
     def __init__(self, position=None):
         if not position:
-            self.position = [0,0,0,0]
+            self.position = (0,0,0,0)
         else:
-            self.position = list(position)
+            self.position = tuple(position)
 
     def __str__(self):
         return repr(self.position)
@@ -20,8 +27,7 @@ class Rect:
         return Rect(self.position)
 
     def assign(self, other):
-        for i in range(0, 4):
-            self.position[i] = other.position[i]
+        self.position = tuple(other.position)
 
     @property
     def width(self):
@@ -37,8 +43,7 @@ class Rect:
 
     @coordinates.setter
     def coordinates(self, newcoords):
-        for i in range(0, 4):
-            self.position[i] = newcoords[i]
+        self.position = newcoords
 
     @staticmethod
     def equal_coordinates(A, B):
@@ -123,11 +128,12 @@ class Rect:
         return True
 
     def extend_to_cover(self, rect):
-        other_position = rect.position
-        self.position[0] = min(self.position[0], other_position[0])
-        self.position[1] = min(self.position[1], other_position[1])
-        self.position[2] = max(self.position[2], other_position[2])
-        self.position[3] = max(self.position[3], other_position[3])
+        self.position = (
+            min(self.position[0], rect.position[0]),
+            min(self.position[1], rect.position[1]),
+            max(self.position[2], rect.position[2]),
+            max(self.position[3], rect.position[3]),
+        )
 
     def get_overlap_area(self, rect):
         other_position = rect.position
@@ -156,25 +162,31 @@ class Rect:
     def get_closest_in_direction(self, direction, rect_list, rect_function = None, wrap_area = None):
         """ Get the closest rect in the list in the direction from fromRect. """
         def getDim(rect):
-            if direction == Direction.Left or direction == Direction.Previous: return rect.coordinates[0]
+            if direction == Direction.Left or direction == Direction.Previous or direction == Direction.InsertLeft: return rect.coordinates[0]
             if direction == Direction.Up: return rect.coordinates[1]
-            if direction == Direction.Right or direction == Direction.Next: return rect.coordinates[0]
+            if direction == Direction.Right or direction == Direction.Next or direction == Direction.InsertRight: return rect.coordinates[0]
             return rect.coordinates[1]
         def getOppositeEnd(rect):
-            if direction == Direction.Left or direction == Direction.Previous: return rect.coordinates[2]
+            if direction == Direction.Left or direction == Direction.Previous or direction == Direction.InsertLeft: return rect.coordinates[2]
             if direction == Direction.Up: return rect.coordinates[3]
-            if direction == Direction.Right or direction == Direction.Next: return rect.coordinates[0]
+            if direction == Direction.Right or direction == Direction.Next or direction == Direction.InsertRight: return rect.coordinates[0]
             return rect.coordinates[1]
         def getOtherDim(rect):
-            if direction == Direction.Left or direction == Direction.Previous: return rect.coordinates[1]
+            if direction == Direction.Left or direction == Direction.Previous or direction == Direction.InsertLeft: return rect.coordinates[1]
             if direction == Direction.Up: return rect.coordinates[0]
-            if direction == Direction.Right or direction == Direction.Next: return rect.coordinates[1]
+            if direction == Direction.Right or direction == Direction.Next or direction == Direction.InsertRight: return rect.coordinates[1]
             return rect.coordinates[0]
         def isAfter(A, B):
-            if direction == Direction.Left or direction == Direction.Previous or direction == Direction.Up:
-                return B <= A
+            if direction == Direction.Left or direction == Direction.Previous or direction == Direction.Up or direction == Direction.InsertLeft:
+                return B < A
             else:
-                return A <= B
+                return A < B
+        def hasPerpendicularOverlap(rect):
+            if direction in Direction.ANY_Left or direction in Direction.ANY_Right:
+                return self.top < rect.bottom and rect.top < self.bottom
+            elif direction in Direction.ANY_Up or direction in Direction.ANY_Down:
+                return self.left < rect.right and rect.left < self.right
+            return True
 
         curStart = getDim(self)
         curOtherDim = getOtherDim(self)
@@ -190,8 +202,12 @@ class Rect:
                 otherStart = getDim(otherRect)
                 otherOtherDim = getOtherDim(otherRect)
 
-                # Skip windows not at all extended in the right direction
+                # Skip rects not at all extended in the right direction
                 if not isAfter(curStart, otherStart):
+                    continue
+
+                # Skip rects that don't have perpendicular overlap
+                if not hasPerpendicularOverlap(otherRect):
                     continue
 
                 diff = float(abs(curStart - otherStart)) + float(abs(curOtherDim - otherOtherDim) / 10000.0)

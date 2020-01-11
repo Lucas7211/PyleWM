@@ -27,12 +27,12 @@ class SidebarLayout(Layout):
                 self.main_window = window
             else:
                 self.sidebar.insert(at_slot-1, window)
-        elif ((not self.flipped and insert_direction == Direction.Right)
-                or (self.flipped and insert_direction == Direction.Left)):
+        elif ((not self.flipped and insert_direction in Direction.ANY_Right)
+                or (self.flipped and insert_direction in Direction.ANY_Left)):
             if self.main_window:
                 self.sidebar.insert(0, self.main_window)
             self.main_window = window
-        elif insert_direction == Direction.Down or insert_direction == Direction.Next:
+        elif insert_direction in Direction.ANY_Down:
             self.sidebar.insert(0, window)
         elif self.focus:
             if self.focus == self.main_window:
@@ -149,25 +149,25 @@ class SidebarLayout(Layout):
 
         # Take focus from an external layout
         if not from_window:
-            if ((not self.flipped and direction == Direction.Right)
-                 or (self.flipped and direction == Direction.Left)):
+            if ((not self.flipped and direction in Direction.ANY_Right)
+                 or (self.flipped and direction in Direction.ANY_Left)):
                 return self.main_window, direction
-            if ((not self.flipped and direction == Direction.Left)
-                 or (self.flipped and direction == Direction.Right)):
+            if ((not self.flipped and direction in Direction.ANY_Left)
+                 or (self.flipped and direction in Direction.ANY_Right)):
                 if self.sidebar:
                     return self.get_sidebar_mru(), direction
                 else:
                     return self.main_window, direction
-            elif direction == Direction.Up or direction == Direction.Previous:
+            elif direction in Direction.ANY_Up:
                 return (self.main_window if self.focus_mru[-1] == self.main_window else self.sidebar[-1]), direction
-            elif direction == Direction.Down or direction == Direction.Next:
+            elif direction in Direction.ANY_Down:
                 return (self.main_window if self.focus_mru[-1] == self.main_window else self.sidebar[0]), direction
             return self.main_window, direction
 
         if from_window == self.main_window:
             # Go to sidebar from main windew
-            if ((not self.flipped and direction == Direction.Right)
-                 or (self.flipped and direction == Direction.Left)):
+            if ((not self.flipped and direction in Direction.ANY_Right)
+                 or (self.flipped and direction in Direction.ANY_Left)):
                 return self.get_sidebar_mru(), direction
             elif direction == Direction.Previous:
                 if self.sidebar:
@@ -182,8 +182,8 @@ class SidebarLayout(Layout):
         else:
             sidebar_index = self.sidebar.index(from_window)
 
-            if ((not self.flipped and direction == Direction.Left)
-                 or (self.flipped and direction == Direction.Right)):
+            if ((not self.flipped and direction in Direction.ANY_Left)
+                 or (self.flipped and direction in Direction.ANY_Right)):
                 # Go to main window from sidebar
                 return self.main_window, direction
             elif direction == Direction.Previous:

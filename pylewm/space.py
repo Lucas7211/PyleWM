@@ -6,8 +6,8 @@ import threading
 
 class Space:
     Layouts = [
-        lambda: SidebarLayout(),
         lambda: AutoGridLayout(),
+        lambda: SidebarLayout(),
     ]
 
     def __init__(self, monitor, rect):

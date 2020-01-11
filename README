@@ -8,8 +8,8 @@ manager for Windows.
 Functionality includes:
 * Binding arbitrary global hotkeys to various builtins or any python function.
 * Switching which window is focused based on a direction input.
-* Windows are automatically tiled into a main window and stacked sidebar layout.
-  A column-based layout is also available.
+* Windows are automatically tiled into a column-grid layout. Hotkeys can be used
+  to move or swap windows in the grid.
 * Double-sided workspaces per monitor, allowing for easy flipping back and forth.
 * Any number of temporary workspaces per monitor, created as needed.
 

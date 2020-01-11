@@ -15,6 +15,8 @@ class AutoGridLayout(Layout):
     def get_wanted_grid_dimensions(self, window_count):
         columns = math.ceil(math.sqrt(float(window_count)))
         rows = int(math.ceil(window_count / columns))
+        if window_count > 2:
+            rows = max(rows, 3)
         return columns, rows
 
     def get_window_column(self, window):
@@ -66,40 +68,46 @@ class AutoGridLayout(Layout):
 
         wanted_columns, wanted_rows = self.get_wanted_grid_dimensions(len(self.windows))
 
+        # Find the first column that has fewer windows than the amount of rows we want
+        candidate_columns = []
+        for column_index, column in enumerate(self.columns):
+            if len(column) < wanted_rows:
+                candidate_columns.append(column_index)
+
+        focus_column, focus_slot = -1, -1
+        if self.focus:
+            focus_column, focus_slot = self.get_window_column(self.focus)
+
         if at_slot and at_slot[0] != -1:
             insert_column, insert_slot = at_slot
             if insert_slot == -1 or insert_slot >= len(self.columns[insert_column]):
                 self.columns[insert_column].append(window)
             else:
                 self.columns[insert_column].insert(insert_slot, window)
-        elif len(self.columns) < wanted_columns:
+        elif len(self.columns) < wanted_columns and focus_column not in candidate_columns:
             # If we don't have enough columns, add the window as a new column
-            if insert_direction == Direction.Right:
+            if insert_direction in Direction.ANY_Right:
                 self.columns.insert(0, [window])
             else:
                 self.columns.append([window])
+        elif insert_direction == Direction.InsertRight:
+            self.columns.insert(0, [window])
+        elif insert_direction == Direction.InsertLeft:
+            self.columns.append([window])
         else:
-            # Find the first column that has fewer windows than the amount of rows we want
-            candidate_columns = []
-            for column_index, column in enumerate(self.columns):
-                if len(column) < wanted_rows:
-                    candidate_columns.append(column_index)
-
             insert_column = -1
 
             # Put it in the candidate column that has focus if we can
-            if self.focus:
-                focus_column, focus_slot = self.get_window_column(self.focus)
-                if focus_column in candidate_columns:
-                    insert_column = focus_column
+            if focus_column in candidate_columns:
+                insert_column = focus_column
 
             # Prefer leftmost column if coming in from the left
-            if insert_column == -1 and insert_direction == Direction.Right:
+            if insert_column == -1 and insert_direction in Direction.ANY_Right:
                 candidate_columns.sort(key = lambda col_index: col_index, reverse=False)
                 insert_column = candidate_columns[0]
 
             # Prefer rightmost column if coming in from the right
-            if insert_column == -1 and insert_direction == Direction.Left:
+            if insert_column == -1 and insert_direction in Direction.ANY_Left:
                 candidate_columns.sort(key = lambda col_index: col_index, reverse=True)
                 insert_column = candidate_columns[0]
 
@@ -110,12 +118,12 @@ class AutoGridLayout(Layout):
 
             # Final fallback, should only happen if inserting additional windows from a direction
             if insert_column == -1:
-                if insert_direction == Direction.Right:
+                if insert_direction in Direction.ANY_Right:
                     insert_column = 0
                 else:
                     insert_column = len(self.columns)-1
 
-            if insert_direction == Direction.Down or insert_direction == Direction.Next:
+            if insert_direction in Direction.ANY_Down:
                 self.columns[insert_column].insert(0, window)
             else:
                 self.columns[insert_column].append(window)
@@ -135,14 +143,14 @@ class AutoGridLayout(Layout):
         if not from_window:
             if not self.columns:
                 return None, direction
-            elif direction == Direction.Right:
+            elif direction in Direction.ANY_Right:
                 return self.columns[0][self.get_mru_index_in_column(0)], direction
-            elif direction == Direction.Left:
+            elif direction in Direction.ANY_Left:
                 return self.columns[-1][self.get_mru_index_in_column(-1)], direction
-            elif direction == Direction.Down or direction == Direction.Next:
+            elif direction in Direction.ANY_Down:
                 last_column, last_slot = self.get_last_focus_column()
                 return self.columns[last_column][0], direction
-            elif direction == Direction.Up or direction == Direction.Previous:
+            elif direction in Direction.ANY_Up:
                 last_column, last_slot = self.get_last_focus_column()
                 return self.columns[last_column][-1], direction
             return None, direction
@@ -150,13 +158,13 @@ class AutoGridLayout(Layout):
         window_column, window_slot = self.get_window_column(from_window)
         column_length = len(self.columns[window_column])
 
-        if direction == Direction.Left:
+        if direction in Direction.ANY_Left:
             if window_column == 0:
                 return None, direction
 
             target_window = self.select_mru_span_window(window_column-1, from_window.rect.top, from_window.rect.bottom)
             return target_window, direction
-        elif direction == Direction.Right:
+        elif direction in Direction.ANY_Right:
             if window_column == len(self.columns)-1:
                 return None, direction
 
@@ -181,14 +189,14 @@ class AutoGridLayout(Layout):
 
         return None, direction
 
-    def move_window_to_column(self, window, to_column_index):
+    def move_window_to_column(self, window, to_column_index, always_insert=False):
         wanted_columns, wanted_rows = self.get_wanted_grid_dimensions(len(self.windows))
         from_column_index, from_slot_index = self.get_window_column(window)
         target_window = self.select_mru_span_window(to_column_index, window.rect.top, window.rect.bottom)
         target_column, target_slot = self.get_window_column(target_window)
 
         if (len(self.columns[target_column]) < len(self.columns[from_column_index])
-            or len(self.columns) > wanted_columns):
+            or len(self.columns) > wanted_columns) or always_insert:
             # Move the window from the larger column to the smaller column
             if window.rect.center[1] >= target_window.rect.center[1]:
                 target_slot += 1
@@ -217,6 +225,17 @@ class AutoGridLayout(Layout):
                     return True, direction
             self.move_window_to_column(window, window_column-1)
             return True, direction
+        elif direction == Direction.InsertLeft:
+            if window_column == 0:
+                if len(self.columns[window_column]) == 1:
+                    return False, direction
+                else:
+                    self.columns[window_column].remove(window)
+                    self.columns.insert(0, [window])
+                    return True, direction
+            
+            self.move_window_to_column(window, window_column-1, always_insert=True)
+            return True, direction
         elif direction == Direction.Right:
             if window_column == len(self.columns)-1:
                 if len(self.columns) >= wanted_columns:
@@ -226,6 +245,17 @@ class AutoGridLayout(Layout):
                     self.columns.append([window])
                     return True, direction
             self.move_window_to_column(window, window_column+1)
+            return True, direction
+        elif direction == Direction.InsertRight:
+            if window_column == len(self.columns)-1:
+                if len(self.columns[window_column]) == 1:
+                    return False, direction
+                else:
+                    self.columns[window_column].remove(window)
+                    self.columns.append([window])
+                    return True, direction
+            
+            self.move_window_to_column(window, window_column+1, always_insert=True)
             return True, direction
         elif direction == Direction.Next:
             new_slot = (window_slot + 1) % column_length

@@ -207,6 +207,14 @@ def move_next():
 def move_previous():
     move_direction(pylewm.layout.Direction.Previous)
 
+@PyleCommand
+def move_insert_left():
+    move_direction(pylewm.layout.Direction.InsertLeft)
+
+@PyleCommand
+def move_insert_right():
+    move_direction(pylewm.layout.Direction.InsertRight)
+
 def move_direction(direction):
     current_space = pylewm.focus.get_focused_space()
     focus_window = pylewm.focus.FocusWindow

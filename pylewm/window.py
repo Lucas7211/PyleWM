@@ -279,6 +279,7 @@ class Window:
                 not Rect.equal_coordinates(self.last_window_pos, self.last_received_pos)
                 or not self.rect.equals(self.last_set_rect)):
 
+            new_rect = self.rect.copy()
             try_position = [
                 self.rect.left,
                 self.rect.top,
@@ -288,6 +289,7 @@ class Window:
             self.adjust_position_for_window(try_position)
 
             set_position_allowed = True
+            needed_tries = 0
             for tries in range(0, 10):
                 try:
                     win32gui.SetWindowPos(self.handle, win32con.HWND_BOTTOM,
@@ -302,22 +304,23 @@ class Window:
 
                 if (try_position[0] != self.last_window_pos[0]
                     or try_position[1] != self.last_window_pos[1]
-                    or (try_position[2] - try_position[0]) != (self.last_window_pos[2] - self.last_window_pos[0])
-                    or (try_position[3] - try_position[1]) != (self.last_window_pos[3] - self.last_window_pos[1])
+                    or try_position[2] != (self.last_window_pos[2] - self.last_window_pos[0])
+                    or try_position[3] != (self.last_window_pos[3] - self.last_window_pos[1])
                 ):
                     # Keep trying!
                     continue
-
-                #break
+                else:
+                    needed_tries = tries+1
+                    break
 
             if set_position_allowed:
-                self.last_set_rect.assign(self.rect)
+                self.last_set_rect.assign(new_rect)
                 self.last_window_pos = self.get_actual_rect()
                 self.last_received_pos = self.last_window_pos
 
-                print(f"Received {self.last_received_pos} for {self.window_title} which wants {self.rect}")
+                print(f"Received {self.last_received_pos} for {self.window_title} which wants {new_rect} after {needed_tries} tries")
             else:
-                print(f"Failed to set {self.rect} on {self.window_title}")
+                print(f"Failed to set {new_rect} on {self.window_title}")
 
     def adjust_position_for_window(self, position):
         if self.ignore_borders:

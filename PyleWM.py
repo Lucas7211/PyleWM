@@ -23,6 +23,11 @@ HOTKEYS = {
     (MOD, 'shift', 't')     : pylewm.spaces.move_next,
     (MOD, 'shift', 'n')     : pylewm.spaces.move_previous,
 
+    (MOD, 'shift', 'lctrl', 'h')     : pylewm.spaces.move_insert_left,
+    (MOD, 'shift', 'lctrl', 's')     : pylewm.spaces.move_insert_right,
+    (MOD, 'shift', 'lctrl', 't')     : pylewm.spaces.move_down,
+    (MOD, 'shift', 'lctrl', 'n')     : pylewm.spaces.move_up,
+
     (MOD, 'shift', '&')     : pylewm.windows.move_to_monitor(0),
     (MOD, 'shift', '[')     : pylewm.windows.move_to_monitor(1),
     (MOD, 'shift', '{')     : pylewm.windows.move_to_monitor(2),

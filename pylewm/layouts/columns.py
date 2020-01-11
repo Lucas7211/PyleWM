@@ -63,7 +63,7 @@ class ColumnsLayout(Layout):
             #print("First Window")
         elif len(self.windows) == 2:
             # Second window always goes into a new column to the side
-            if insert_direction == Direction.Right:
+            if insert_direction in Direction.ANY_Right:
                 #print("Second Window Left")
                 self.columns.insert(0, [window])
             else:
@@ -82,13 +82,13 @@ class ColumnsLayout(Layout):
                 insert_column, insert_slot = self.get_window_column(self.focus)
                 insert_slot += 1
                 #print(f"Insert After Focus {insert_column}, {insert_slot}")
-            elif insert_direction == Direction.Right:
+            elif insert_direction in Direction.ANY_Right:
                 # Insert on a new leftmost column
                 #print(f"Insert Leftmost {insert_column}, {insert_slot}")
                 self.columns.insert(0, [])
                 insert_column = 0
                 insert_slot = 0
-            elif insert_direction == Direction.Left:
+            elif insert_direction in Direction.ANY_Left:
                 # Insert on a new rightmost column
                 #print(f"Insert Rightmost {insert_column}, {insert_slot}")
                 self.columns.append([])
@@ -97,7 +97,7 @@ class ColumnsLayout(Layout):
             else:
                 # Insert into the previous column that had focus
                 insert_column, insert_slot = self.get_last_focus_column()
-                if insert_direction == Direction.Down or insert_direction == Direction.Next:
+                if insert_direction in Direction.ANY_Down:
                     insert_slot = 0
                 else:
                     insert_slot = -1
@@ -125,14 +125,14 @@ class ColumnsLayout(Layout):
         if not from_window:
             if not self.columns:
                 return None, direction
-            elif direction == Direction.Right:
+            elif direction in Direction.ANY_Right:
                 return self.columns[0][self.get_mru_index_in_column(0)], direction
-            elif direction == Direction.Left:
+            elif direction in Direction.ANY_Left:
                 return self.columns[-1][self.get_mru_index_in_column(-1)], direction
-            elif direction == Direction.Down or direction == Direction.Next:
+            elif direction in Direction.ANY_Down:
                 last_column, last_slot = self.get_last_focus_column()
                 return self.columns[last_column][0], direction
-            elif direction == Direction.Up or direction == Direction.Previous:
+            elif direction in Direction.ANY_Up:
                 last_column, last_slot = self.get_last_focus_column()
                 return self.columns[last_column][-1], direction
             return None, direction
@@ -140,13 +140,13 @@ class ColumnsLayout(Layout):
         window_column, window_slot = self.get_window_column(from_window)
         column_length = len(self.columns[window_column])
 
-        if direction == Direction.Left:
+        if direction in Direction.ANY_Left:
             if window_column == 0:
                 return None, direction
 
             target_window = self.select_mru_span_window(window_column-1, from_window.rect.top, from_window.rect.bottom)
             return target_window, direction
-        elif direction == Direction.Right:
+        elif direction in Direction.ANY_Right:
             if window_column == len(self.columns)-1:
                 return None, direction
 
@@ -176,7 +176,7 @@ class ColumnsLayout(Layout):
         column_length = len(self.columns[window_column])
         self.need_reposition = True
 
-        if direction == Direction.Left:
+        if direction in Direction.ANY_Left:
             if window_column == 0:
                 if column_length == 1:
                     return False, direction
@@ -197,7 +197,7 @@ class ColumnsLayout(Layout):
                 del self.columns[window_column]
 
             return True, direction
-        elif direction == Direction.Right:
+        elif direction in Direction.ANY_Right:
             if window_column == len(self.columns)-1:
                 if column_length == 1:
                     return False, direction

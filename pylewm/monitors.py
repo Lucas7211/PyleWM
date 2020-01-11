@@ -103,6 +103,8 @@ def get_covering_monitor(rect):
     return Monitors[0]
 
 def get_monitor_in_direction(from_monitor, direction):
+    if direction in (Direction.Next, Direction.Previous):
+        return None
     return from_monitor.rect.get_closest_in_direction(
         direction,
         [m for m in Monitors if m != from_monitor],
