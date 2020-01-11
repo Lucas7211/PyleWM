@@ -70,12 +70,12 @@ def focus_window_handle(hwnd, rect=None, num=10):
             pythoncom.CoInitialize()
             ComInitialized = True
 
-        # Send a bogus alt key to ourselves so we are 
+        # Send a bogus key to ourselves so we are 
         # marked as having received keyboard input, which
         # makes windows determine we have the power to change
         # window focus. Somehow.
         shell = win32com.client.Dispatch("WScript.Shell")
-        shell.SendKeys('^')
+        shell.SendKeys('{SCROLLLOCK}{SCROLLLOCK}')
 
         win32gui.SetForegroundWindow(hwnd)
 
