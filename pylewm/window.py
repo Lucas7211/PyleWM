@@ -37,6 +37,7 @@ class Window:
         self.last_window_pos = win32gui.GetWindowRect(self.handle)
         self.last_received_pos = self.last_window_pos
         self.rect = Rect(self.last_window_pos)
+        self.floating_rect = self.rect.copy()
         self.last_set_rect = self.rect.copy()
         self.window_class = win32gui.GetClassName(hwnd)
         self.window_title = win32gui.GetWindowText(hwnd)
@@ -61,7 +62,7 @@ class Window:
         self.drag_ticks_since_last_movement = 0
 
         self.drop_space = None
-        self.drop_slot = 0
+        self.drop_slot = None
         self.drop_ticks_inside_slot = 0
 
     def reset(self):
@@ -127,7 +128,7 @@ class Window:
 
     def stop_managing(self):
         self.command_queue.stop()
-        self.set_drop_space(None)
+        self.remove_drop_space()
 
     def is_cloaked(self):
         return is_window_handle_cloaked(self.handle)
@@ -172,7 +173,7 @@ class Window:
             self.last_window_pos = new_rect
             self.take_new_rect = False
             self.dragging = False
-            self.set_drop_space(None)
+            self.remove_drop_space()
 
         # Some rudimentary tracking for when windows are being dragged
         if new_rect != self.last_window_pos:
@@ -197,49 +198,51 @@ class Window:
         self.last_window_pos = new_rect
         if self.floating:
             self.rect.coordinates = new_rect
+            self.floating_rect.coordinates = new_rect
 
     def update_float_drop(self):
         if not self.can_tile:
             return
         if self.dragging and self.drag_ticks_with_movement > 5:
             hover_space = pylewm.focus.get_cursor_space()
+            hover_slot = None
             if hover_space:
                 hover_slot, force_drop = hover_space.get_drop_slot(pylewm.focus.get_cursor_position(), self.rect)
 
                 # Only allow forced drops when drag&dropping
                 if not force_drop:
                     hover_slot = None
-
-            self.set_drop_space(hover_space)
-
-            if hover_slot is None:
-                self.drop_slot = None
-                self.set_drop_space(None)
-            elif hover_slot == self.drop_slot:
-                self.drop_ticks_inside_slot += 1
-                if self.drop_ticks_inside_slot > 3:
-                    if self.drop_space:
-                        self.drop_space.set_pending_drop_slot(hover_slot)
+            
+            if hover_slot is not None:
+                self.set_drop_space(hover_space, hover_slot)
             else:
-                self.drop_slot = hover_slot
-                self.drop_ticks_inside_slot = 0
-
-        elif not self.dragging and self.drop_space and self.drop_space.pending_drop_slot != -1:
+                self.remove_drop_space()
+        elif not self.dragging and self.drop_space and self.drop_slot is not None and self.drop_ticks_inside_slot >= 3:
             self.floating = False
             self.take_new_rect = True
             self.drop_space.add_window(self, at_slot=self.drop_slot)
-            self.set_drop_space(None)
+            self.remove_drop_space()
         else:
-            self.set_drop_space(None)
+            self.remove_drop_space()
 
-    def set_drop_space(self, new_space):
-        if self.drop_space == new_space:
-            return
+    def set_drop_space(self, new_space, new_slot):
+        if self.drop_space == new_space and self.drop_slot == new_slot:
+            if self.drop_ticks_inside_slot == 2:
+                self.drop_space.set_pending_drop_slot(self.drop_slot)
+            self.drop_ticks_inside_slot += 1
+        else:
+            if self.drop_space:
+                self.drop_space.set_pending_drop_slot(None)
+            self.drop_space = new_space
+            self.drop_slot = new_slot
+            self.drop_ticks_inside_slot = 0
+
+    def remove_drop_space(self):
         if self.drop_space:
             self.drop_space.set_pending_drop_slot(None)
-        self.drop_space = new_space
         self.drop_ticks_inside_slot = 0
-        self.drop_slot = -1
+        self.drop_space = None
+        self.drop_slot = None
 
     def update(self):
         if self.hidden:
@@ -247,6 +250,10 @@ class Window:
         if self.closed:
             return
         if not win32gui.IsWindow(self.handle) or self.is_cloaked():
+            self.closed = True
+            return
+        if self.is_minimized() or self.is_window_hidden():
+            # Manually minimized windows are considered closed
             self.closed = True
             return
         if self.floating:
@@ -263,15 +270,10 @@ class Window:
 
         # If the window has been moved outside of PyleWM we 'unsnap' it from the layout
         #  This is the same operation as 'closing' it since we are no longer managing it
-        if self.is_maximized() or (self.dragging and self.drag_ticks_with_movement > 2):
+        if self.is_maximized() or (self.dragging and (self.drag_ticks_with_movement > 2 or is_left_mouse_held())):
             self.set_always_top(True)
             self.floating = True
             self.dragging = False
-            return
-
-        # Manually minimized windows are considered closed
-        if self.is_minimized() or self.is_window_hidden():
-            self.closed = True
             return
 
         # Move the window to the wanted rect if it has changed
@@ -353,6 +355,36 @@ class Window:
         position[1] += 2
         position[2] = adjusted.right - adjusted.left - 6
         position[3] = adjusted.bottom - position[1] - 3
+
+    def make_floating(self):
+        space = self.space
+        if space:
+            space.remove_window(self)
+
+        self.floating = True
+        self.can_tile = False
+
+        def float_cmd():
+            # Floating windows are always on top of everything
+            self.set_always_top(True)
+
+            # Return window to the position it had before
+            try_position = [
+                self.floating_rect.left,
+                self.floating_rect.top,
+                self.floating_rect.width,
+                self.floating_rect.height,
+            ]
+
+            try:
+                win32gui.SetWindowPos(self.handle, win32con.HWND_BOTTOM,
+                    try_position[0], try_position[1],
+                    try_position[2], try_position[3],
+                    win32con.SWP_NOACTIVATE)
+            except:
+                pass
+
+        self.command_queue.queue_command(float_cmd)
 
     def poke(self):
         def poke_cmd():

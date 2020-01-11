@@ -78,7 +78,17 @@ class AutoGridLayout(Layout):
         if self.focus:
             focus_column, focus_slot = self.get_window_column(self.focus)
 
-        if at_slot and at_slot[0] != -1:
+        if at_slot == Direction.InsertLeft:
+            if self.columns and not self.columns[0]:
+                self.columns[0].append(window)
+            else:
+                self.columns.insert(0, [window])
+        elif at_slot == Direction.InsertRight:
+            if self.columns and not self.columns[-1]:
+                self.columns[-1].append(window)
+            else:
+                self.columns.append([window])
+        elif at_slot and at_slot[0] != -1:
             insert_column, insert_slot = at_slot
             if insert_slot == -1 or insert_slot >= len(self.columns[insert_column]):
                 self.columns[insert_column].append(window)
@@ -299,16 +309,40 @@ class AutoGridLayout(Layout):
         if fake_window_count != -1:
             window_count = fake_window_count
 
+        # Allow dropping at the top of an empty screen for auto-tile
+        if window_count <= 1:
+            if (position[1] < self.rect.top + 100
+                or position[1] > self.rect.bottom - 100
+                or position[0] < self.rect.left + 50
+                or position[0] > self.rect.right - 50):
+                return Direction.InsertLeft, True
+            else:
+                return None, False
+
+        # Allow dropping around the center of a single column to split
+        if len(self.windows) == 1:
+            if position[0] < self.rect.left + 50:
+                return Direction.InsertLeft, True
+            elif position[0] > self.rect.right - 50:
+                return Direction.InsertRight, True
+            elif position[1] < self.rect.top + 100:
+                return (0, 0), True
+            elif position[1] > self.rect.bottom - 100:
+                return (0, 1), True
+            return None, False
+
         wanted_columns, wanted_rows = self.get_wanted_grid_dimensions(window_count)
+
+        require_force = False
         if len(self.columns) < wanted_columns:
             # Never insert into an existing column if we want more columns to begin with
-            return None, False
+            require_force = True
 
         column_count = len(self.columns)
         if column_count == 0:
             return None, False
 
-        column_splits = self.get_column_splits()
+        column_splits = self.get_column_splits(len(self.columns))
         for column_index in range(0, column_count):
             # Check if the position is within this column
             if position[0] < column_splits[column_index]:
@@ -317,16 +351,34 @@ class AutoGridLayout(Layout):
                 continue
 
             # Only allow insertion into this column if the column is short of wanted height
+            column_require_force = require_force
             if len(self.columns[column_index]) >= wanted_rows:
-                continue
+                column_require_force = True
 
             # If the column is empty always drop into it
             slot_count = len(self.columns[column_index])
             if slot_count == 0:
                 return (column_index, 0), False
 
-            slot_splits = self.get_slot_splits(column_index)
-            for slot_index in range(0, slot_count):
+            # On the first column, dropping on the left means a new column to the left
+            if column_index == 0 and position[0] < column_splits[column_index] + 50:
+                return Direction.InsertLeft, True
+
+            # On the last column, dropping on the right means a new column to the right
+            if column_index == column_count-1 and position[0] > column_splits[column_index+1] - 50:
+                return Direction.InsertRight, True
+
+            # Allow force dropping at the edge of the column
+            is_force_drop = (position[0] < column_splits[column_index] + 50
+                        or position[0] > column_splits[column_index+1] - 50
+                        or position[1] < self.rect.top + 100
+                        or position[1] > self.rect.bottom - 100)
+
+            if not is_force_drop and column_require_force:
+                continue
+
+            slot_splits = self.get_slot_splits(slot_count + 1)
+            for slot_index in range(0, slot_count+1):
                 slot_start = slot_splits[slot_index]
                 slot_end = slot_splits[slot_index+1]
 
@@ -335,12 +387,8 @@ class AutoGridLayout(Layout):
                 if position[1] > slot_end:
                     continue
 
-                slot_center = (slot_start + slot_end) / 2
+                return (column_index, slot_index), is_force_drop
 
-                if position[1] > slot_center:
-                    return (column_index, slot_index+1), False
-                else:
-                    return (column_index, slot_index), False
         return None, False
 
     def get_focus_window_after_removing(self, window_before_remove):
@@ -355,8 +403,7 @@ class AutoGridLayout(Layout):
             return self.columns[window_column+1][0]
         return None
 
-    def get_column_splits(self):
-        column_count = len(self.columns)
+    def get_column_splits(self, column_count):
         column_width = int(float(self.rect.width) / float(column_count))
         column_splits = []
         for i in range(0, column_count):
@@ -364,8 +411,7 @@ class AutoGridLayout(Layout):
         column_splits.append(self.rect.right)
         return column_splits
 
-    def get_slot_splits(self, column_index):
-        slot_count = len(self.columns[column_index])
+    def get_slot_splits(self, slot_count):
         slot_height = int(float(self.rect.height) / float(slot_count))
         slot_splits = []
         for i in range(0, slot_count):
@@ -380,19 +426,46 @@ class AutoGridLayout(Layout):
         # Update all window positions
         if self.need_reposition:
             self.need_reposition = False
-            columns = len(self.columns)
-            column_splits = self.get_column_splits()
 
+            column_count = len(self.columns)
+
+            pending_column, pending_slot = -1, -1
+            extra_column = -1
+            if self.pending_drop_slot == Direction.InsertLeft:
+                column_count += 1
+                extra_column = 0
+            elif self.pending_drop_slot == Direction.InsertRight:
+                column_count += 1
+                extra_column = column_count-1
+            elif self.pending_drop_slot is not None:
+                pending_column, pending_slot = self.pending_drop_slot
+
+            column_splits = self.get_column_splits(column_count)
             for column_index, column in enumerate(self.columns):
-                slot_splits = self.get_slot_splits(column_index)
+                column_position = column_index
+                if extra_column != -1 and column_index >= extra_column:
+                    column_position += 1
 
+                slot_count = len(column)
+                if pending_column == column_index:
+                    slot_count += 1
+
+                slot_splits = self.get_slot_splits(slot_count)
                 for slot_index, window in enumerate(column):
+                    slot_position = slot_index
+                    if pending_column == column_index and slot_index >= pending_slot:
+                        slot_position += 1
+
                     window.rect.coordinates = (
-                        column_splits[column_index],
-                        slot_splits[slot_index],
-                        column_splits[column_index+1],
-                        slot_splits[slot_index+1],
+                        column_splits[column_position],
+                        slot_splits[slot_position],
+                        column_splits[column_position+1],
+                        slot_splits[slot_position+1],
                     )
+
+    def set_pending_drop_slot(self, pending_slot):
+        self.pending_drop_slot = pending_slot
+        self.need_reposition = True
 
     def takeover_from_layout(self, old_layout):
         self.need_reposition = True
@@ -424,8 +497,6 @@ class AutoGridLayout(Layout):
             self.add_window(window, at_slot=drop_slot)
 
         # Remove columns that didn't get any windows
-        for i in range(0, column_count):
-            if not self.columns[i]:
-                del self.columns[i]
+        self.columns = [col for col in self.columns if col]
 
         return True

@@ -72,7 +72,6 @@ class Space:
             self.update_focus(focus_window)
 
             self.layout.focus_mru = self.focus_mru
-            self.layout.pending_drop_slot = self.pending_drop_slot
             self.layout.focus = self.focus
             self.layout.rect.assign(self.rect)
             self.layout.update_layout()
@@ -107,6 +106,7 @@ class Space:
     def set_pending_drop_slot(self, slot):
         with self.space_lock:
             self.pending_drop_slot = slot
+            self.layout.set_pending_drop_slot(slot)
 
     def get_window_in_direction(self, from_window, direction):
         with self.space_lock:

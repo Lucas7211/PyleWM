@@ -40,3 +40,6 @@ class Layout:
 
     def takeover_from_windows(self, window_list):
         return False
+
+    def set_pending_drop_slot(self, pending_slot):
+        self.pending_drop_slot = pending_slot

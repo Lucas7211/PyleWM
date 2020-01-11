@@ -63,12 +63,7 @@ def make_window_floating():
     if not window or not window.space:
         return
 
-    space = window.space
-    space.remove_window(window)
-
-    window.floating = True
-    window.can_tile = False
-    window.command_queue.queue_command(lambda: window.set_always_top(True))
+    window.make_floating()
 
 @PyleCommand
 def move_to_monitor(monitor_index):

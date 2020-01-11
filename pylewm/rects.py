@@ -113,8 +113,8 @@ class Rect:
         self.position[3] = pos
 
     def contains(self, pos):
-        return (pos[0] >= self.position[0] and pos[0] <= self.position[2] and
-                pos[1] >= self.position[1] and pos[1] <= self.position[3])
+        return (pos[0] >= self.position[0] and pos[0] < self.position[2] and
+                pos[1] >= self.position[1] and pos[1] < self.position[3])
 
     def fully_contains(self, rect):
         return self.contains(rect.topleft) and self.contains(rect.bottomright)
