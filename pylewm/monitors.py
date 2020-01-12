@@ -12,7 +12,7 @@ DesktopArea = Rect()
 class Monitor:
     def __init__(self, info):
         self.info = info
-        self.rect = Rect(info['Monitor'])
+        self.rect = Rect(info['Work'])
         self.primary = info["Flags"] & 1
 
         self.spaces = [Space(self, self.rect), Space(self, self.rect)]
