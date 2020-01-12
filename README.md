@@ -6,9 +6,9 @@ It is inspired heavily by the linux window managers i3 and awesomewm.
 Functionality includes:
 * Windows are automatically tiled into a column-grid layout. Hotkeys can be used
   to move or swap windows in the grid.
-* Switching which window is focused based on a direction input.
-* Binding arbitrary global hotkeys to various builtins or any python function.
+* Hotkeys for switching which window is focused based on a direction.
 * Double-sided workspaces per monitor, allowing for easy flipping back and forth.
+* Binding arbitrary global hotkeys to various builtins or any python function.
 * Any number of temporary workspaces per monitor, created as needed.
 * Drag & Drop windows into automatically tiled slots.
 
@@ -16,8 +16,8 @@ Installation
 ============
 Either:
 * Download a self-contained binary package from the [Releases Page](https://github.com/GGLucas/PyleWM/releases)
-* Use `pip install pylewm` and run `python -m pylewm`
-* Clone the repository and execute `PyleWM.py` (see Dependencies section below)
+* OR: Use `pip install pylewm` and run `python -m pylewm`
+* OR: Clone the repository and execute `PyleWM.py` (see Dependencies section below)
 
 Getting Started
 ===============
