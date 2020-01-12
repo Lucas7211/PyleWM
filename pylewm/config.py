@@ -1,5 +1,6 @@
 import pylewm.hotkeys
 import pylewm.filters
+from pylewm.commands import PyleCommand
 
 import os
 import sys
@@ -21,8 +22,11 @@ def filters(added_filters):
     global CONFIG_FILTERS
     CONFIG_FILTERS += added_filters
 
+def get_config_dir():
+    return os.path.expandvars(r"%APPDATA%\PyleWM")
+
 def apply():
-    config_dir = os.path.expandvars(r"%APPDATA%\PyleWM")
+    config_dir = get_config_dir()
     config_file = os.path.join(config_dir, "PyleWM_Config.py")
 
     # Create config folder if one doesn't exist

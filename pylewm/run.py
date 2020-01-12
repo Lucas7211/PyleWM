@@ -71,7 +71,9 @@ def start():
     tray_icon.icon = Image.open(png_path)
     tray_icon.title = "PyleWM"
     tray_icon.menu = pystray.Menu(
-        pystray.MenuItem("Quit", lambda: run_pyle_command(quit))
+        pystray.MenuItem("Open Config Directory", lambda: run_pyle_command(pylewm.execution.open_config)),
+        pystray.MenuItem("Restart", lambda: run_pyle_command(restart)),
+        pystray.MenuItem("Quit", lambda: run_pyle_command(quit)),
     )
     tray_icon.run()
 

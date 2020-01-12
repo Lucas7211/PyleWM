@@ -90,7 +90,6 @@ pylewm.config.hotkeys({
     (*MOD, 'a')              : pylewm.execution.command_prompt,
     (*MOD, 'shift', 'a')     : pylewm.execution.command_prompt(as_admin=True),
     (*MOD, ',')              : pylewm.execution.start_menu,
-    #(*MOD, 'p')              : pylewm.execution.run(r'C:\Program Files\Mozilla Firefox\firefox.exe'),
     (*MOD, 'p')              : pylewm.execution.run(r'C:\Program Files\Mozilla Firefox\firefox.exe'),
     (*MOD, 'k')              : pylewm.wsltty.open_wsltty(["ranger", pylewm.wsltty.wsl_path(os.environ["USERPROFILE"])]),
     (*MOD, 'u')              : pylewm.execution.file_explorer,
@@ -105,7 +104,7 @@ pylewm.config.hotkeys({
 pylewm.config.filters([
     ({"class": "mintty"}, NoTitlebar, AutoPoke),
     ({"title": "Slack *"}, Tiling, Monitor(0)),
-    ({"title": "*Media Player Classic*"}, Floating),
+    ({"class": "MediaPlayerClassicW"}, Floating),
     ({"title": "* One Manager"}, Tiling, Monitor(2), TemporarySpace),
 
     # Visual Studio

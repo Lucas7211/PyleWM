@@ -69,22 +69,22 @@ pylewm.config.hotkeys({
     #(*MOD, 'a')              : None,
 
 # EXAMPLE: Start Firefox with a hotkey:
-    #(*MOD, 'p')              : pylewm.execution.run(r'C:\Program Files\Mozilla Firefox\firefox.exe'),
-    #(*MOD, 'shift', 'p')     : pylewm.execution.run([r'C:\Program Files\Mozilla Firefox\firefox.exe', 'https://github.com']),
+    #(*MOD, 'b')              : pylewm.execution.run(r'C:\Program Files\Mozilla Firefox\firefox.exe'),
+    #(*MOD, 'shift', 'b')     : pylewm.execution.run([r'C:\Program Files\Mozilla Firefox\firefox.exe', 'https://github.com']),
 
 # EXAMPLE: Open C:\ with a hotkey:
     #(*MOD, 'c')              : pylewm.execution.file_explorer("C:\\"),
 })
 
 # Filters can specify what to do with windows whose title or class matches
-# a specific pattern.
+# a specific pattern. Use * as a wildcard in the title or class patterns.
 
 pylewm.config.filters([
     # EXAMPLE: Automatically send slack to the leftmost monitor:
     #({"title": "Slack *"}, pylewm.filters.Tiling, pylewm.filters.Monitor(0)),
 
     # EXAMPLE: Media Player Classic windows should not be tiled but left floating on top:
-    #({"title": "*Media Player Classic*"}, pylewm.filters.Floating),
+    #({"class": "MediaPlayerClassicW"}, pylewm.filters.Floating),
 
     # EXAMPLE: Windows created with the 'Ghost' class should be ignored by PyleWM entirely
     #({"class": "Ghost"}, pylewm.filters.Ignore),

@@ -1,5 +1,6 @@
 from pylewm.sendkeys import sendKey
 from pylewm.commands import PyleCommand
+import pylewm.config
 
 import os
 import ctypes
@@ -80,6 +81,9 @@ def this_pc(cwd=None):
     cmd = ["explorer.exe", "/n,", "/e,", "/select,", "C:\\"]
     run(cmd, as_admin=True).run()
 
+@PyleCommand.Threaded
+def open_config(cwd=None):
+    file_explorer(pylewm.config.get_config_dir()).run()
 
 class STARTUPINFO(ctypes.Structure):
     _fields_ = (
