@@ -108,7 +108,7 @@ pylewm.config.filters([
     ({"title": "* One Manager"}, Tiling, Monitor(2), TemporarySpace),
 
     # Visual Studio
-    ({"class": "HwndWrapper[*"}, KeepStartMonitor, AutoPoke),
+    ({"class": "HwndWrapper[*"}, KeepStartMonitor, AutoPoke, ForceBorders(2)),
     ({"class": "Ghost"}, Ignore),
 
     # Unreal Engine

@@ -51,7 +51,7 @@ class Window:
         self.force_closed = False
         self.always_top = False
         self.force_always_top = False
-        self.ignore_borders = False
+        self.force_borders = None
 
         parent_handle = win32api.GetWindowLong(self.handle, win32con.GWL_HWNDPARENT)
         self.is_child_window = win32gui.IsWindow(parent_handle)
@@ -325,8 +325,15 @@ class Window:
                 print(f"Failed to set {new_rect} on {self.window_title}")
 
     def adjust_position_for_window(self, position):
-        if self.ignore_borders:
-            return
+        if self.force_borders is not None:
+            if self.force_borders == 0:
+                return
+            else:
+                position[0] += self.force_borders
+                position[1] += self.force_borders
+                position[2] -= self.force_borders*2
+                position[3] -= self.force_borders*2
+                return
 
         style = win32api.GetWindowLong(self.handle, win32con.GWL_STYLE)
 
