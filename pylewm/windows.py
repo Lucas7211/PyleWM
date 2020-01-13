@@ -198,7 +198,8 @@ def manage_window(window):
 
     window.manage()
 
-    pylewm.filters.trigger_all_filters(window, post=True)
+    if not InitialPlacement:
+        pylewm.filters.trigger_all_filters(window, post=True)
 
 @PyleThread(0.05)
 def tick_windows():
@@ -249,6 +250,9 @@ def tick_windows():
             if not handled:
                 for window in window_list:
                     space.add_window(window)
+        for space, window_list in InitialWindowsBySpace.items():
+            for window in window_list:
+                pylewm.filters.trigger_all_filters(window, post=True)
         InitialWindowsBySpace = None
 
     # Remove windows that have been closed
