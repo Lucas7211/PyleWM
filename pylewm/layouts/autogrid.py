@@ -11,6 +11,9 @@ class AutoGridLayout(Layout):
         self.columns = []
         self.windows = []
         self.need_reposition = False
+    
+    def is_portrait_mode(self):
+        return self.rect.width < self.rect.height
 
     def get_wanted_grid_dimensions(self, window_count):
         columns = math.ceil(math.sqrt(float(window_count)))
@@ -94,6 +97,11 @@ class AutoGridLayout(Layout):
                 self.columns[insert_column].append(window)
             else:
                 self.columns[insert_column].insert(insert_slot, window)
+        elif self.is_portrait_mode() and len(self.columns) == 1 and len(self.columns[0]) <= 2:
+            if insert_direction in Direction.ANY_Down:
+                self.columns[0].insert(0, window)
+            else:
+                self.columns[0].append(window)
         elif len(self.columns) < wanted_columns and focus_column not in candidate_columns:
             # If we don't have enough columns, add the window as a new column
             if insert_direction in Direction.ANY_Right:
