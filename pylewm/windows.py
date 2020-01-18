@@ -13,6 +13,7 @@ import win32api
 import win32con
 
 import traceback
+import time
 
 IgnoredWindows = set()
 Windows = {}
@@ -21,6 +22,9 @@ PreviouslyClosedWindows = set()
 
 InitialPlacement = True
 InitialWindowsBySpace = {}
+
+HiddenFocusSpace = None
+HiddenFocusSpaceSince = None
 
 @PyleCommand
 def close():
@@ -282,11 +286,14 @@ def tick_windows():
     # Update focus
     focus_hwnd = win32gui.GetForegroundWindow()
     if focus_hwnd in Windows and Windows[focus_hwnd]:
-        if pylewm.focus.FocusWindow:
-            pylewm.focus.FocusWindow.focused = False
-        pylewm.focus.FocusWindow = Windows[focus_hwnd]
-        if pylewm.focus.FocusWindow:
-            pylewm.focus.FocusWindow.focused = True
+        new_focus = Windows[focus_hwnd]
+        if new_focus != pylewm.focus.FocusWindow:
+            if pylewm.focus.FocusWindow:
+                pylewm.focus.FocusWindow.focused = False
+            pylewm.focus.FocusWindow = new_focus
+            pylewm.focus.WindowFocusedSince = time.time()
+            if new_focus:
+                new_focus.focused = True
     else:
         if pylewm.focus.FocusWindow:
             pylewm.focus.FocusWindow.focused = False
@@ -305,6 +312,27 @@ def tick_windows():
     if pylewm.focus.FocusWindow and pylewm.focus.FocusWindow.closed:
         pylewm.focus.FocusWindow.focused = False
         pylewm.focus.FocusWindow = None
+    
+    # If the currently focused window is on a hidden space,
+    # switch that monitor to the space the window is in.
+    #  This can happen if some other application focuses it,
+    #  for example clicking a link focusing the browser window
+    #  from a different space.
+    global HiddenFocusSpace
+    global HiddenFocusSpaceSince
+    if pylewm.focus.FocusWindow:
+        space = pylewm.focus.FocusWindow.space
+        if space and not space.visible:
+            if space == HiddenFocusSpace:
+                if (time.time() - HiddenFocusSpaceSince) > 0.05:
+                    space.monitor.switch_to_space(space)
+            else:
+                HiddenFocusSpace = space
+                HiddenFocusSpaceSince = time.time()
+        else:
+            HiddenFocusSpace = None
+    else:
+        HiddenFocusSpace = None
 
     # Update spaces on all monitors
     for monitor in pylewm.monitors.Monitors:

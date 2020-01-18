@@ -14,6 +14,7 @@ FocusQueue = pylewm.commands.CommandQueue()
 FocusSpace = None
 FocusWindow = None
 LastFocusWindow = None
+WindowFocusedSince = None
 
 @PyleCommand
 def focus_monitor(monitor_index):
