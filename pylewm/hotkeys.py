@@ -9,7 +9,7 @@ import copy
 queue_command = None
 
 class Mode:
-    def __init__(self, hotkeys, captureAll=True):
+    def __init__(self, hotkeys={}, captureAll=True):
         self.hotkeys = []
         self.captureAll = captureAll
         for key, bind in hotkeys.items():
@@ -54,19 +54,28 @@ class KeyPrompt(Mode):
 def prompt_key(callback):
     KeyPrompt(callback)()
 
+@pylewm.commands.PyleCommand
 def escape_mode():
     """ Escape whatever hotkey mode we're currently in. """
     with ModeLock:
         if ModeStack:
             ModeStack.pop(0)
 
+@pylewm.commands.PyleCommand
+def absorb_key():
+    """ Absorb whatever key is being pressed. """
+    pass
+
 class ModPair:
-    def __init__(self, left=False, right=False, either=False):
+    def __init__(self, left=False, right=False, either=False, any_state=False):
         self.left = left
         self.right = right
         self.either = either
+        self.any_state = any_state
         
     def __eq__(self, other):
+        if self.any_state or other.any_state:
+            return True
         if self.either:
             return other.left or other.right or other.either
         if other.either:
@@ -81,6 +90,8 @@ class ModPair:
             str += "L"
         if self.right:
             str += "R"
+        if self.any_state:
+            str += "?"
         if not str:
             str = "-"
         return str
@@ -91,10 +102,10 @@ class ModPair:
         
     def update(self, matchKey, matchSet, leftKey, rightKey):
         isMod = 0
-        if matchKey == leftKey:
+        if matchKey == leftKey and leftKey != 0:
             self.left = matchSet
             isMod = 1
-        if matchKey == rightKey:
+        if matchKey == rightKey and rightKey != 0:
             self.right = matchSet
             isMod = 2
         self.either = False
@@ -106,6 +117,7 @@ class KeySpec:
         self.win = ModPair()
         self.ctrl = ModPair()
         self.shift = ModPair()
+        self.app = ModPair()
         self.key = key
         self.down = True
       
@@ -140,17 +152,33 @@ class KeySpec:
                     spec.win.left = True
                 elif elem.lower() == "win":
                     spec.win.either = True
+                elif elem.lower() == "app":
+                    spec.app.either = True
+                elif elem.startswith('='):
+                    spec.key = elem[1:].lower()
+                elif elem == '*':
+                    spec.win.any_state = True
+                    spec.ctrl.any_state = True
+                    spec.alt.any_state = True
+                    spec.shift.any_state = True
+                    spec.app.any_state = True
                 else:
                     spec.key = elem.lower()
         return spec
-    
-    def __eq__(self, other):
+
+    def equals_combo(self, other):
         return self.alt == other.alt and self.win == other.win \
             and self.ctrl == other.ctrl and self.shift == other.shift \
-            and self.key == other.key and self.down == other.down
+            and self.key == other.key and self.app == other.app
+    
+    def __eq__(self, other):
+        return self.equals_combo(other) and self.down == other.down
             
     def __str__(self):
         return str(self.__dict__)
+
+    def __repr__(self):
+        return repr(self.__dict__)
             
 KeyBindings = []
 ModeStack = []
@@ -175,6 +203,7 @@ def handle_python(isKeyDown, keyCode, scanCode):
     isMod |= ActiveKey.shift.update(keyCode, isKeyDown, win32con.VK_LSHIFT, win32con.VK_RSHIFT)
     isMod |= ActiveKey.ctrl.update(keyCode, isKeyDown, win32con.VK_LCONTROL, win32con.VK_RCONTROL)
     isMod |= ActiveKey.win.update(keyCode, isKeyDown, win32con.VK_LWIN, win32con.VK_RWIN)
+    isMod |= ActiveKey.app.update(keyCode, isKeyDown, win32con.VK_APPS, 0)
 
     # Update active key
     ActiveKey.key = VKToChr(keyCode, scanCode)
@@ -183,18 +212,42 @@ def handle_python(isKeyDown, keyCode, scanCode):
     # Check modes
     if ModeStack:
         with ModeLock:
-            return ModeStack[0].handle_key(ActiveKey, isMod)
+            handle_type = ModeStack[0].handle_key(ActiveKey, isMod)
+            if handle_type is None:
+                return False
 
     # Check keybinds
     for bnd in KeyBindings:
-        if bnd[0] == ActiveKey:
-            queue_command(bnd[1])
-            absorbKey = True
+        if bnd[0].key == ActiveKey.key:
+            if bnd[0].equals_combo(ActiveKey):
+                if ActiveKey.down:
+                    queue_command(bnd[1])
+                absorbKey = True
+
     return absorbKey
 
 # TODO: Complete this map
 VK_MAP = {
     win32con.VK_ESCAPE: "esc",
+    win32con.VK_F1: "f1",
+    win32con.VK_F2: "f2",
+    win32con.VK_F3: "f3",
+    win32con.VK_F4: "f4",
+    win32con.VK_F5: "f5",
+    win32con.VK_F6: "f6",
+    win32con.VK_F7: "f7",
+    win32con.VK_F8: "f8",
+    win32con.VK_F9: "f9",
+    win32con.VK_F10: "f10",
+    win32con.VK_F11: "f11",
+    win32con.VK_F12: "f12",
+    win32con.VK_LCONTROL: "lctrl",
+    win32con.VK_RCONTROL: "rctrl",
+    win32con.VK_LMENU: "lalt",
+    win32con.VK_RMENU: "ralt",
+    win32con.VK_LSHIFT: "lshift",
+    win32con.VK_RSHIFT: "rshift",
+    win32con.VK_APPS: "app",
 }
 
 KBState = (ctypes.c_byte * 256)()

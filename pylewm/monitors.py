@@ -113,7 +113,7 @@ def get_monitor_in_direction(from_monitor, direction):
     )
 
 def get_monitor_by_index(index):
-    monitor_index = min(index, len(Monitors)-1)
+    monitor_index = index % len(Monitors)
     return Monitors[monitor_index]
 
 @PyleInit
@@ -133,10 +133,10 @@ def initMonitors():
         monitor.monitor_index = i
 
     # Rotate monitors so the default monitor is at index 0
-    #for i, monitor in enumerate(Monitors):
-    #    if monitor.primary:
-    #        Monitors = Monitors[i:] + Monitors[:i]
-    #        break
+    for i, monitor in enumerate(Monitors):
+        if monitor.primary:
+            Monitors = Monitors[i:] + Monitors[:i]
+            break
 
     for i, monitor in enumerate(Monitors):
         print(f"Monitor {i}: {monitor.rect}")

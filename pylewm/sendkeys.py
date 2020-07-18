@@ -7,6 +7,13 @@ import win32api, win32con
 # TODO: Complete this map
 vkMap = {
     'esc': win32con.VK_ESCAPE,
+    'lctrl': win32con.VK_LCONTROL,
+    'rctrl': win32con.VK_RCONTROL,
+    'lshift': win32con.VK_LSHIFT,
+    'rshift': win32con.VK_RSHIFT,
+    'lalt': win32con.VK_LMENU,
+    'ralt': win32con.VK_RMENU,
+    'app': win32con.VK_APPS,
 }
 
 def sendKey(key):
@@ -38,6 +45,24 @@ def sendKeySpec(keySpec):
             ctypes.windll.user32.keybd_event(mod[1], 0, win32con.KEYEVENTF_KEYUP, 0)
         elif mod[0].right:
             ctypes.windll.user32.keybd_event(mod[2], 0, win32con.KEYEVENTF_KEYUP, 0)
+
+@PyleCommand.Threaded
+def release_key(keySpec):
+    vkCode = 0
+    if keySpec.key in vkMap:
+        vkCode = vkMap[keySpec.key]
+    else:
+        vkCode = ctypes.windll.user32.VkKeyScanA(ctypes.wintypes.WCHAR(chr(keySpec.key)))
+    ctypes.windll.user32.keybd_event(vkCode, 0, win32con.KEYEVENTF_KEYUP, 0)
+
+@PyleCommand.Threaded
+def press_key(keySpec):
+    vkCode = 0
+    if keySpec.key in vkMap:
+        vkCode = vkMap[keySpec.key]
+    else:
+        vkCode = ctypes.windll.user32.VkKeyScanA(ctypes.wintypes.WCHAR(chr(keySpec.key)))
+    ctypes.windll.user32.keybd_event(vkCode, 0, 0, 0)
 
 @PyleCommand.Threaded
 def sendkey(keys):

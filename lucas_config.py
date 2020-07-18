@@ -5,21 +5,21 @@ import pylewm
 from pylewm.filters import *
 import os
 
-# I have remapped right control to a more convenient place on the keyboard
+# I have remapped the 'app' key to a more convenient place on the keyboard
 # and use it for all my window management shortcuts.
-MOD = ('rctrl',)
+MOD = ('app',)
 
 pylewm.config.hotkeys({
-    # Focus managament
+    # Focus management
     (*MOD, 'h')              : pylewm.spaces.focus_left,
     (*MOD, 's')              : pylewm.spaces.focus_right,
     (*MOD, 't')              : pylewm.spaces.focus_next,
     (*MOD, 'n')              : pylewm.spaces.focus_previous,
 
-    (*MOD, '&')              : pylewm.focus.focus_monitor(0),
-    (*MOD, '[')              : pylewm.focus.focus_monitor(1),
-    (*MOD, '{')              : pylewm.focus.focus_monitor(2),
-    (*MOD, '}')              : pylewm.focus.focus_monitor(3),
+    (*MOD, '&')              : pylewm.focus.focus_monitor(-1),
+    (*MOD, '[')              : pylewm.focus.focus_monitor(0),
+    (*MOD, '{')              : pylewm.focus.focus_monitor(1),
+    (*MOD, '}')              : pylewm.focus.focus_monitor(2),
 
     # Move window slots
     (*MOD, 'shift', 'h')     : pylewm.spaces.move_left,
@@ -32,10 +32,10 @@ pylewm.config.hotkeys({
     (*MOD, 'shift', 'lctrl', 't')     : pylewm.spaces.move_down,
     (*MOD, 'shift', 'lctrl', 'n')     : pylewm.spaces.move_up,
 
-    (*MOD, 'shift', '&')     : pylewm.windows.move_to_monitor(0),
-    (*MOD, 'shift', '[')     : pylewm.windows.move_to_monitor(1),
-    (*MOD, 'shift', '{')     : pylewm.windows.move_to_monitor(2),
-    (*MOD, 'shift', '}')     : pylewm.windows.move_to_monitor(3),
+    (*MOD, 'shift', '&')     : pylewm.windows.move_to_monitor(-1),
+    (*MOD, 'shift', '[')     : pylewm.windows.move_to_monitor(0),
+    (*MOD, 'shift', '{')     : pylewm.windows.move_to_monitor(1),
+    (*MOD, 'shift', '}')     : pylewm.windows.move_to_monitor(2),
 
     # Window management
     (*MOD, '$')              : pylewm.windows.close,
@@ -62,25 +62,25 @@ pylewm.config.hotkeys({
 
     (*MOD, 'shift', 'o')     : pylewm.spaces.move_to_new_temporary_space,
 
-    (*MOD, 'g')              : pylewm.spaces.focus_space(0, 0),
-    (*MOD, 'c')              : pylewm.spaces.focus_space(1, 0),
-    (*MOD, 'r')              : pylewm.spaces.focus_space(2, 0),
-    (*MOD, 'l')              : pylewm.spaces.focus_space(3, 0),
+    (*MOD, 'g')              : pylewm.spaces.focus_space(-1, 0),
+    (*MOD, 'c')              : pylewm.spaces.focus_space(0, 0),
+    (*MOD, 'r')              : pylewm.spaces.focus_space(1, 0),
+    (*MOD, 'l')              : pylewm.spaces.focus_space(2, 0),
 
-    (*MOD, '*')              : pylewm.spaces.focus_space(0, 1),
-    (*MOD, ')')              : pylewm.spaces.focus_space(1, 1),
-    (*MOD, '+')              : pylewm.spaces.focus_space(2, 1),
-    (*MOD, ']')              : pylewm.spaces.focus_space(3, 1),
+    (*MOD, '*')              : pylewm.spaces.focus_space(-1, 1),
+    (*MOD, ')')              : pylewm.spaces.focus_space(0, 1),
+    (*MOD, '+')              : pylewm.spaces.focus_space(1, 1),
+    (*MOD, ']')              : pylewm.spaces.focus_space(2, 1),
 
-    (*MOD, 'shift', 'g')     : pylewm.spaces.move_to_space(0, 0),
-    (*MOD, 'shift', 'c')     : pylewm.spaces.move_to_space(1, 0),
-    (*MOD, 'shift', 'r')     : pylewm.spaces.move_to_space(2, 0),
-    (*MOD, 'shift', 'l')     : pylewm.spaces.move_to_space(3, 0),
+    (*MOD, 'shift', 'g')     : pylewm.spaces.move_to_space(-1, 0),
+    (*MOD, 'shift', 'c')     : pylewm.spaces.move_to_space(0, 0),
+    (*MOD, 'shift', 'r')     : pylewm.spaces.move_to_space(1, 0),
+    (*MOD, 'shift', 'l')     : pylewm.spaces.move_to_space(2, 0),
 
-    (*MOD, 'shift', '*')     : pylewm.spaces.move_to_space(0, 1),
-    (*MOD, 'shift', ')')     : pylewm.spaces.move_to_space(1, 1),
-    (*MOD, 'shift', '+')     : pylewm.spaces.move_to_space(2, 1),
-    (*MOD, 'shift', ']')     : pylewm.spaces.move_to_space(3, 1),
+    (*MOD, 'shift', '*')     : pylewm.spaces.move_to_space(-1, 1),
+    (*MOD, 'shift', ')')     : pylewm.spaces.move_to_space(0, 1),
+    (*MOD, 'shift', '+')     : pylewm.spaces.move_to_space(1, 1),
+    (*MOD, 'shift', ']')     : pylewm.spaces.move_to_space(2, 1),
 
     (*MOD, '!')              : pylewm.spaces.next_layout,
     (*MOD, 'shift', '!')     : pylewm.spaces.previous_layout,
@@ -99,6 +99,7 @@ pylewm.config.hotkeys({
     (*MOD, 'shift', 'q')     : pylewm.run.restart,
     (*MOD, 'shift', '\\')    : pylewm.windows.show_window_info,
     (*MOD, 'shift', '=')     : pylewm.spaces.show_spaces_info,
+    ('*', '=app')            : pylewm.hotkeys.absorb_key,
 })
 
 pylewm.config.filters([

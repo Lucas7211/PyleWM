@@ -66,6 +66,7 @@ class Window:
         self.drop_ticks_inside_slot = 0
 
     def reset(self):
+        print("Close due to reset: "+self.window_title)
         self.closed = True
         if self.hidden:
             self.hidden = False
@@ -249,11 +250,17 @@ class Window:
             return
         if self.closed:
             return
-        if not win32gui.IsWindow(self.handle) or self.is_cloaked():
+        if not win32gui.IsWindow(self.handle):
+            print("Close due to not handle: "+self.window_title)
+            self.closed = True
+            return
+        if self.is_cloaked():
+            print("Close due to cloaked: "+self.window_title)
             self.closed = True
             return
         if self.is_minimized() or self.is_window_hidden():
             # Manually minimized windows are considered closed
+            print("Close due to minimize: "+self.window_title)
             self.closed = True
             return
         if self.floating:
