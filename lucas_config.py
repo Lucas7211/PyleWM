@@ -95,6 +95,9 @@ pylewm.config.hotkeys({
     (*MOD, 'u')              : pylewm.execution.file_explorer,
     (*MOD, 'shift', 'u')     : pylewm.execution.this_pc,
 
+    (*MOD, '.')              : pylewm.execution.run([r'C:\Program Files (x86)\foobar2000\foobar2000.exe', '/command:Play or pause']),
+    (*MOD, 'shift', '.')     : pylewm.execution.run([r'C:\Program Files (x86)\foobar2000\foobar2000.exe', '/command:Next']),
+
     # PyleWM management
     (*MOD, 'shift', 'q')     : pylewm.run.restart,
     (*MOD, 'shift', '\\')    : pylewm.windows.show_window_info,
