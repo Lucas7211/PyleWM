@@ -102,7 +102,7 @@ pylewm.config.hotkeys({
     (*MOD, 'shift', 'q')     : pylewm.run.restart,
     (*MOD, 'shift', '\\')    : pylewm.windows.show_window_info,
     (*MOD, 'shift', '=')     : pylewm.spaces.show_spaces_info,
-    ('*', '=app')            : pylewm.hotkeys.absorb_key,
+    ('any_mod', '=app')      : pylewm.hotkeys.absorb_key,
 })
 
 pylewm.config.filters([

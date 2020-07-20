@@ -154,9 +154,9 @@ class KeySpec:
                     spec.win.either = True
                 elif elem.lower() == "app":
                     spec.app.either = True
-                elif elem.startswith('='):
+                elif elem.startswith('=') and elem != '=':
                     spec.key = elem[1:].lower()
-                elif elem == '*':
+                elif elem == 'any_mod':
                     spec.win.any_state = True
                     spec.ctrl.any_state = True
                     spec.alt.any_state = True

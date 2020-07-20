@@ -4,6 +4,7 @@ from pylewm.space import Space
 from pylewm.layout import Direction
 
 import ctypes
+import math
 import win32api, win32con
 
 Monitors = []
@@ -128,15 +129,17 @@ def initMonitors():
         Monitors.append(monitor)
 
     # Sort monitors by position so their order stays the same
-    Monitors.sort(key=lambda x: x.rect.left)
-    for i, monitor in enumerate(Monitors):
-        monitor.monitor_index = i
+    Monitors.sort(key=lambda x: math.floor(x.rect.top/900.0) * -10000 + x.rect.left)
 
     # Rotate monitors so the default monitor is at index 0
     for i, monitor in enumerate(Monitors):
         if monitor.primary:
             Monitors = Monitors[i:] + Monitors[:i]
             break
+
+    # Make sure each monitor knows the correct index
+    for i, monitor in enumerate(Monitors):
+        monitor.monitor_index = i
 
     for i, monitor in enumerate(Monitors):
         print(f"Monitor {i}: {monitor.rect}")
