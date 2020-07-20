@@ -123,12 +123,12 @@ def get_monitor(window):
                     if f.base is Monitor:
                         if len(f.args) >= 1:
                             return f.args[0]
-                return -1
+                return None
     if KeepStartMonitor in FiltersByFunction:
         for filt in FiltersByFunction[KeepStartMonitor]:
             if pylewm.selector.matches(window, filt[0]):
                 return pylewm.monitors.get_covering_monitor(window.rect).monitor_index
-    return -1
+    return None
 
 @PyleInit
 def init_filters():

@@ -167,10 +167,10 @@ class Rect:
             if direction == Direction.Right or direction == Direction.Next or direction == Direction.InsertRight: return rect.coordinates[0]
             return rect.coordinates[1]
         def getOppositeEnd(rect):
-            if direction == Direction.Left or direction == Direction.Previous or direction == Direction.InsertLeft: return rect.coordinates[2]
-            if direction == Direction.Up: return rect.coordinates[3]
-            if direction == Direction.Right or direction == Direction.Next or direction == Direction.InsertRight: return rect.coordinates[0]
-            return rect.coordinates[1]
+            if direction == Direction.Left or direction == Direction.Previous or direction == Direction.InsertLeft: return rect.coordinates[2]+1
+            if direction == Direction.Up: return rect.coordinates[3]+1
+            if direction == Direction.Right or direction == Direction.Next or direction == Direction.InsertRight: return rect.coordinates[0]-1
+            return rect.coordinates[1]-1
         def getOtherDim(rect):
             if direction == Direction.Left or direction == Direction.Previous or direction == Direction.InsertLeft: return rect.coordinates[1]
             if direction == Direction.Up: return rect.coordinates[0]

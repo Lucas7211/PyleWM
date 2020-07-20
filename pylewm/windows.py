@@ -174,7 +174,7 @@ def add_window_to_space(window):
     slot = None
 
     filter_monitor = pylewm.filters.get_monitor(window)
-    if filter_monitor != -1:
+    if filter_monitor is not None:
         filter_monitor = min(filter_monitor, len(pylewm.monitors.Monitors)-1)
         space = pylewm.monitors.Monitors[filter_monitor].visible_space
     elif InitialPlacement or window.handle in PreviouslyClosedWindows:

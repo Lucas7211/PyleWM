@@ -129,6 +129,14 @@ class AutoGridLayout(Layout):
                 candidate_columns.sort(key = lambda col_index: col_index, reverse=True)
                 insert_column = candidate_columns[0]
 
+            # Choose the most recently focused candidate column
+            if insert_column == -1:
+                for mru_window in reversed(self.focus_mru):
+                    mru_column, mru_slot = self.get_window_column(mru_window)
+                    if mru_column in candidate_columns:
+                        insert_column = mru_column
+                        break
+
             # Put it in the shortest current column
             if insert_column == -1:
                 candidate_columns.sort(key = lambda col_index: len(self.columns[col_index]), reverse=True)
