@@ -76,7 +76,7 @@ def focus_window_handle(hwnd, rect=None, num=10):
         # makes windows determine we have the power to change
         # window focus. Somehow.
         shell = win32com.client.Dispatch("WScript.Shell")
-        shell.SendKeys('{BREAK}')
+        shell.SendKeys('{F15}')
 
         win32gui.SetForegroundWindow(hwnd)
 
