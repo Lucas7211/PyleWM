@@ -45,6 +45,7 @@ class Window:
         self.closed = False
         self.focused = False
         self.hidden = False
+        self.becoming_visible = False
         self.floating = False
         self.can_tile = True
         self.take_new_rect = False
@@ -70,6 +71,7 @@ class Window:
         self.closed = True
         if self.hidden:
             self.hidden = False
+            self.becoming_visible = True
             ctypes.windll.user32.ShowWindowAsync(self.handle, win32con.SW_SHOWNOACTIVATE)
         if self.always_top:
             self.set_always_top(False)
@@ -79,6 +81,7 @@ class Window:
             if not self.hidden:
                 return
             self.hidden = False
+            self.becoming_visible = True
             ctypes.windll.user32.ShowWindowAsync(self.handle, win32con.SW_SHOWNOACTIVATE)
             self.bring_to_front()
 
@@ -92,6 +95,7 @@ class Window:
             if self.hidden:
                 return
             self.hidden = True
+            self.becoming_visible = False
             time.sleep(0.05)
             ctypes.windll.user32.ShowWindowAsync(self.handle, win32con.SW_HIDE)
 
@@ -258,11 +262,19 @@ class Window:
             print("Close due to cloaked: "+self.window_title)
             self.closed = True
             return
-        if self.is_minimized() or self.is_window_hidden():
+        if self.is_minimized():
             # Manually minimized windows are considered closed
             print("Close due to minimize: "+self.window_title)
             self.closed = True
             return
+        if self.is_window_hidden():
+            # Manually minimized windows are considered closed
+            if not self.becoming_visible:
+                print("Close due to hidden: "+self.window_title)
+                self.closed = True
+                return
+        else if self.becoming_visible:
+            self.becoming_visible = False
         if self.floating:
             self.update_drag()
             if self.dragging or self.drop_space:
