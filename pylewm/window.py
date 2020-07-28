@@ -273,7 +273,7 @@ class Window:
                 print("Close due to hidden: "+self.window_title)
                 self.closed = True
                 return
-        else if self.becoming_visible:
+        elif self.becoming_visible:
             self.becoming_visible = False
         if self.floating:
             self.update_drag()
