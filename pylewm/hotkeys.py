@@ -255,6 +255,11 @@ VK_MAP = {
     win32con.VK_RSHIFT: "rshift",
     win32con.VK_APPS: "app",
     win32con.VK_RETURN: "enter",
+    win32con.VK_BACK: "backspace",
+    win32con.VK_LEFT: "left",
+    win32con.VK_RIGHT: "right",
+    win32con.VK_UP: "up",
+    win32con.VK_DOWN: "down",
 }
 
 KBState = (ctypes.c_byte * 256)()

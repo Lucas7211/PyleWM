@@ -6,7 +6,7 @@ setup(
 
     packages=["pylewm", "pylewm.layouts"],
     package_data={
-        "pylewm": ["PyleWM.png"],
+        "pylewm": ["PyleWM.png", "data/*"],
     },
 
     executables = [

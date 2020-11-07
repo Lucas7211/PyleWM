@@ -7,7 +7,7 @@ setup(
 
     install_requires=["pypiwin32>=223", "pystray>=0.15.0"],
     package_data={
-        "pylewm": ["PyleWM.png"],
+        "pylewm": ["PyleWM.png", "data/*"],
     },
 
     entry_points= {

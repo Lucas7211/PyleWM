@@ -46,6 +46,10 @@ class Rect:
         self.position = newcoords
 
     @staticmethod
+    def from_pos_size(pos, size):
+        return Rect(( pos[0], pos[1], pos[0]+size[0], pos[1]+size[1] ))
+
+    @staticmethod
     def equal_coordinates(A, B):
         return (A[0] == B[0]
                 and A[1] == B[1]
@@ -111,6 +115,14 @@ class Rect:
     @bottom.setter
     def bottom(self, pos):
         self.position[3] = pos
+
+    def shift(self, pos):
+        self.position = (
+            self.position[0] + pos[0],
+            self.position[1] + pos[1],
+            self.position[2] + pos[0],
+            self.position[3] + pos[1],
+        )
 
     def contains(self, pos):
         return (pos[0] >= self.position[0] and pos[0] < self.position[2] and
