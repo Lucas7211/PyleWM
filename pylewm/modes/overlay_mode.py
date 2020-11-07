@@ -36,20 +36,27 @@ class OverlayWindow:
         pygame.draw.rect(self.display, color, pygame.Rect(rect.left + width, rect.top, rect.width - width*2, width))
         pygame.draw.rect(self.display, color, pygame.Rect(rect.left + width, rect.bottom - width, rect.width - width*2, width))
 
-    def draw_text(self, text, color, rect, align = (0.0, 0.0)):
-        img = self.font.render(text, True, color)
+    def draw_text(self, text, color, rect, align = (0.0, 0.0), font=None, background_box=None):
+        if not font:
+            font = self.font
+        img = font.render(text, True, color)
         blit_dim = [img.get_width(), img.get_height()]
 
         if blit_dim[0] > rect.width:
             blit_dim[0] = rect.width
         else:
-            rect.shift((align[0] * (rect.width - blit_dim[0]), 0))
+            rect = rect.shifted((align[0] * (rect.width - blit_dim[0]), 0))
 
         if blit_dim[1] > rect.height:
             blit_dim[1] = rect.height
         else:
-            rect.shift((0, align[1] * (rect.height - blit_dim[1])))
+            rect = rect.shifted((0, align[1] * (rect.height - blit_dim[1])))
 
+        if background_box:
+            self.draw_box(Rect((
+                rect.left - 2, rect.top - 1,
+                rect.left + blit_dim[0] + 2, rect.top + blit_dim[1] + 2
+            )), background_box)
         self.display.blit(img, (rect.left, rect.top), (0, 0, blit_dim[0], blit_dim[1]))
 
     def window_loop(self):
@@ -73,9 +80,14 @@ class OverlayWindow:
             win32gui.SetLayeredWindowAttributes(self.hwnd, win32api.RGB(*self.bg_color), 0, win32con.LWA_COLORKEY)
 
             ttf_path = os.path.join(os.path.dirname(__file__), "..", "data", "TerminusTTF-Bold-4.47.0.ttf")
+
             self.font = pygame.font.Font(ttf_path, 24)
             if not self.font:
                 self.font = pygame.font.SysFont(None, 24)
+
+            self.font_small = pygame.font.Font(ttf_path, 16)
+            if not self.font:
+                self.font_small = pygame.font.SysFont(None, 16)
 
             self.display = pygame.display.set_mode((self.rect.width, self.rect.height), pygame.NOFRAME | pygame.HIDDEN)
             win32gui.SetWindowPos(self.hwnd, win32con.HWND_TOPMOST, self.rect.left, self.rect.top, self.rect.width, self.rect.height, 0)

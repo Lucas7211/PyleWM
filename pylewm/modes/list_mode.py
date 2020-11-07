@@ -12,11 +12,22 @@ class ListOption():
         pass
 
     def filter(self, text, filter_obj):
-        ratio = fuzz.token_sort_ratio(self.name, text)
-        if ratio < 25:
+        name_lower = self.name.lower()
+        score = 100
+
+        contains_all = True
+        for phrase in filter_obj.phrases:
+            if phrase not in name_lower:
+                score -= 100
+
+        if name_lower.startswith(filter_obj.text_lower):
+            score += 50
+
+        score += fuzz.token_sort_ratio(text, self.name)
+        if score < 25:
             return 0
         else:
-            return ratio
+            return score
 
 class ListFilterObj():
     def __init__(self):
@@ -65,7 +76,8 @@ class ListMode(pylewm.modes.overlay_mode.OverlayMode):
 
     def get_filter_obj(self):
         obj = ListFilterObj()
-        obj.phrases = self.filter_text.split(" ")
+        obj.phrases = [x.lower() for x in self.filter_text.split(" ")]
+        obj.text_lower = self.filter_text.lower()
         return obj
 
     def handle_key(self, key, isMod):

@@ -20,6 +20,14 @@ class Rect:
         else:
             self.position = tuple(position)
 
+    @staticmethod
+    def from_pos_size(pos, size):
+        return Rect(( pos[0], pos[1], pos[0]+size[0], pos[1]+size[1] ))
+
+    @staticmethod
+    def centered_around(pos, size):
+        return Rect(( pos[0] - size[0] / 2, pos[1] - size[1] / 2, pos[0]+size[0]/2, pos[1]+size[1]/2 ))
+
     def __str__(self):
         return repr(self.position)
 
@@ -28,6 +36,14 @@ class Rect:
 
     def assign(self, other):
         self.position = tuple(other.position)
+
+    def padded(self, x_padding, y_padding):
+        return Rect((
+            self.position[0] + x_padding,
+            self.position[1] + y_padding,
+            self.position[2] - x_padding,
+            self.position[3] - y_padding
+        ))
 
     @property
     def width(self):
@@ -44,10 +60,6 @@ class Rect:
     @coordinates.setter
     def coordinates(self, newcoords):
         self.position = newcoords
-
-    @staticmethod
-    def from_pos_size(pos, size):
-        return Rect(( pos[0], pos[1], pos[0]+size[0], pos[1]+size[1] ))
 
     @staticmethod
     def equal_coordinates(A, B):
@@ -116,12 +128,24 @@ class Rect:
     def bottom(self, pos):
         self.position = (self.position[0], self.position[1], self.position[2], pos)
 
-    def shift(self, pos):
-        self.position = (
+    def shifted(self, pos):
+        return Rect((
             self.position[0] + pos[0],
             self.position[1] + pos[1],
             self.position[2] + pos[0],
             self.position[3] + pos[1],
+        ))
+
+    def min(self, x_min, y_min):
+        return Rect.from_pos_size(
+            (min(self.position[0], x_min), min(self.position[1], y_min)),
+            (self.width, self.height)
+        )
+
+    def max(self, x_max, y_max):
+        return Rect.from_pos_size(
+            (max(self.position[0], x_max), max(self.position[1], y_max)),
+            (self.width, self.height)
         )
 
     def contains(self, pos):

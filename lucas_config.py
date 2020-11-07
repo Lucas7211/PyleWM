@@ -2,6 +2,10 @@
 # Keys are based on a custom dvorak keyboard layout.
 
 import pylewm
+import pylewm.modes.keynav
+import pylewm.modes.hint_mouse
+import pylewm.modes.goto_window
+import pylewm.modes.select_application
 from pylewm.filters import *
 import os
 
@@ -13,8 +17,8 @@ pylewm.config.hotkeys({
     # Focus management
     (*MOD, 'h')              : pylewm.spaces.focus_left,
     (*MOD, 's')              : pylewm.spaces.focus_right,
-    (*MOD, 't')              : pylewm.spaces.focus_next,
-    (*MOD, 'n')              : pylewm.spaces.focus_previous,
+    (*MOD, 't')              : pylewm.spaces.focus_down,
+    (*MOD, 'n')              : pylewm.spaces.focus_up,
 
     (*MOD, '&')              : pylewm.focus.focus_monitor(-1),
     (*MOD, '[')              : pylewm.focus.focus_monitor(0),
@@ -24,8 +28,8 @@ pylewm.config.hotkeys({
     # Move window slots
     (*MOD, 'shift', 'h')     : pylewm.spaces.move_left,
     (*MOD, 'shift', 's')     : pylewm.spaces.move_right,
-    (*MOD, 'shift', 't')     : pylewm.spaces.move_next,
-    (*MOD, 'shift', 'n')     : pylewm.spaces.move_previous,
+    (*MOD, 'shift', 't')     : pylewm.spaces.move_down,
+    (*MOD, 'shift', 'n')     : pylewm.spaces.move_up,
 
     (*MOD, 'shift', 'lctrl', 'h')     : pylewm.spaces.move_insert_left,
     (*MOD, 'shift', 'lctrl', 's')     : pylewm.spaces.move_insert_right,
@@ -41,7 +45,7 @@ pylewm.config.hotkeys({
     (*MOD, '$')              : pylewm.windows.close,
     (*MOD, '\\')             : pylewm.windows.poke,
     (*MOD, "'")              : pylewm.windows.drop_window_into_layout,
-    (*MOD, 'x')              : pylewm.windows.make_window_floating,
+    (*MOD, "shift", "'")     : pylewm.windows.make_window_floating,
 
     (*MOD, 'shift', 'm')     : pylewm.windows.minimize,
     (*MOD, 'shift', 'b')     : pylewm.windows.vanish,
@@ -51,8 +55,6 @@ pylewm.config.hotkeys({
     (*MOD, 'shift', 'i')     : pylewm.yank.drop_all_windows,
 
     # Space management
-    (*MOD, 'j')              : pylewm.spaces.flip,
-    (*MOD, 'shift', 'j')     : pylewm.spaces.move_flip,
     (*MOD, ' ')              : pylewm.spaces.flip,
     (*MOD, 'shift', ' ')     : pylewm.spaces.move_flip,
 
@@ -89,20 +91,30 @@ pylewm.config.hotkeys({
     (*MOD, ';')              : pylewm.wsltty.open_wsltty,
     (*MOD, 'a')              : pylewm.execution.command_prompt,
     (*MOD, 'shift', 'a')     : pylewm.execution.command_prompt(as_admin=True),
-    (*MOD, ',')              : pylewm.execution.start_menu,
     (*MOD, 'p')              : pylewm.execution.run(r'C:\Program Files\Mozilla Firefox\firefox.exe'),
-    (*MOD, 'k')              : pylewm.wsltty.open_wsltty(["ranger", pylewm.wsltty.wsl_path(os.environ["USERPROFILE"])]),
-    (*MOD, 'u')              : pylewm.execution.file_explorer,
-    (*MOD, 'shift', 'u')     : pylewm.execution.this_pc,
+    (*MOD, 'k')              : pylewm.wsltty.open_wsltty(["ranger", "/data/spool"]),
+    (*MOD, 'u')              : pylewm.execution.this_pc,
+    (*MOD, 'shift', 'u')     : pylewm.execution.file_explorer,
 
-    (*MOD, '.')              : pylewm.execution.run([r'C:\Program Files (x86)\foobar2000\foobar2000.exe', '/command:Play or pause']),
-    (*MOD, 'shift', '.')     : pylewm.execution.run([r'C:\Program Files (x86)\foobar2000\foobar2000.exe', '/command:Next']),
+    (*MOD, '.')              : pylewm.execution.run([r'C:\mpd\mpc.exe', 'toggle']),
+    (*MOD, 'shift', '.')     : pylewm.execution.run([r'C:\mpd\mpc.exe', 'next']),
 
     # PyleWM management
     (*MOD, 'shift', 'q')     : pylewm.run.restart,
     (*MOD, 'shift', '\\')    : pylewm.windows.show_window_info,
     (*MOD, 'shift', '=')     : pylewm.spaces.show_spaces_info,
     ('any_mod', '=app')      : pylewm.hotkeys.absorb_key,
+
+    # List selection modes
+    (*MOD, ',')              : pylewm.modes.select_application.run_application,
+    (*MOD, 'e')              : pylewm.modes.goto_window.start_goto_window,
+
+    # Mouse control mode
+    (*MOD, 'j')              : pylewm.modes.hint_mouse.start_hint_mouse(hintkeys="aoeuhtns"),
+    (*MOD, 'shift', 'j')     : pylewm.modes.hint_mouse.start_hint_mouse(hintkeys="aoeuhtns", clickmode="right"),
+
+    # System management
+    (*MOD, 'ctrl', '$')     : pylewm.execution.run([r'C:\bin\GoToSleep.bat'], as_admin=True),
 })
 
 pylewm.config.filters([
