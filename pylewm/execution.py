@@ -10,6 +10,7 @@ import win32process
 import win32security
 import win32api
 import subprocess
+import pywintypes
 
 @PyleCommand.Threaded
 def start_menu():

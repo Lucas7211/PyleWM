@@ -80,7 +80,6 @@ class KeyNavMode(pylewm.modes.overlay_mode.OverlayMode):
         self.shift(0, self.rect.height)
 
     def undo_move(self):
-        print("UNDO: "+repr(self.rect_history))
         if len(self.rect_history) < 2:
             return
         self.rect = self.rect_history[-2]
@@ -89,33 +88,25 @@ class KeyNavMode(pylewm.modes.overlay_mode.OverlayMode):
 
     def left_click(self):
         position = win32gui.ScreenToClient(self.window.handle, win32api.GetCursorPos())
+        pylewm.commands.delay_pyle_command(0.1, lambda: win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, position[0], position[1], 0, 0))
+        pylewm.commands.delay_pyle_command(0.15, lambda: win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, position[0], position[1], 0, 0))
 
-        lParam = win32api.MAKELONG(position[0], position[1])
-        try:
-            win32api.PostMessage(self.window.handle, win32con.WM_LBUTTONDOWN, win32con.MK_LBUTTON, lParam)
-            win32api.PostMessage(self.window.handle, win32con.WM_LBUTTONUP, win32con.MK_LBUTTON, lParam)
-        except:
-            pass
+    def double_click(self):
+        position = win32gui.ScreenToClient(self.window.handle, win32api.GetCursorPos())
+        pylewm.commands.delay_pyle_command(0.1, lambda: win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, position[0], position[1], 0, 0))
+        pylewm.commands.delay_pyle_command(0.15, lambda: win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, position[0], position[1], 0, 0))
+        pylewm.commands.delay_pyle_command(0.2, lambda: win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, position[0], position[1], 0, 0))
+        pylewm.commands.delay_pyle_command(0.25, lambda: win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, position[0], position[1], 0, 0))
 
     def right_click(self):
         position = win32gui.ScreenToClient(self.window.handle, win32api.GetCursorPos())
-
-        lParam = win32api.MAKELONG(position[0], position[1])
-        try:
-            win32api.PostMessage(self.window.handle, win32con.WM_RBUTTONDOWN, win32con.MK_RBUTTON, lParam)
-            win32api.PostMessage(self.window.handle, win32con.WM_RBUTTONUP, win32con.MK_RBUTTON, lParam)
-        except:
-            pass
+        pylewm.commands.delay_pyle_command(0.1, lambda: win32api.mouse_event(win32con.MOUSEEVENTF_RIGHTDOWN, position[0], position[1], 0, 0))
+        pylewm.commands.delay_pyle_command(0.15, lambda: win32api.mouse_event(win32con.MOUSEEVENTF_RIGHTUP, position[0], position[1], 0, 0))
 
     def middle_click(self):
         position = win32gui.ScreenToClient(self.window.handle, win32api.GetCursorPos())
-
-        lParam = win32api.MAKELONG(position[0], position[1])
-        try:
-            win32api.PostMessage(self.window.handle, win32con.WM_MBUTTONDOWN, win32con.MK_MBUTTON, lParam)
-            win32api.PostMessage(self.window.handle, win32con.WM_MBUTTONUP, win32con.MK_MBUTTON, lParam)
-        except:
-            pass
+        pylewm.commands.delay_pyle_command(0.1, lambda: win32api.mouse_event(win32con.MOUSEEVENTF_MIDDLEDOWN, position[0], position[1], 0, 0))
+        pylewm.commands.delay_pyle_command(0.15, lambda: win32api.mouse_event(win32con.MOUSEEVENTF_MIDDLEUP, position[0], position[1], 0, 0))
 
     def update_rect(self):
         try:
@@ -200,6 +191,12 @@ def undo_move():
 def left_click():
     with pylewm.hotkeys.ModeLock:
         pylewm.hotkeys.ModeStack[0].left_click()
+    pylewm.hotkeys.queue_command(pylewm.hotkeys.escape_mode)
+
+@pylewm.commands.PyleCommand
+def double_click():
+    with pylewm.hotkeys.ModeLock:
+        pylewm.hotkeys.ModeStack[0].double_click()
     pylewm.hotkeys.queue_command(pylewm.hotkeys.escape_mode)
 
 @pylewm.commands.PyleCommand

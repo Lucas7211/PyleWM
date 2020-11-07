@@ -5,7 +5,13 @@ setup(
     version="1.0",
     packages=["pylewm", "pylewm.layouts"],
 
-    install_requires=["pypiwin32>=223", "pystray>=0.15.0"],
+    install_requires=[
+        "pypiwin32>=223",
+        "pystray>=0.15.0",
+        "pygame>=2.0.0",
+        "fuzzywuzzy>=0.18.0",
+        "python-levenshtein>=0.12.0"
+    ],
     package_data={
         "pylewm": ["PyleWM.png", "data/*"],
     },

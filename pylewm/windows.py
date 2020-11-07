@@ -47,6 +47,11 @@ def close():
 def drop_window_into_layout():
     ''' Drop a previously unmanaged window into the layout of the monitor it's on. '''
     hwnd = win32gui.GetForegroundWindow()
+
+    window, classification, reason = pylewm.window_classification.classify_window(hwnd)
+    if classification == pylewm.window_classification.IgnoreTemporary or classification == pylewm.window_classification.IgnorePermanent:
+        return
+
     if hwnd in Windows and Windows[hwnd]:
         window = Windows[hwnd]
         if window.floating:
@@ -68,6 +73,14 @@ def make_window_floating():
         return
 
     window.make_floating()
+
+@PyleCommand
+def toggle_window_floating():
+    window = pylewm.focus.FocusWindow
+    if window and window.space:
+        window.make_floating()
+    else:
+        drop_window_into_layout().run()
 
 @PyleCommand
 def move_to_monitor(monitor_index):

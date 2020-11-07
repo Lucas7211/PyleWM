@@ -5,7 +5,7 @@ import win32gui
 class WindowOption(pylewm.modes.list_mode.ListOption):
     def __init__(self, window):
         self.window = window
-        self.name = self.window.window_title
+        self.name = win32gui.GetWindowText(self.window.handle)
 
     def confirm(self):
         pylewm.focus.set_focus(self.window)

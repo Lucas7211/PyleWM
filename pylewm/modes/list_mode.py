@@ -2,6 +2,7 @@ import pylewm
 import pylewm.modes.overlay_mode
 import win32api, win32con, win32gui
 from pylewm.rects import Rect
+from fuzzywuzzy import fuzz
 
 class ListOption():
     def __init__(self, name):
@@ -11,10 +12,11 @@ class ListOption():
         pass
 
     def filter(self, text, filter_obj):
-        for phrase in filter_obj.phrases:
-            if phrase.lower() not in self.name.lower():
-                return False
-        return True
+        ratio = fuzz.token_sort_ratio(self.name, text)
+        if ratio < 25:
+            return 0
+        else:
+            return ratio
 
 class ListFilterObj():
     def __init__(self):
@@ -27,6 +29,7 @@ class ListMode(pylewm.modes.overlay_mode.OverlayMode):
         self.all_options = options
         self.options = options
         self.selected_index = 0 
+        self.has_selection = False
 
         self.filter_text = ""
         self.closed = False
@@ -45,9 +48,11 @@ class ListMode(pylewm.modes.overlay_mode.OverlayMode):
 
     def select_next(self):
         self.selected_index = min(self.selected_index+1, len(self.options)-1)
+        self.has_selection = True
 
     def select_prev(self):
         self.selected_index = max(self.selected_index-1, 0)
+        self.has_selection = True
 
     def confirm_selection(self):
         if self.selected_index != -1:
@@ -65,7 +70,7 @@ class ListMode(pylewm.modes.overlay_mode.OverlayMode):
 
     def handle_key(self, key, isMod):
         if not isMod and key.down and not self.closed:
-            if len(key.key) == 1 and key.key.isalnum() or key.key == ' ':
+            if len(key.key) == 1:
                 if key.shift.isSet:
                     self.filter_text += key.key.upper()
                 else:
@@ -98,10 +103,16 @@ class ListMode(pylewm.modes.overlay_mode.OverlayMode):
 
         self.options = []
         for opt in self.all_options:
-            if opt.filter(self.filter_text, filter_obj):
+            opt.score = opt.filter(self.filter_text, filter_obj)
+            if opt.score > 0:
                 self.options.append(opt)
+
+        self.options.sort(key = lambda x: x.score, reverse=True)
+
+        if self.has_selection:
+            for i, opt in enumerate(self.options):
                 if selected_option is opt:
-                    self.selected_index = len(self.options)-1
+                    self.selected_index = i
 
         if self.selected_index == -1 and len(self.options) > 0:
             self.selected_index = 0
