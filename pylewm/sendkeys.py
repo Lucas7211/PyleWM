@@ -74,3 +74,8 @@ def sendkeys(keys):
     """ Generate a list of keys to be pressed in sequence. """
     for key in keys:
         sendKeySpec(KeySpec.fromTuple(key))
+
+@PyleCommand.Threaded
+def send_left_click():
+    win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN,0,0)
+    win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP,0,0)

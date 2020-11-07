@@ -7,7 +7,11 @@ import win32api
 import win32con
 
 ALWAYS_IGNORE_CLASSES = {
-    "progman"
+    "progman",
+}
+
+ALWAYS_IGNORE_TITLES = {
+    "PyleWM_Internal",
 }
 
 ALWAYS_FLOATING_CLASSES = {
@@ -36,6 +40,10 @@ def classify_window(hwnd):
     # Windows with no title are temporary and should be ignored
     if window.window_title == '':
         return None, IgnoreTemporary, "Empty Title"
+
+    # Windows with no title are temporary and should be ignored
+    if window.window_title in ALWAYS_IGNORE_TITLES:
+        return None, IgnoreTemporary, "Always Ignored by Name"
 
     # Check if any filters ignore this
     if pylewm.filters.is_ignored(window):

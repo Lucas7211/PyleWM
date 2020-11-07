@@ -28,6 +28,9 @@ class Mode:
                 return True
         return self.captureAll and not isMod
 
+    def end_mode(self):
+        pass
+
     def __call__(self):
         with ModeLock:
             ModeStack.insert(0, self)
@@ -59,6 +62,7 @@ def escape_mode():
     """ Escape whatever hotkey mode we're currently in. """
     with ModeLock:
         if ModeStack:
+            ModeStack[0].end_mode()
             ModeStack.pop(0)
 
 @pylewm.commands.PyleCommand
@@ -213,6 +217,8 @@ def handle_python(isKeyDown, keyCode, scanCode):
     if ModeStack:
         with ModeLock:
             handle_type = ModeStack[0].handle_key(ActiveKey, isMod)
+            if handle_type:
+                return True
             if handle_type is None:
                 return False
 
@@ -248,6 +254,7 @@ VK_MAP = {
     win32con.VK_LSHIFT: "lshift",
     win32con.VK_RSHIFT: "rshift",
     win32con.VK_APPS: "app",
+    win32con.VK_RETURN: "enter",
 }
 
 KBState = (ctypes.c_byte * 256)()

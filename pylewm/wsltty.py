@@ -6,7 +6,9 @@ from pylewm.commands import PyleCommand
 @PyleCommand
 def open_wsltty(cmd=""):
     wsltty = [
-        os.getenv("LOCALAPPDATA") + r'\wsltty\wsl.bat',
+        os.getenv("LOCALAPPDATA") + r'\wsltty\bin\mintty.exe',
+        "--WSL=",
+        "--configdir=" + os.getenv("APPDATA") + r'\wsltty'
     ]
 
     if cmd:
