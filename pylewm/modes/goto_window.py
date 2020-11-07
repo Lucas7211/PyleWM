@@ -1,5 +1,6 @@
 import pylewm
 import pylewm.modes.list_mode
+import win32gui
 
 class WindowOption(pylewm.modes.list_mode.ListOption):
     def __init__(self, window):
@@ -13,9 +14,8 @@ class WindowOption(pylewm.modes.list_mode.ListOption):
 def start_goto_window(hotkeys = {}):
     options = []
 
-    for monitor in pylewm.monitors.Monitors:
-        for space in monitor.spaces:
-            for window in space.windows:
-                options.append(WindowOption(window))
+    for hwnd, window in pylewm.windows.Windows.items():
+        if win32gui.IsWindow(hwnd):
+            options.append(WindowOption(window))
 
     pylewm.modes.list_mode.ListMode(hotkeys, options)()

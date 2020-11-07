@@ -148,11 +148,3 @@ class ListMode(pylewm.modes.overlay_mode.OverlayMode):
                     (box.width - 5, 35)),
                 (1.0, 1.0)
             )
-
-
-@pylewm.commands.PyleCommand
-def start_list_test(hotkeys = {}):
-    ListMode(hotkeys, [
-        ListOption("A Single Test Option"),
-        ListOption("Another Nice Test Option"),
-    ])()

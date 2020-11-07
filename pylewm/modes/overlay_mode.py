@@ -5,17 +5,18 @@ import win32gui
 import win32con
 import win32api
 import os
+import time
 from pylewm.rects import Rect
-
 
 OVERLAY_WINDOW = None
 class OverlayWindow:
     def __init__(self):
-        self.thread = threading.Thread(target = self.window_loop)
-        self.thread.start()
         self.shown = False
         self.rect = Rect()
         self.bg_color = (255, 192, 203)
+
+        self.thread = threading.Thread(target = self.window_loop)
+        self.thread.start()
 
     def show(self, mode, rect):
         self.rect = rect
@@ -54,26 +55,27 @@ class OverlayWindow:
     def window_loop(self):
         pygame.init()
 
-        self.display = pygame.display.set_mode((100, 100), pygame.NOFRAME | pygame.HIDDEN)
-        pygame.display.set_caption("PyleWM_Internal")
-
-        self.hwnd = pygame.display.get_wm_info()["window"]
-        win32gui.SetWindowLong(self.hwnd, win32con.GWL_EXSTYLE, win32gui.GetWindowLong(self.hwnd, win32con.GWL_EXSTYLE) | win32con.WS_EX_LAYERED)
-        win32gui.SetLayeredWindowAttributes(self.hwnd, win32api.RGB(*self.bg_color), 0, win32con.LWA_COLORKEY)
-
-        ttf_path = os.path.join(os.path.dirname(__file__), "..", "data", "TerminusTTF-Bold-4.47.0.ttf")
-        self.font = pygame.font.Font(ttf_path, 24)
-        if not self.font:
-            self.font = pygame.font.SysFont(None, 24)
-
         while not pylewm.commands.stopped:
             while not self.shown and not pylewm.commands.stopped:
-                while pygame.event.get():
-                    pass
-                pygame.display.update()
+                time.sleep(0.1)
+                pass
 
             if pylewm.commands.stopped:
                 break
+            
+            pygame.display.init()
+
+            self.display = pygame.display.set_mode((100, 100), pygame.NOFRAME | pygame.HIDDEN)
+            pygame.display.set_caption("PyleWM_Internal")
+
+            self.hwnd = pygame.display.get_wm_info()["window"]
+            win32gui.SetWindowLong(self.hwnd, win32con.GWL_EXSTYLE, win32gui.GetWindowLong(self.hwnd, win32con.GWL_EXSTYLE) | win32con.WS_EX_LAYERED)
+            win32gui.SetLayeredWindowAttributes(self.hwnd, win32api.RGB(*self.bg_color), 0, win32con.LWA_COLORKEY)
+
+            ttf_path = os.path.join(os.path.dirname(__file__), "..", "data", "TerminusTTF-Bold-4.47.0.ttf")
+            self.font = pygame.font.Font(ttf_path, 24)
+            if not self.font:
+                self.font = pygame.font.SysFont(None, 24)
 
             self.display = pygame.display.set_mode((self.rect.width, self.rect.height), pygame.NOFRAME | pygame.HIDDEN)
             win32gui.SetWindowPos(self.hwnd, win32con.HWND_TOPMOST, self.rect.left, self.rect.top, self.rect.width, self.rect.height, 0)
@@ -88,7 +90,7 @@ class OverlayWindow:
                         self.mode.draw(self)
                 pygame.display.update()
 
-            win32gui.ShowWindow(self.hwnd, win32con.SW_HIDE)
+            pygame.display.quit()
 
         pygame.quit()
 
@@ -106,7 +108,10 @@ class OverlayMode(pylewm.hotkeys.Mode):
         global OVERLAY_WINDOW
         if not OVERLAY_WINDOW:
             OVERLAY_WINDOW = OverlayWindow()
-        OVERLAY_WINDOW.show(self, monitor.rect)
+
+        rect = monitor.rect.copy()
+        rect.bottom = rect.bottom - 3
+        OVERLAY_WINDOW.show(self, rect)
 
     def end_mode(self):
         OVERLAY_WINDOW.hide()

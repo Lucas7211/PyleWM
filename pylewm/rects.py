@@ -90,7 +90,7 @@ class Rect:
 
     @left.setter
     def left(self, pos):
-        self.position[0] = pos
+        self.position = (pos, self.position[1], self.position[2], self.position[3])
 
     @property
     def top(self):
@@ -98,7 +98,7 @@ class Rect:
 
     @top.setter
     def top(self, pos):
-        self.position[1] = pos
+        self.position = (self.position[0], pos, self.position[2], self.position[3])
 
     @property
     def right(self):
@@ -106,7 +106,7 @@ class Rect:
 
     @right.setter
     def right(self, pos):
-        self.position[2] = pos
+        self.position = (self.position[0], self.position[1], pos, self.position[3])
 
     @property
     def bottom(self):
@@ -114,7 +114,7 @@ class Rect:
 
     @bottom.setter
     def bottom(self, pos):
-        self.position[3] = pos
+        self.position = (self.position[0], self.position[1], self.position[2], pos)
 
     def shift(self, pos):
         self.position = (
