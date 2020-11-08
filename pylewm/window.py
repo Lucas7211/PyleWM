@@ -284,8 +284,15 @@ class Window:
                 if not self.can_tile:
                     return
                 hover_space = pylewm.focus.get_cursor_space()
-                hover_space.add_window(self)
-                self.floating = False
+                if hover_space:
+                    hover_slot, force_drop = hover_space.get_drop_slot(self.rect.center, self.rect)
+                    if hover_slot and not self.take_new_rect:
+                        hover_space.add_window(self, at_slot=hover_slot)
+                    else:
+                        hover_space.add_window(self)
+                    self.floating = False
+                else:
+                    self.floating = True
                 self.take_new_rect = True
         if self.minimized:
             return

@@ -9,6 +9,7 @@ class WindowOption(pylewm.modes.list_mode.ListOption):
 
     def confirm(self):
         if self.window.minimized:
+            self.window.take_new_rect = True
             win32gui.ShowWindow(self.window.handle, win32con.SW_RESTORE)
         pylewm.focus.set_focus(self.window)
 
