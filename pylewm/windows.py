@@ -98,7 +98,13 @@ def move_to_monitor(monitor_index):
 def minimize():
     hwnd = win32gui.GetForegroundWindow()
     if hwnd in Windows and Windows[hwnd]:
-        Windows[hwnd].minimize()
+        window = Windows[hwnd]
+        window.minimize()
+
+        space = window.space
+        if space:
+            space.remove_window(window)
+            pylewm.focus.set_focus_space(space)
     else:
         pylewm.window.minimize_window_handle(hwnd)
 
@@ -138,7 +144,27 @@ def show_window_info():
         text += f"Last Window Position:\t{window.last_window_pos}\n"
         text += f"Last Received Position:\t{window.last_received_pos}\n"
 
+    text += f"\nStyle: {show_flags(win32api.GetWindowLong(window.handle, win32con.GWL_STYLE), WINDOW_STYLE_FLAGS)}\n"
+    text += f"ExStyle: {show_flags(win32api.GetWindowLong(window.handle, win32con.GWL_EXSTYLE), WINDOW_STYLE_EX_FLAGS)}\n"
+
     ctypes.windll.user32.MessageBoxW(None, text, 'PyleWM: Window Info', 0)
+
+def show_flags(flags, flag_list):
+    str = ""
+    for i in range(0, 32):
+        if flags & 1<<i:
+            if str:
+                str += " | "
+
+            found_flag = False
+            for flag in flag_list:
+                if (1<<i) & flag[0]:
+                    str += flag[1]
+                    found_flag = True
+                    break
+            if not found_flag:
+                str += f"{(1<<i):x}".zfill(8)
+    return str
 
 def reset_all():
     global Windows
@@ -155,23 +181,6 @@ def print_window_info(window=None, text=None, indent=""):
     if not win32gui.IsWindow(window):
         print("NO WINDOW FOCUSED")
         return
-
-    def show_flags(flags, flag_list):
-        str = ""
-        for i in range(0, 32):
-            if flags & 1<<i:
-                if str:
-                    str += " | "
-
-                found_flag = False
-                for flag in flag_list:
-                    if (1<<i) & flag[0]:
-                        str += flag[1]
-                        found_flag = True
-                        break
-                if not found_flag:
-                    str += f"{(1<<i):x}".zfill(8)
-        return str
 
     print(f"{indent}{text}")
     print(f"{indent}  Title: {win32gui.GetWindowText(window)}")

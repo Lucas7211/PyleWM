@@ -3,6 +3,9 @@ import pylewm.modes.hint_helpers
 import pylewm
 from pylewm.rects import Rect
 import win32gui, win32api, win32con
+import array
+import mss
+import ctypes
 
 class HintRegion:
     pass
@@ -19,6 +22,11 @@ class HintMouseMode(pylewm.modes.overlay_mode.OverlayMode):
         self.hintkeys = hintkeys
 
         self.overlay_window(self.window)
+
+        self.image = None
+        #x1, y1, x2, y2 = win32gui.GetWindowRect(self.window.handle)
+        #with mss.mss() as sct:
+            #self.image = sct.grab((x1, y1, x2, y2))
 
         self.line_color = (128, 128, 255)
         self.hint_color = (255, 255, 0)
@@ -56,22 +64,59 @@ class HintMouseMode(pylewm.modes.overlay_mode.OverlayMode):
         self.start_region_mode()
         super(HintMouseMode, self).__init__(hotkeys)
 
+    def is_boring(self, rect):
+        if not self.image:
+            return False
+        data = self.image.raw
+        stride = self.image.width * 4
+
+        x_min = max(0, rect.left)
+        x_max = min(self.image.width, rect.right)
+        y_min = max(0, rect.top)
+        y_max = min(self.image.height, rect.bottom)
+
+        index = y_min*stride + x_min*4
+
+        b = data[index]
+        g = data[index+1]
+        r = data[index+2]
+
+        y = y_min
+        while y < y_max:
+            index = y*stride + x_min*4
+            if any(not (-5 < x-b < 5) for x in data[index:index+(x_max-x_min)*4:4]):
+                return False
+            if any(not (-5 < x-g < 5) for x in data[index+1:index+(x_max-x_min)*4+1:4]):
+                return False
+            if any(not (-5 < x-r < 5) for x in data[index+2:index+(x_max-x_min)*4+2:4]):
+                return False
+            y += 1
+
+        return True
+
     def start_region_mode(self):
         self.region_mode = True
         self.regions = []
 
-        y = 0
-        while y < self.cover_area.height:
-            x = 0
-            while x < self.cover_area.width:
-                region = HintRegion()
-                region.rect = Rect((
+        y = 10
+        while y < self.cover_area.height - 10:
+            x = 10
+            while x < self.cover_area.width - 10:
+                # If the region is all one color in the image, we consider it boring
+                # and we don't add a hint to it!
+                rect = Rect((
                     x, y,
-                    min(x + self.region_width, self.cover_area.width),
-                    min(y + self.region_height, self.cover_area.height)
+                    min(x + self.region_width, self.cover_area.width-10),
+                    min(y + self.region_height, self.cover_area.height-10)
                 ))
-                self.regions.append(region)
                 x += self.region_width
+
+                if self.is_boring(rect):
+                    continue
+
+                region = HintRegion()
+                region.rect = rect
+                self.regions.append(region)
             y += self.region_height
 
         pylewm.modes.hint_helpers.create_hints(self.regions, self.hintkeys)
@@ -234,7 +279,7 @@ class HintMouseMode(pylewm.modes.overlay_mode.OverlayMode):
 
                 overlay.draw_box(Rect.centered_around(point.position, (6, 6)), self.hint_color)
 
-@pylewm.commands.PyleCommand
+@pylewm.commands.PyleCommand.Threaded
 def start_hint_mouse(hotkeys={}, hintkeys="asdfjkl;", clickmode="left"):
     if not pylewm.focus.FocusWindow:
         return

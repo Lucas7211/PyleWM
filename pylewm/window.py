@@ -53,6 +53,7 @@ class Window:
         self.always_top = False
         self.force_always_top = False
         self.force_borders = None
+        self.minimized = False
 
         parent_handle = win32api.GetWindowLong(self.handle, win32con.GWL_HWNDPARENT)
         self.is_child_window = win32gui.IsWindow(parent_handle)
@@ -106,6 +107,10 @@ class Window:
     def minimize(self):
         def minimize_cmd():
             minimize_window_handle(self.handle)
+
+        self.minimized = True
+        self.floating = True
+        self.dragging = False
         self.command_queue.queue_command(minimize_cmd)
 
     def remove_titlebar(self):
@@ -262,19 +267,28 @@ class Window:
             print("Close due to cloaked: "+self.window_title)
             self.closed = True
             return
-        if self.is_minimized():
+        if self.is_minimized() or (self.is_window_hidden() and not self.becoming_visible):
             # Manually minimized windows are considered closed
-            print("Close due to minimize: "+self.window_title)
-            self.closed = True
-            return
-        if self.is_window_hidden():
-            # Manually minimized windows are considered closed
-            if not self.becoming_visible:
-                print("Close due to hidden: "+self.window_title)
-                self.closed = True
+            if not self.minimized:
+                print("Close due to minimize: "+self.window_title)
+                self.minimized = True
+                self.floating = True
+                self.dragging = False
                 return
-        elif self.becoming_visible:
-            self.becoming_visible = False
+        else:
+            if not self.is_window_hidden():
+                self.becoming_visible = False
+            if self.minimized:
+                print("Reopen from minimize: "+self.window_title)
+                self.minimized = False
+                if not self.can_tile:
+                    return
+                hover_space = pylewm.focus.get_cursor_space()
+                hover_space.add_window(self)
+                self.floating = False
+                self.take_new_rect = True
+        if self.minimized:
+            return
         if self.floating:
             self.update_drag()
             if self.dragging or self.drop_space:
@@ -403,7 +417,7 @@ class Window:
             ]
 
             try:
-                win32gui.SetWindowPos(self.handle, win32con.HWND_BOTTOM,
+                win32gui.SetWindowPos(self.handle, win32con.HWND_TOPMOST,
                     try_position[0], try_position[1],
                     try_position[2], try_position[3],
                     win32con.SWP_NOACTIVATE)
