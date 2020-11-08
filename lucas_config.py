@@ -4,6 +4,7 @@
 import pylewm
 import pylewm.modes.keynav
 import pylewm.modes.hint_mouse
+import pylewm.modes.hint_window
 import pylewm.modes.goto_window
 import pylewm.modes.select_application
 from pylewm.filters import *
@@ -107,14 +108,15 @@ pylewm.config.hotkeys({
 
     # List selection modes
     (*MOD, ',')              : pylewm.modes.select_application.run_application,
-    (*MOD, 'e')              : pylewm.modes.goto_window.start_goto_window,
+    (*MOD, 'enter')          : pylewm.modes.goto_window.start_goto_window,
+    (*MOD, 'e')              : pylewm.modes.hint_window.start_hint_window(hintkeys="aoeuhtns"),
 
     # Mouse control mode
     (*MOD, 'j')              : pylewm.modes.hint_mouse.start_hint_mouse(hintkeys="aoeuhtns"),
     (*MOD, 'shift', 'j')     : pylewm.modes.hint_mouse.start_hint_mouse(hintkeys="aoeuhtns", clickmode="right"),
 
     # System management
-    (*MOD, 'ctrl', '$')     : pylewm.execution.run([r'C:\bin\GoToSleep.bat'], as_admin=True),
+    (*MOD, 'ctrl', '$')     : pylewm.execution.run([r'C:\bin\GoToSleep.bat'], cmd_window=True),
 })
 
 pylewm.config.filters([

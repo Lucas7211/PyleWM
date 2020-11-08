@@ -35,8 +35,6 @@ class ListFilterObj():
 
 class ListMode(pylewm.modes.overlay_mode.OverlayMode):
     def __init__(self, hotkeys, options):
-        super(ListMode, self).__init__(hotkeys)
-
         self.all_options = options
         self.options = options
         self.selected_index = 0 
@@ -44,6 +42,7 @@ class ListMode(pylewm.modes.overlay_mode.OverlayMode):
 
         self.filter_text = ""
         self.closed = False
+        self.dirty = True
 
         self.displayed_count = 7
         self.context_pre = 3
@@ -56,14 +55,26 @@ class ListMode(pylewm.modes.overlay_mode.OverlayMode):
         self.bg_selected_color = (0, 128, 255)
 
         self.overlay_monitor(pylewm.focus.get_focused_monitor())
+        super(ListMode, self).__init__(hotkeys)
+
+    def should_clear(self):
+        return False
+
+    def should_draw(self):
+        if self.dirty:
+            self.dirty = False
+            return True
+        return False
 
     def select_next(self):
         self.selected_index = min(self.selected_index+1, len(self.options)-1)
         self.has_selection = True
+        self.dirty = True
 
     def select_prev(self):
         self.selected_index = max(self.selected_index-1, 0)
         self.has_selection = True
+        self.dirty = True
 
     def confirm_selection(self):
         if self.selected_index != -1:
@@ -106,6 +117,7 @@ class ListMode(pylewm.modes.overlay_mode.OverlayMode):
         return super(ListMode, self).handle_key(key, isMod)
 
     def update_filter(self):
+        self.dirty = True
         filter_obj = self.get_filter_obj()
 
         selected_option = None
@@ -132,7 +144,7 @@ class ListMode(pylewm.modes.overlay_mode.OverlayMode):
     def draw(self, overlay):
         if self.closed:
             return
-        box_left = (overlay.rect.width - self.box_width) / 2
+        box_left = (self.overlay_rect.width - self.box_width) / 2
         box = Rect((
             box_left,
             0,

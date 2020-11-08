@@ -54,6 +54,10 @@ class Rect:
         return self.position[3] - self.position[1]
 
     @property
+    def size(self):
+        return (self.width, self.height)
+
+    @property
     def coordinates(self):
         return self.position
 

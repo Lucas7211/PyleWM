@@ -26,7 +26,10 @@ class Mode:
             if bnd[0] == key:
                 queue_command(bnd[1])
                 return True
-        return self.captureAll and not isMod
+        if not isMod and self.captureAll:
+            return True
+        else:
+            return None
 
     def end_mode(self):
         pass
@@ -216,11 +219,10 @@ def handle_python(isKeyDown, keyCode, scanCode):
     # Check modes
     if ModeStack:
         with ModeLock:
-            handle_type = ModeStack[0].handle_key(ActiveKey, isMod)
-            if handle_type:
-                return True
-            if handle_type is None:
-                return False
+            if ModeStack:
+                handle_type = ModeStack[0].handle_key(ActiveKey, isMod)
+                if handle_type is not None:
+                    return handle_type
 
     # Check keybinds
     for bnd in KeyBindings:

@@ -1,4 +1,5 @@
 import pylewm.modes.overlay_mode
+import pylewm.modes.hint_helpers
 import pylewm
 from pylewm.rects import Rect
 import win32gui, win32api, win32con
@@ -11,8 +12,6 @@ class HintPoint:
 
 class HintMouseMode(pylewm.modes.overlay_mode.OverlayMode):
     def __init__(self, hintkeys, hotkeys, clickmode):
-        super(HintMouseMode, self).__init__(hotkeys)
-
         self.window = pylewm.focus.FocusWindow
         self.cover_area = self.window.rect
 
@@ -55,6 +54,7 @@ class HintMouseMode(pylewm.modes.overlay_mode.OverlayMode):
         self.shift_size = 5
 
         self.start_region_mode()
+        super(HintMouseMode, self).__init__(hotkeys)
 
     def start_region_mode(self):
         self.region_mode = True
@@ -74,7 +74,7 @@ class HintMouseMode(pylewm.modes.overlay_mode.OverlayMode):
                 x += self.region_width
             y += self.region_height
 
-        self.create_hints(self.regions)
+        pylewm.modes.hint_helpers.create_hints(self.regions, self.hintkeys)
 
     def start_points_mode(self, region):
         self.selected_region = region
@@ -101,7 +101,7 @@ class HintMouseMode(pylewm.modes.overlay_mode.OverlayMode):
 
             self.points.append(point)
 
-        self.create_hints(self.points)
+        pylewm.modes.hint_helpers.create_hints(self.points, self.hintkeys)
 
     def close(self):
         self.closed = True
@@ -200,21 +200,6 @@ class HintMouseMode(pylewm.modes.overlay_mode.OverlayMode):
 
         return super(HintMouseMode, self).handle_key(key, isMod)
 
-    def create_hints(self, item_list):
-        depth = 1
-        key_count = len(self.hintkeys)
-
-        depth_count = float(len(item_list))
-        while depth_count > key_count:
-            depth += 1
-            depth_count /= float(key_count)
-
-        for i, item in enumerate(item_list):
-            item.hint = ""
-            n = i
-            for d in range(0, depth):
-                item.hint += self.hintkeys[n % key_count]
-                n = int(n / key_count)
 
     def draw(self, overlay):
         if self.closed:

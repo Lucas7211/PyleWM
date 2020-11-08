@@ -6,8 +6,6 @@ from pylewm.rects import Rect
 
 class KeyNavMode(pylewm.modes.overlay_mode.OverlayMode):
     def __init__(self, hotkeys):
-        super(KeyNavMode, self).__init__(hotkeys)
-
         self.window = pylewm.focus.FocusWindow
         self.cover_area = self.window.rect
 
@@ -22,6 +20,8 @@ class KeyNavMode(pylewm.modes.overlay_mode.OverlayMode):
 
         self.rect_history = []
         self.update_rect()
+
+        super(KeyNavMode, self).__init__(hotkeys)
 
     def split_left(self):
         self.rect = Rect((
