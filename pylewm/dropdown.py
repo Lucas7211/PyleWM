@@ -20,9 +20,11 @@ def set_as_dropdown():
     previous_window = DROPDOWN_WINDOW
     if previous_window:
         if previous_window.hidden:
+            previous_window.is_dropdown = False
             previous_window.show()
 
     DROPDOWN_WINDOW = window
+    window.is_dropdown = True
 
 @PyleCommand
 def toggle_dropdown():
@@ -63,7 +65,9 @@ def update_dropdown():
         if not window.hidden:
             if not window.floating:
                 print("Dropdown window placed into layout")
+                window.is_dropdown = False
                 DROPDOWN_WINDOW = None
             elif not window.focused and not window.becoming_visible:
                 print("Lost focus on dropdown window")
+                window.is_dropdown = True
                 window.hide()

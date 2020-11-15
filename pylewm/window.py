@@ -54,6 +54,7 @@ class Window:
         self.force_always_top = False
         self.force_borders = None
         self.minimized = False
+        self.is_dropdown = False
 
         parent_handle = win32api.GetWindowLong(self.handle, win32con.GWL_HWNDPARENT)
         self.is_child_window = win32gui.IsWindow(parent_handle)

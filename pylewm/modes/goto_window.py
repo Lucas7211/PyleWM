@@ -19,6 +19,8 @@ def start_goto_window(hotkeys = {}):
     options = []
     for hwnd, window in pylewm.windows.Windows.items():
         if win32gui.IsWindow(hwnd):
+            if window.is_dropdown:
+                continue
             option = WindowOption(window)
             options.append(option)
 

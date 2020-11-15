@@ -30,6 +30,8 @@ class HintWindowMode(pylewm.modes.overlay_mode.OverlayMode):
         hidden_windows = {}
         for hwnd, window in pylewm.windows.Windows.items():
             if win32gui.IsWindow(hwnd):
+                if window.is_dropdown:
+                    continue
                 if window.minimized:
                     continue
                 if window.space and not window.space.visible:
