@@ -26,7 +26,7 @@ class Rect:
 
     @staticmethod
     def centered_around(pos, size):
-        return Rect(( int(pos[0] - size[0]) / 2, int(pos[1] - size[1]) / 2, int(pos[0]+size[0]/2), int(pos[1]+size[1]/2) ))
+        return Rect(( int(pos[0] - size[0] / 2), int(pos[1] - size[1] / 2), int(pos[0]+size[0]/2), int(pos[1]+size[1]/2) ))
 
     def __str__(self):
         return repr(self.position)
