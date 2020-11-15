@@ -227,6 +227,11 @@ def manage_window(window):
     if not InitialPlacement:
         pylewm.filters.trigger_all_filters(window, post=True)
 
+
+WINDOW_UPDATE_FUNCS = []
+def PyleWindowUpdate(func):
+    WINDOW_UPDATE_FUNCS.append(func)
+
 @PyleThread(0.05)
 def tick_windows():
     global NewWindows
@@ -368,6 +373,9 @@ def tick_windows():
         if not window:
             continue
         window.trigger_update()
+
+    for update_func in WINDOW_UPDATE_FUNCS:
+        update_func()
 
     # We are no longer in initial placement mode
     global InitialPlacement

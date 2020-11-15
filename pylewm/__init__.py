@@ -13,6 +13,7 @@ import pylewm.filters
 import pylewm.wsltty
 import pylewm.config
 import pylewm.alt_mode
+import pylewm.dropdown
 import pylewm.run
 
 from pylewm.run import start, restart, quit

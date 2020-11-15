@@ -18,7 +18,7 @@ class Rect:
         if not position:
             self.position = (0,0,0,0)
         else:
-            self.position = tuple(position)
+            self.position = tuple(map(int, position))
 
     @staticmethod
     def from_pos_size(pos, size):
@@ -26,7 +26,7 @@ class Rect:
 
     @staticmethod
     def centered_around(pos, size):
-        return Rect(( pos[0] - size[0] / 2, pos[1] - size[1] / 2, pos[0]+size[0]/2, pos[1]+size[1]/2 ))
+        return Rect(( int(pos[0] - size[0]) / 2, int(pos[1] - size[1]) / 2, int(pos[0]+size[0]/2), int(pos[1]+size[1]/2) ))
 
     def __str__(self):
         return repr(self.position)

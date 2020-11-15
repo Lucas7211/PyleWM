@@ -11,6 +11,7 @@ import win32security
 import win32api
 import subprocess
 import pywintypes
+import shutil
 
 @PyleCommand.Threaded
 def start_menu():
@@ -52,7 +53,12 @@ def run(args, cwd=None, as_admin=False, cmd_window=False):
             escaped_commandline += arg
             escaped_commandline += '" '
 
-        success = ctypes.windll.advapi32.CreateProcessWithTokenW(int(spawn_token), 0, args[0], escaped_commandline,
+        # Try to lookup where the exe is from PATH
+        executable = args[0]
+        if not os.path.isfile(executable):
+            executable = shutil.which(executable)
+
+        success = ctypes.windll.advapi32.CreateProcessWithTokenW(int(spawn_token), 0, executable, escaped_commandline,
                     win32con.CREATE_NO_WINDOW if not cmd_window else win32con.CREATE_NEW_CONSOLE, None, os.getcwd(),
                     ctypes.pointer(startup_info), ctypes.pointer(process_information))
 

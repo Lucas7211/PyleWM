@@ -2,6 +2,7 @@ import pylewm.commands
 import sys, ctypes
 from ctypes import windll, CFUNCTYPE, POINTER, c_int, c_uint, c_void_p, byref, c_ulong, pointer, addressof, create_string_buffer
 import win32con, win32api, win32gui, atexit
+import ctypes.wintypes as wintypes
 
 import traceback, threading
 import copy
@@ -295,8 +296,59 @@ def wait_for_hotkeys():
 
     HANDLER = CFUNCTYPE(c_uint, c_uint, c_uint, POINTER(c_uint))
     handlerPtr = HANDLER(handle_windows)
+
     windowsHook = windll.user32.SetWindowsHookExA(win32con.WH_KEYBOARD_LL, handlerPtr, win32api.GetModuleHandle(None), 0)
     atexit.register(windll.user32.UnhookWindowsHookEx, windowsHook)
+
+    """
+    def is_window_handle_cloaked(hwnd):
+        output = (ctypes.c_uint * 1)()
+        result = ctypes.windll.dwmapi.DwmGetWindowAttribute(
+            hwnd,
+            ctypes.c_uint(14),
+            output, 4)
+        return output[0] != 0
+    HAS_HIDDEN = set()
+    def handle_shell(hook, event, hwnd, idObject, idChild, dwEventThread, dwmsEventTime):
+        if idObject == win32con.OBJID_WINDOW:
+            if win32gui.IsWindow(hwnd) and not is_window_handle_cloaked(hwnd) and win32gui.IsWindowVisible(hwnd):
+                print(f"LOCATIONCHANGE {hwnd:x} {win32gui.GetWindowText(hwnd)} - {win32gui.GetWindowRect(hwnd)}")
+
+                rect = win32gui.GetWindowRect(hwnd)
+                if (rect[0] != -10000 or rect[1] != -10000) and hwnd not in HAS_HIDDEN:
+                    print("MOVE")
+                    win32gui.SetWindowPos(hwnd,
+                        win32con.HWND_BOTTOM,
+                        -10000, -10000,
+                        rect[2]-rect[0], rect[3]-rect[1],
+                        win32con.SWP_NOACTIVATE | win32con.SWP_NOSIZE)
+                    result = win32gui.GetWindowRect(hwnd)
+                    print(f"result {result}")
+                    HAS_HIDDEN.add(hwnd)
+
+            if win32gui.IsWindow(hwnd) and not is_window_handle_cloaked(hwnd) and win32gui.IsWindowVisible(hwnd) and not hwnd in HAS_HIDDEN:
+                print(f"PREHIDE {hwnd:x}")
+                HAS_HIDDEN.add(hwnd)
+                win32gui.ShowWindow(hwnd, win32con.SW_HIDE)
+                #pylewm.commands.delay_pyle_command(0.5, lambda: win32gui.ShowWindow(hwnd, win32con.SW_SHOW))
+                #rect = win32gui.GetWindowRect(hwnd)
+                #win32gui.SetWindowPos(hwnd,
+                    #win32con.HWND_BOTTOM,
+                    #rect[0], rect[1],
+                    #rect[2]-rect[0], rect[3]-rect[1],
+                    #win32con.SWP_NOACTIVATE)
+                #win32gui.SetWindowPos(hwnd,
+                #    win32con.HWND_BOTTOM,
+                #    -5000, -5000,
+                #    rect[2]-rect[0], rect[3]-rect[1],
+                #    win32con.SWP_HIDEWINDOW)
+
+    shellHandlerPtr = (CFUNCTYPE(None, wintypes.HANDLE, c_uint, wintypes.HANDLE, c_uint, c_uint, c_uint, c_uint))(handle_shell)
+    shellHook = windll.user32.SetWinEventHook(
+        win32con.EVENT_OBJECT_LOCATIONCHANGE,
+        win32con.EVENT_OBJECT_LOCATIONCHANGE,
+        win32api.GetModuleHandle(None), shellHandlerPtr, 0, 0, win32con.WINEVENT_INCONTEXT)
+    atexit.register(windll.user32.UnhookWinEvent, shellHook)"""
     
     while not pylewm.commands.stopped:
         msg = win32gui.GetMessage(None, 0, 0)

@@ -27,6 +27,11 @@ def set_focus(window):
     rect = window.rect.copy()
     FocusQueue.queue_command(lambda: focus_window_handle(hwnd, rect))
 
+def set_focus_no_mouse(window):
+    print(f"Focus Window {window.window_title}")
+    hwnd = window.handle
+    FocusQueue.queue_command(lambda: focus_window_handle(hwnd, None))
+
 def set_focus_space(space):
     if space.last_focus:
         set_focus(space.last_focus)

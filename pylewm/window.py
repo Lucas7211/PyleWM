@@ -91,6 +91,32 @@ class Window:
             #self.last_window_pos = self.get_actual_rect()
         self.command_queue.queue_command(show_cmd)
 
+    def show_with_rect(self, new_rect):
+        self.rect = new_rect
+        def show_with_rect_cmd():
+            if not self.hidden:
+                return
+            self.hidden = False
+            self.becoming_visible = True
+
+            try_position = [
+                self.rect.left,
+                self.rect.top,
+                self.rect.width,
+                self.rect.height,
+            ]
+            try:
+                win32gui.SetWindowPos(self.handle, win32con.HWND_TOPMOST,
+                    try_position[0], try_position[1],
+                    try_position[2], try_position[3],
+                    win32con.SWP_SHOWWINDOW)
+            except:
+                pass
+
+            ctypes.windll.user32.ShowWindowAsync(self.handle, win32con.SW_SHOW)
+
+        self.command_queue.queue_command(show_with_rect_cmd)
+
     def hide(self):
         def hide_cmd():
             if self.hidden:

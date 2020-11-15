@@ -88,16 +88,19 @@ pylewm.config.hotkeys({
     (*MOD, '!')              : pylewm.spaces.next_layout,
     (*MOD, 'shift', '!')     : pylewm.spaces.previous_layout,
 
+    (*MOD, 'a')              : pylewm.dropdown.toggle_dropdown,
+    (*MOD, 'shift', 'a')     : pylewm.dropdown.set_as_dropdown,
+
     # Application management
-    (*MOD, ';')              : pylewm.wsltty.open_wsltty,
-    (*MOD, 'a')              : pylewm.execution.command_prompt,
-    (*MOD, 'shift', 'a')     : pylewm.execution.command_prompt(as_admin=True),
+    (*MOD, ';')              : pylewm.execution.run([r'wt.exe', '-p', 'Ubuntu-20.04']),
+    (*MOD, 'shift', ';')     : pylewm.execution.run([r'wt.exe', '-p', 'Windows PowerShell'], as_admin=True),
+    (*MOD, 'ctrl', ',')      : pylewm.execution.start_menu,
     (*MOD, 'p')              : pylewm.execution.run(r'C:\Program Files\Mozilla Firefox\firefox.exe'),
-    (*MOD, 'k')              : pylewm.wsltty.open_wsltty(["ranger", "/data/spool"]),
+    (*MOD, 'k')              : pylewm.execution.run([r'wt.exe', "wsl.exe", "--", "ranger", "/data/spool"]),
     (*MOD, 'u')              : pylewm.execution.this_pc,
     (*MOD, 'shift', 'u')     : pylewm.execution.file_explorer,
 
-    (*MOD, '.')              : pylewm.execution.run([r'C:\mpd\mpc.exe', 'toggle']),
+    (*MOD, '.')              : pylewm.execution.run([r'C:\mpd\toggle.bat']),
     (*MOD, 'shift', '.')     : pylewm.execution.run([r'C:\mpd\mpc.exe', 'next']),
 
     # PyleWM management
@@ -121,9 +124,8 @@ pylewm.config.hotkeys({
 
 pylewm.config.filters([
     ({"class": "mintty"}, NoTitlebar, AutoPoke),
-    ({"title": "Slack *"}, Tiling, Monitor(0)),
+    ({"title": "Windows Terminal"}, NoTitlebar),
     ({"class": "MediaPlayerClassicW"}, Floating),
-    ({"title": "* One Manager"}, Tiling, Monitor(2), TemporarySpace),
 
     # Visual Studio
     ({"class": "HwndWrapper[*"}, KeepStartMonitor, AutoPoke, ForceBorders(2)),
