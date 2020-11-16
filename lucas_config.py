@@ -136,4 +136,6 @@ pylewm.config.filters([
     ({"class": "SplashScreenClass"}, Ignore),
     ({"class": "UnrealWindow", "child": True}, Floating),
     ({"title": "*PCD3D_SM5*", "class": "UnrealWindow"}, Tiling, Monitor(1), TemporarySpace),
+
+    ({"class": "DesktopWindowXamlSource"}, Ignore),
 ])
