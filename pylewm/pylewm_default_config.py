@@ -26,9 +26,9 @@ def apply(MOD=('ctrl','alt')):
         # -- MOD+M Minimizes a window
         (*MOD, 'm')     : pylewm.windows.minimize,
 
-        # -- MOD+SHIFT+A and S switch a window between being tiled and floating on top
-        (*MOD, 'shift', 'a')              : pylewm.windows.drop_window_into_layout,
-        (*MOD, 'shift', 's')              : pylewm.windows.make_window_floating,
+        # -- MOD+SHIFT+Z and X switch a window between being tiled and floating on top
+        (*MOD, 'shift', 'z')              : pylewm.windows.drop_window_into_layout,
+        (*MOD, 'shift', 'x')              : pylewm.windows.make_window_floating,
 
         # -- Yank & Paste windows with MOD+Y and MOD+P
         (*MOD, 'y')              : pylewm.yank.yank_window,

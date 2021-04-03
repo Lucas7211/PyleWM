@@ -42,6 +42,23 @@ For a list of hotkeys available by default see [the example config file](pylewm/
 
 PyleWM adds a windows tray icon that can be used to quit the application.
 
+Temporary Workspaces
+====================
+In addition to the two 'back' and 'front' workspaces per monitor, an unlimited
+amount of temporary workspaces can be used.
+
+Temporary workspaces only exist as long as there are windows assigned to them.
+As soon as all windows in a temporary workspace are closed or moved away, it is destroyed.
+
+The default `Control+Alt+S` shortcut will switch to the most recently used temporary workspace. 
+When there are no temporary workspaces on this monitor, or if the current visible workspace is already a temporary workspace,
+it switches to a new empty temporary workspace instead.
+
+The `Control+Alt+N` (Next Temporary Workspace) and `Control+Alt+M` (Previous Temporary Workspace) shortcuts can
+switch between temporary workspaces if the current monitor has more than one.
+
+Pressing `Control+Alt+Shift+S` will move the currently focused window into its own new temporary workspace.
+
 Configuration
 =============
 PyleWM automatically sets up an example configuration file in
@@ -52,7 +69,7 @@ updated configuration.
 Dependencies
 ============
 Written for minimum Python version 3.6.
-Requires `pypiwin32` and `pystray`.
+Requires `pypiwin32`, `pystray`, `pygame` and `fuzzywuzzy`.
 
 Permissions
 ===========

@@ -75,16 +75,17 @@ class Monitor:
         index = self.temp_spaces.index(temp_space)
         self.temp_spaces = self.temp_spaces[index:] + self.temp_spaces[:index]
 
-    def get_adjacent_temp_space(self, temp_space, direction):
+    def get_adjacent_temp_space(self, temp_space, direction, final_empty_space = False):
         assert temp_space in self.temp_spaces
         old_index = self.temp_spaces.index(temp_space)
         new_index = (old_index + direction + len(self.temp_spaces)) % len(self.temp_spaces)
 
         # There is always an empty temporary space at the end of the list of
         # temporary spaces. But only if you're going forward
-        if old_index == len(self.temp_spaces) - 1 and direction > 0:
-            if len(temp_space.windows) > 0:
-                return self.new_temp_space()
+        if final_empty_space:
+            if old_index == len(self.temp_spaces) - 1 and direction > 0:
+                if len(temp_space.windows) > 0:
+                    return self.new_temp_space()
 
         return self.temp_spaces[new_index]
     

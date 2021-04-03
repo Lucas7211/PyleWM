@@ -84,6 +84,14 @@ def move_to_space(monitor_index, space_index):
     delay_pyle_command(0.05, lambda: pylewm.focus.set_focus(window))
 
 @PyleCommand
+def new_temporary():
+    space = pylewm.focus.get_focused_space()
+    monitor = space.monitor
+
+    temp_space = monitor.new_temp_space()
+    goto_space(temp_space)
+
+@PyleCommand
 def goto_temporary():
     space = pylewm.focus.get_focused_space()
     monitor = space.monitor
@@ -104,13 +112,13 @@ def goto_temporary():
     goto_space(temp_space)
 
 @PyleCommand
-def next_temporary():
+def next_temporary(final_empty_space = False):
     space = pylewm.focus.get_focused_space()
     monitor = space.monitor
     if not space.temporary:
         return
 
-    goto_space(monitor.get_adjacent_temp_space(space, +1))
+    goto_space(monitor.get_adjacent_temp_space(space, +1, final_empty_space))
 
 @PyleCommand
 def previous_temporary():
