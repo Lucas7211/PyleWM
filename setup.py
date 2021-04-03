@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name="PyleWM",
     version="1.1",
-    packages=["pylewm", "pylewm.layouts"],
+    packages=["pylewm", "pylewm.layouts", "pylewm.modes"],
 
     install_requires=[
         "pypiwin32>=223",
