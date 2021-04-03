@@ -4,7 +4,6 @@ import pylewm
 from pylewm.rects import Rect
 import win32gui, win32api, win32con
 import array
-import mss
 import ctypes
 
 class HintRegion:
@@ -24,9 +23,6 @@ class HintMouseMode(pylewm.modes.overlay_mode.OverlayMode):
         self.overlay_window(self.window)
 
         self.image = None
-        #x1, y1, x2, y2 = win32gui.GetWindowRect(self.window.handle)
-        #with mss.mss() as sct:
-            #self.image = sct.grab((x1, y1, x2, y2))
 
         self.line_color = (128, 128, 255)
         self.hint_color = (255, 255, 0)

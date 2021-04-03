@@ -10,7 +10,8 @@ setup(
         "pystray>=0.15.0",
         "pygame>=2.0.0",
         "fuzzywuzzy>=0.18.0",
-        "python-levenshtein>=0.12.0"
+        "python-levenshtein>=0.12.0",
+        "pylnk3>=0.4.2",
     ],
     package_data={
         "pylewm": ["PyleWM.png", "data/*"],
