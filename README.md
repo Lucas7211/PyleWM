@@ -59,6 +59,17 @@ switch between temporary workspaces if the current monitor has more than one.
 
 Pressing `Control+Alt+Shift+S` will move the currently focused window into its own new temporary workspace.
 
+Application Selector
+====================
+PyleWM has a builtin fuzzy search window. By default this can be used in two modes:
+
+Pressing `Control+Alt+Enter` shows a list of all application shortcuts (taken
+from the start menu and the desktop), and lets you type a fuzzy search to start any
+application.
+
+Pressing `Control+Alt+W` lists the titles of all currently open windows, and lets you
+type a fuzzy search to focus one of them.
+
 Configuration
 =============
 PyleWM automatically sets up an example configuration file in

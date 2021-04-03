@@ -48,6 +48,12 @@ pylewm.config.hotkeys({
     #(*MOD, ' ')              : pylewm.spaces.flip,
     #(*MOD, 'shift', ' ')     : pylewm.spaces.move_flip,
 
+    # -- MOD+Enter opens a fuzzy search window to start any application with a start menu / desktop shortcut
+    #(*MOD, 'enter')          : pylewm.modes.select_application.run_application,
+
+    # -- MOD+W opens a fuzzy search window to select any available window by name
+    #(*MOD, 'w')              : pylewm.modes.goto_window.start_goto_window,
+
     # -- Temporary spaces are created and deleted when necessary per monitor
     #(*MOD, 's')              : pylewm.spaces.goto_temporary,
     #(*MOD, 'n')              : pylewm.spaces.next_temporary,

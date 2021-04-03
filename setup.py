@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="PyleWM",
-    version="1.0",
+    version="1.1",
     packages=["pylewm", "pylewm.layouts"],
 
     install_requires=[
