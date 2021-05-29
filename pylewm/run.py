@@ -3,6 +3,7 @@ from functools import partial
 import traceback, os
 import subprocess
 import argparse
+import faulthandler
 
 import pystray
 from PIL import Image
@@ -58,6 +59,7 @@ def start():
         # Set up registry variables for running PyleWM correctly
         init_registry_vars()
 
+    faulthandler.enable()
     pylewm.config.apply()
 
     for fun in InitFunctions:

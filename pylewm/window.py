@@ -92,6 +92,15 @@ class Window:
             #self.last_window_pos = self.get_actual_rect()
         self.command_queue.queue_command(show_cmd)
 
+    def SetWindowPos(self, hwnd, insert_hwnd, pos_x, pos_y, pos_cx, pos_cy, flags):
+        result = ctypes.windll.user32.SetWindowPos(
+            hwnd, insert_hwnd,
+            pos_x, pos_y,
+            pos_cx, pos_cy,
+            flags
+        )
+        return (result != 0)
+
     def show_with_rect(self, new_rect):
         self.rect = new_rect
         def show_with_rect_cmd():
@@ -106,13 +115,10 @@ class Window:
                 self.rect.width,
                 self.rect.height,
             ]
-            try:
-                win32gui.SetWindowPos(self.handle, win32con.HWND_TOPMOST,
-                    try_position[0], try_position[1],
-                    try_position[2], try_position[3],
-                    win32con.SWP_SHOWWINDOW)
-            except:
-                pass
+            self.SetWindowPos(self.handle, win32con.HWND_TOPMOST,
+                try_position[0], try_position[1],
+                try_position[2], try_position[3],
+                win32con.SWP_SHOWWINDOW)
 
             ctypes.windll.user32.ShowWindowAsync(self.handle, win32con.SW_SHOW)
 
@@ -150,15 +156,17 @@ class Window:
 
     def manage(self):
         self.command_queue = pylewm.commands.CommandQueue()
-        if self.is_maximized():
-            self.remove_maximize()
-            self.last_window_pos = win32gui.GetWindowRect(self.handle)
-        if self.floating:
-            self.set_always_top(True)
-        elif self.force_always_top:
-            self.set_always_top(True)
-        else:
-            self.bring_to_front()
+        def manage_window_cmd():
+            if self.is_maximized():
+                self.remove_maximize()
+                self.last_window_pos = win32gui.GetWindowRect(self.handle)
+            if self.floating:
+                self.set_always_top(True)
+            elif self.force_always_top:
+                self.set_always_top(True)
+            else:
+                self.bring_to_front()
+        self.command_queue.queue_command(manage_window_cmd)
 
     def trigger_update(self):
         self.command_queue.queue_command(self.update)
@@ -360,13 +368,11 @@ class Window:
             set_position_allowed = True
             needed_tries = 0
             for tries in range(0, 10):
-                try:
-                    win32gui.SetWindowPos(self.handle, win32con.HWND_BOTTOM,
-                        try_position[0], try_position[1],
-                        try_position[2], try_position[3],
-                        win32con.SWP_NOACTIVATE)
-                except:
-                    set_position_allowed = False
+                set_position_allowed = self.SetWindowPos(self.handle, win32con.HWND_BOTTOM,
+                    try_position[0], try_position[1],
+                    try_position[2], try_position[3],
+                    win32con.SWP_NOACTIVATE)
+                if not set_position_allowed:
                     break
 
                 self.last_window_pos = self.get_actual_rect()
@@ -450,62 +456,46 @@ class Window:
                 self.floating_rect.height,
             ]
 
-            try:
-                win32gui.SetWindowPos(self.handle, win32con.HWND_TOPMOST,
+            self.SetWindowPos(self.handle, win32con.HWND_TOPMOST,
                     try_position[0], try_position[1],
                     try_position[2], try_position[3],
                     win32con.SWP_NOACTIVATE)
-            except:
-                pass
 
         self.command_queue.queue_command(float_cmd)
 
     def poke(self):
         def poke_cmd():
-            try:
-                win32gui.SetWindowPos(self.handle, win32con.HWND_BOTTOM,
-                    self.rect.left+2, self.rect.top+2,
-                    self.rect.width-4, self.rect.height-4,
-                    win32con.SWP_NOACTIVATE)
-            except:
-                pass
-            try:
-                win32gui.SetWindowPos(self.handle, win32con.HWND_BOTTOM,
-                    self.rect.left, self.rect.top,
-                    self.rect.width, self.rect.height,
-                    win32con.SWP_NOACTIVATE)
-            except:
-                pass
+            self.SetWindowPos(self.handle, win32con.HWND_BOTTOM,
+                self.rect.left+2, self.rect.top+2,
+                self.rect.width-4, self.rect.height-4,
+                win32con.SWP_NOACTIVATE)
+            self.SetWindowPos(self.handle, win32con.HWND_BOTTOM,
+                self.rect.left, self.rect.top,
+                self.rect.width, self.rect.height,
+                win32con.SWP_NOACTIVATE)
         self.command_queue.queue_command(poke_cmd)
 
     def bring_to_front(self):
         if self.force_always_top:
             return
 
-        try:
-            win32gui.SetWindowPos(self.handle, win32con.HWND_TOP, 0, 0, 0, 0,
-                    win32con.SWP_NOACTIVATE | win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
-        except:
-            pass
+        self.SetWindowPos(self.handle, win32con.HWND_TOP, 0, 0, 0, 0,
+                win32con.SWP_NOACTIVATE | win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
 
     def send_to_bottom(self):
         if self.force_always_top:
             return
-
-        try:
-            win32gui.SetWindowPos(self.handle, win32con.HWND_BOTTOM, 0, 0, 0, 0,
-                    win32con.SWP_NOACTIVATE | win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
-        except:
-            pass
+        self.SetWindowPos(self.handle, win32con.HWND_BOTTOM, 0, 0, 0, 0,
+                win32con.SWP_NOACTIVATE | win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
 
     def set_always_top(self, always_top):
         self.always_top = always_top
         try:
             if always_top:
-                win32gui.SetWindowPos(self.handle, win32con.HWND_TOPMOST, 0, 0, 0, 0,
+                self.SetWindowPos(self.handle, win32con.HWND_TOPMOST, 0, 0, 0, 0,
                         win32con.SWP_NOACTIVATE | win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
             else:
-                win32gui.SetWindowPos(self.handle, win32con.HWND_NOTOPMOST, 0, 0, 0, 0,
+                self.SetWindowPos(self.handle, win32con.HWND_NOTOPMOST, 0, 0, 0, 0,
                         win32con.SWP_NOACTIVATE | win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
         except:
             pass
