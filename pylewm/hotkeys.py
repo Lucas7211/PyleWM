@@ -269,6 +269,12 @@ KBState = (ctypes.c_byte * 256)()
 def VKToChr(vk, sc):
     if vk in VK_MAP:
         return VK_MAP[vk]
+
+    # check if the pressed key is a dead key
+    MAPVK_VK_TO_CHAR = 2
+    if windll.user32.MapVirtualKeyA(vk, MAPVK_VK_TO_CHAR) < 0:
+        return ""
+
     try:
         output = (ctypes.c_short * 3)()
         retCode = windll.user32.ToAscii(c_uint(vk), c_uint(sc), KBState, output, c_uint(0))
