@@ -270,20 +270,17 @@ def VKToChr(vk, sc):
     if vk in VK_MAP:
         return VK_MAP[vk]
 
-    # check if the pressed key is a dead key
     MAPVK_VK_TO_CHAR = 2
-    if windll.user32.MapVirtualKeyA(vk, MAPVK_VK_TO_CHAR) < 0:
+    charValue = windll.user32.MapVirtualKeyA(vk, MAPVK_VK_TO_CHAR)
+    if charValue < 0:
+        # if less then 0 then it was a deadkey
+        return ""
+    if charValue == 0:
+        # Could not be translated
         return ""
 
-    try:
-        output = (ctypes.c_short * 3)()
-        retCode = windll.user32.ToAscii(c_uint(vk), c_uint(sc), KBState, output, c_uint(0))
-        return chr(output[0]).lower()
-    except Exception as ex:
-        import traceback
-        traceback.print_exc()
-        sys.exit()
-    
+    return chr(charValue).lower()
+
 def wait_for_hotkeys():
     def handle_windows(nCode, wParam, lParam):
             isKeyDown = False
