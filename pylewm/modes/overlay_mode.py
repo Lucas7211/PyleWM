@@ -6,9 +6,12 @@ import win32con
 import win32api
 import os
 import time
+import re
 from pylewm.rects import Rect
 
 OVERLAY_WINDOW = None
+re_unicode = re.compile("[^\x00-\xFFFF]+")
+
 class OverlayWindow:
     def __init__(self):
         self.shown = False
@@ -57,6 +60,8 @@ class OverlayWindow:
 
         if not font:
             font = self.font
+
+        text = re_unicode.sub("?", text)
         img = font.render(text, True, color)
         blit_dim = [img.get_width(), img.get_height()]
 
