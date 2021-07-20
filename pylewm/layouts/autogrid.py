@@ -56,7 +56,7 @@ class AutoGridLayout(Layout):
     def select_mru_span_window(self, column_index, pos_top, pos_bottom):
         candidates = []
         for window in self.columns[column_index]:
-            if pos_top < window.rect.bottom and window.rect.top < pos_bottom:
+            if pos_top < window.layout_position.bottom and window.layout_position.top < pos_bottom:
                 candidates.append(window)
 
         for window in reversed(self.focus_mru):
@@ -156,6 +156,7 @@ class AutoGridLayout(Layout):
 
     def remove_window(self, window):
         self.windows.remove(window)
+        print(f"remove {window} now {len(self.windows)}")
 
         for column in self.columns:
             if window in column:
@@ -188,13 +189,13 @@ class AutoGridLayout(Layout):
             if window_column == 0:
                 return None, direction
 
-            target_window = self.select_mru_span_window(window_column-1, from_window.rect.top, from_window.rect.bottom)
+            target_window = self.select_mru_span_window(window_column-1, from_window.layout_position.top, from_window.layout_position.bottom)
             return target_window, direction
         elif direction in Direction.ANY_Right:
             if window_column == len(self.columns)-1:
                 return None, direction
 
-            target_window = self.select_mru_span_window(window_column+1, from_window.rect.top, from_window.rect.bottom)
+            target_window = self.select_mru_span_window(window_column+1, from_window.layout_position.top, from_window.layout_position.bottom)
             return target_window, direction
         elif direction == Direction.Next:
             new_slot = (window_slot + 1) % column_length
@@ -218,13 +219,13 @@ class AutoGridLayout(Layout):
     def move_window_to_column(self, window, to_column_index, always_insert=False):
         wanted_columns, wanted_rows = self.get_wanted_grid_dimensions(len(self.windows))
         from_column_index, from_slot_index = self.get_window_column(window)
-        target_window = self.select_mru_span_window(to_column_index, window.rect.top, window.rect.bottom)
+        target_window = self.select_mru_span_window(to_column_index, window.layout_position.top, window.layout_position.bottom)
         target_column, target_slot = self.get_window_column(target_window)
 
         if (len(self.columns[target_column]) < len(self.columns[from_column_index])
             or len(self.columns) > wanted_columns) or always_insert:
             # Move the window from the larger column to the smaller column
-            if window.rect.center[1] >= target_window.rect.center[1]:
+            if window.layout_position.center[1] >= target_window.layout_position.center[1]:
                 target_slot += 1
             self.columns[target_column].insert(target_slot, window)
             self.columns[from_column_index].remove(window)
@@ -441,6 +442,7 @@ class AutoGridLayout(Layout):
 
         # Update all window positions
         if self.need_reposition:
+            new_rect = Rect()
             self.need_reposition = False
 
             column_count = len(self.columns)
@@ -472,12 +474,13 @@ class AutoGridLayout(Layout):
                     if pending_column == column_index and slot_index >= pending_slot:
                         slot_position += 1
 
-                    window.rect.coordinates = (
+                    new_rect.coordinates = (
                         column_splits[column_position],
                         slot_splits[slot_position],
                         column_splits[column_position+1],
                         slot_splits[slot_position+1],
                     )
+                    window.set_layout(new_rect)
 
     def set_pending_drop_slot(self, pending_slot):
         self.pending_drop_slot = pending_slot
@@ -509,7 +512,7 @@ class AutoGridLayout(Layout):
 
         # Put windows in the most appropriate positions
         for window in window_list:
-            drop_slot, force_drop = self.get_drop_slot(window.rect.center, window.rect, fake_window_count=window_count)
+            drop_slot, force_drop = self.get_drop_slot(window.layout_position.center, window.layout_position, fake_window_count=window_count)
             self.add_window(window, at_slot=drop_slot)
 
         # Remove columns that didn't get any windows

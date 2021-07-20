@@ -7,13 +7,13 @@ import pylewm.window
 import pylewm.window_classification
 import pylewm.space
 import pylewm.spaces
-import pylewm.yank
+#import pylewm.yank
 import pylewm.selector
-import pylewm.filters
-import pylewm.wsltty
+#import pylewm.filters
+#import pylewm.wsltty
 import pylewm.config
-import pylewm.alt_mode
-import pylewm.dropdown
+#import pylewm.alt_mode
+#import pylewm.dropdown
 import pylewm.run
 
 from pylewm.run import start, restart, quit

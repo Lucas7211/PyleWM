@@ -3,21 +3,84 @@ from concurrent.futures import ThreadPoolExecutor
 
 import traceback
 import threading
+import math
 import time
 
 InitFunctions = []
 stopped = False
 
-ThreadPool = ThreadPoolExecutor(max_workers=64)
+class CommandQueue:
+    def __init__(self):
+        self.queuedFunctions = []
+        self.delayedFunctions = []
+        self.queue_lock = threading.RLock()
+        self.queue_event = threading.Event()
+        self.stopped = False
 
-def delay_pyle_command(timer, fun):
-    def timed_cmd():
-        time.sleep(timer)
-        fun()
-    ThreadPool.submit(timed_cmd)
+    def queue(self, fun):
+        with self.queue_lock:
+            self.queuedFunctions.append(fun)
+            self.queue_event.set()
+
+    def delay(self, delay, fun):
+        with self.queue_lock:
+            self.delayedFunctions.append([time.monotonic() + delay, fun])
+            self.queue_event.set()
+
+    def run_with_update(self, updatefunc):
+        global stopped
+        while not stopped:
+            updatefunc()
+            self.process(self.suggested_timeout())
+        
+    def process(self, timeout):
+        global stopped
+        if stopped:
+            return
+        self.queue_event.wait(timeout)
+        if stopped:
+            return
+
+        now_time = time.monotonic()
+
+        run = None
+        with self.queue_lock:
+            run = list(self.queuedFunctions)
+
+            new_delayed = []
+            for delayed in self.delayedFunctions:
+                if delayed[0] <= now_time:
+                    run.append(delayed[1])
+                else:
+                    new_delayed.append(delayed)
+            self.delayedFunctions = new_delayed
+
+            self.queuedFunctions = []
+            self.queue_event.clear()
+
+        try:
+            for cmd in run:
+                run_pyle_command(cmd)
+        except Exception as ex:
+            traceback.print_exc()
+
+    def suggested_timeout(self):
+        delay = 1.0 / 60.0
+        now_time = time.monotonic()
+
+        with self.queue_lock:
+            for delayed in self.delayedFunctions:
+                delay = min(delay, delayed[0] - now_time)
+        return max(delay, 0.0)
+
+Commands = CommandQueue()
+AsyncCommandThreadPool = ThreadPoolExecutor(max_workers=64)
+
+def delay_pyle_command(delay, fun):
+    Commands.delay(delay, fun)
 
 def queue_pyle_command(fun):
-    ThreadPool.submit(fun)
+    Commands.queue(fun)
 
 class PyleCommand:
     @staticmethod
@@ -45,7 +108,7 @@ class PyleCommand:
 
     def run(self):
         if self.threaded:
-            ThreadPool.submit(self.execute_on_thread)
+            AsyncCommandThreadPool.submit(self.execute_on_thread)
         else:
             self.func()
 
@@ -58,50 +121,3 @@ def run_pyle_command(fun):
 def PyleInit(fun):
     InitFunctions.append(fun)
     return fun
-
-def PyleThread(timer):
-    def TickDecorator(func):
-        def TickThread():
-            global stopped
-            while not stopped:
-                func()
-                time.sleep(timer)
-        def ThreadInit():
-            threading.Thread(target=TickThread, daemon=True).start()
-        InitFunctions.append(ThreadInit)
-    return TickDecorator
-
-class CommandQueue:
-    def __init__(self):
-        self.queuedFunctions = []
-        self.queue_lock = threading.RLock()
-        self.queue_event = threading.Event()
-        self.stopped = False
-
-        threading.Thread(target=self.process_commands_thread, daemon=True).start()
-    
-    def stop(self):
-        self.stopped = True
-        self.queue_event.set()
-
-    def queue_command(self, fun):
-        with self.queue_lock:
-            self.queuedFunctions.append(fun)
-            self.queue_event.set()
-        
-    def process_commands_thread(self):
-        global stopped
-        while not stopped and not self.stopped:
-            self.queue_event.wait()
-
-            run = None
-            with self.queue_lock:
-                run = list(self.queuedFunctions)
-                self.queuedFunctions = []
-                self.queue_event.clear()
-
-            try:
-                for cmd in run:
-                    run_pyle_command(cmd)
-            except Exception as ex:
-                traceback.print_exc()

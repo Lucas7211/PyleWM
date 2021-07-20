@@ -44,7 +44,7 @@ class ColumnsLayout(Layout):
     def select_mru_span_window(self, column_index, pos_top, pos_bottom):
         candidates = []
         for window in self.columns[column_index]:
-            if pos_top < window.rect.bottom and window.rect.top < pos_bottom:
+            if pos_top < window.layout_position.bottom and window.layout_position.top < pos_bottom:
                 candidates.append(window)
 
         for window in reversed(self.focus_mru):
@@ -144,13 +144,13 @@ class ColumnsLayout(Layout):
             if window_column == 0:
                 return None, direction
 
-            target_window = self.select_mru_span_window(window_column-1, from_window.rect.top, from_window.rect.bottom)
+            target_window = self.select_mru_span_window(window_column-1, from_window.layout_position.top, from_window.layout_position.bottom)
             return target_window, direction
         elif direction in Direction.ANY_Right:
             if window_column == len(self.columns)-1:
                 return None, direction
 
-            target_window = self.select_mru_span_window(window_column+1, from_window.rect.top, from_window.rect.bottom)
+            target_window = self.select_mru_span_window(window_column+1, from_window.layout_position.top, from_window.layout_position.bottom)
             return target_window, direction
         elif direction == Direction.Next:
             new_slot = (window_slot + 1) % column_length
@@ -185,9 +185,9 @@ class ColumnsLayout(Layout):
                     self.columns.insert(0, [window])
                     return True, direction
 
-            target_window = self.select_mru_span_window(window_column-1, window.rect.top, window.rect.bottom)
+            target_window = self.select_mru_span_window(window_column-1, window.layout_position.top, window.layout_position.bottom)
             target_column, target_slot = self.get_window_column(target_window)
-            if window.rect.center[1] >= target_window.rect.center[1]:
+            if window.layout_position.center[1] >= target_window.layout_position.center[1]:
                 target_slot += 1
 
             self.columns[target_column].insert(target_slot, window)
@@ -206,9 +206,9 @@ class ColumnsLayout(Layout):
                     self.columns.append([window])
                     return True, direction
 
-            target_window = self.select_mru_span_window(window_column+1, window.rect.top, window.rect.bottom)
+            target_window = self.select_mru_span_window(window_column+1, window.layout_position.top, window.layout_position.bottom)
             target_column, target_slot = self.get_window_column(target_window)
-            if window.rect.center[1] >= target_window.rect.center[1]:
+            if window.layout_position.center[1] >= target_window.layout_position.center[1]:
                 target_slot += 1
             self.columns[target_column].insert(target_slot, window)
 
@@ -321,6 +321,7 @@ class ColumnsLayout(Layout):
 
         # Update all window positions
         if self.need_reposition:
+            new_rect = Rect()
             self.need_reposition = False
             columns = len(self.columns)
             column_splits = self.get_column_splits()
@@ -329,12 +330,13 @@ class ColumnsLayout(Layout):
                 slot_splits = self.get_slot_splits(column_index)
 
                 for slot_index, window in enumerate(column):
-                    window.rect.coordinates = (
+                    new_rect.coordinates = (
                         column_splits[column_index],
                         slot_splits[slot_index],
                         column_splits[column_index+1],
                         slot_splits[slot_index+1],
                     )
+                    window.set_layout(new_rect)
 
     def takeover_from_layout(self, old_layout):
         self.need_reposition = True

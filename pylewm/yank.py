@@ -1,5 +1,5 @@
 from pylewm.commands import PyleCommand
-import pylewm.window
+#import pylewm.window
 import pylewm.focus
 
 YankStack = []

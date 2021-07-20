@@ -10,18 +10,28 @@ from PIL import Image
 
 import threading
 
-from pylewm.commands import PyleCommand, InitFunctions, CommandQueue, run_pyle_command
+from pylewm.commands import PyleCommand, InitFunctions, CommandQueue, queue_pyle_command, run_pyle_command, Commands
 
+import pylewm.winproxy.winupdate
 import pylewm.windows
 import pylewm.hotkeys
 import pylewm.commands
 
-global_queue = CommandQueue()
 tray_icon = None
 
 def key_process_thread():
-    pylewm.hotkeys.queue_command = global_queue.queue_command
+    pylewm.hotkeys.queue_command = queue_pyle_command
     pylewm.hotkeys.wait_for_hotkeys()
+
+def command_thread():
+    Commands.run_with_update(
+        updatefunc = pylewm.windows.window_update
+    )
+
+def winproxy_thread():
+    pylewm.winproxy.winupdate.ProxyCommands.run_with_update(
+        updatefunc = pylewm.winproxy.winupdate.proxy_update
+    )
 
 def find_pythonw_executable():
     dir, name = os.path.split(sys.executable)
@@ -66,6 +76,8 @@ def start():
         fun()
 
     threading.Thread(target=key_process_thread, daemon=True).start()
+    threading.Thread(target=command_thread, daemon=True).start()
+    threading.Thread(target=winproxy_thread, daemon=True).start()
 
     global tray_icon
     tray_icon = pystray.Icon('PyleWM')
@@ -81,12 +93,12 @@ def start():
 
 def stop_threads():
     pylewm.commands.stopped = True
-    global_queue.queue_event.set()
+    Commands.queue_event.set()
     tray_icon.stop()
 
 @PyleCommand
 def restart():
-    pylewm.windows.reset_all()
+    #pylewm.windows.reset_all()
     stop_threads()
 
     os.execl(sys.executable, sys.executable, *sys.argv)
@@ -94,6 +106,6 @@ def restart():
     
 @PyleCommand
 def quit():
-    pylewm.windows.reset_all()
+    #pylewm.windows.reset_all()
     stop_threads()
     sys.exit()

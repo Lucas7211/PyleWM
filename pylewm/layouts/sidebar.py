@@ -74,46 +74,51 @@ class SidebarLayout(Layout):
             return
 
         h_main_start, h_main_end, h_sidebar_start, h_sidebar_end = self.get_horizontal_positions()
+        new_rect = Rect()
 
         # Update the position of the main window
         if not self.sidebar:
             if self.pending_drop_slot is not None:
                 if self.pending_drop_slot == 0:
                     # Pending drop on the main window
-                    self.main_window.rect.coordinates = (
+                    new_rect.coordinates = (
                         h_sidebar_start,
                         self.rect.top,
                         h_sidebar_end,
                         self.rect.bottom,
                     )
+                    self.main_window.set_layout(new_rect)
                 else:
                     # Pending drop on the sidebar
-                    self.main_window.rect.coordinates = (
+                    new_rect.coordinates = (
                         h_main_start,
                         self.rect.top,
                         h_main_end,
                         self.rect.bottom,
                     )
+                    self.main_window.set_layout(new_rect)
             else:
                 # Full sreen main window
-                self.main_window.rect.assign(self.rect)
+                self.main_window.layout_position.assign(self.rect)
         else:
             if self.pending_drop_slot is not None and self.pending_drop_slot == 0:
                 # Pending drop on main window
-                self.main_window.rect.coordinates = (
+                new_rect.coordinates = (
                     h_main_start + 25,
                     self.rect.top + 25,
                     h_main_end - 25,
                     self.rect.bottom - 25,
                 )
+                self.main_window.set_layout(new_rect)
             else:
                 # Perfectly normal main window
-                self.main_window.rect.coordinates = (
+                new_rect.coordinates = (
                     h_main_start,
                     self.rect.top,
                     h_main_end,
                     self.rect.bottom,
                 )
+                self.main_window.set_layout(new_rect)
 
             # Update the position of the sidebar windows
             slot_count = len(self.sidebar)
@@ -135,12 +140,13 @@ class SidebarLayout(Layout):
                 if self.pending_drop_slot is not None and self.pending_drop_slot != 0 and slot_index >= self.pending_drop_slot-1:
                     slot_position += 1
 
-                window.rect.coordinates = (
+                new_rect.coordinates = (
                     h_sidebar_start,
                     slot_splits[slot_position],
                     h_sidebar_end,
                     slot_splits[slot_position+1],
                 )
+                window.set_layout(new_rect)
 
     def get_window_in_direction(self, from_window, direction):
         # No windows, no focus
