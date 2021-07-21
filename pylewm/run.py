@@ -14,9 +14,9 @@ import atexit
 from pylewm.commands import PyleCommand, InitFunctions, CommandQueue, queue_pyle_command, run_pyle_command, Commands
 
 import pylewm.winproxy.winupdate
-import pylewm.windows
 import pylewm.hotkeys
 import pylewm.commands
+import pylewm.window_update
 
 tray_icon = None
 
@@ -26,7 +26,7 @@ def key_process_thread():
 
 def command_thread():
     Commands.run_with_update(
-        updatefunc = pylewm.windows.window_update
+        updatefunc = pylewm.window_update.window_update
     )
 
 def winproxy_thread():

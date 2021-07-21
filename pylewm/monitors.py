@@ -142,5 +142,5 @@ def initMonitors():
     for i, monitor in enumerate(Monitors):
         monitor.monitor_index = i
 
-    for i, monitor in enumerate(Monitors):
-        print(f"Monitor {i}: {monitor.rect}")
+    #for i, monitor in enumerate(Monitors):
+    #    print(f"Monitor {i}: {monitor.rect}")

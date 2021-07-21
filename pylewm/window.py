@@ -34,10 +34,26 @@ class Window:
             self.state = new_state
             self.proxy.ignored = (self.state == WindowState.IgnorePermanent)
 
+            if self.state == WindowState.Floating:
+                self.make_floating()
+            elif self.state == WindowState.Tiled:
+                self.make_tiled()
+
+    def make_floating(self):
+        self.state = WindowState.Floating
+        self.proxy.set_always_on_top(True)
+
+        if self.space:
+            self.space.remove_window(self)
+
+    def make_tiled(self):
+        self.state = WindowState.Tiled
+        self.proxy.set_always_on_top(False)
+
     def is_ignored(self):
         return self.state == WindowState.IgnorePermanent or self.state == WindowState.IgnoreTemporary
 
-    def is_tiling(self):
+    def is_tiled(self):
         return self.state == WindowState.Tiled
 
     def is_floating(self):
@@ -68,12 +84,24 @@ class Window:
         self.wm_becoming_visible = False
         self.proxy.hide()
 
+    def close(self):
+        self.closed = True
+        if self.space:
+            self.space.remove_window(self)
+        self.proxy.close()
+
+    def minimize(self):
+        self.proxy.minimize()
+
+    def poke(self):
+        self.proxy.poke()
+
     def wm_visible_duration(self):
         return time.time() - self.wm_visible_since
 
     def can_move(self):
         """ Whether this window can be moved within the layout or between spaces. """
-        return self.is_tiling() and not self.window_info.is_hung
+        return self.is_tiled() and not self.window_info.is_hung
 
     def update(self):
         # Classify the window if we haven't classified it yet
@@ -97,6 +125,8 @@ class Window:
         # Don't do any window management if we've hidden the window ourselves
         if self.wm_hidden:
             return
+        if Window.InInitialPlacement:
+            return
 
         # Wait for the window to become visible
         if self.wm_becoming_visible:
@@ -108,12 +138,11 @@ class Window:
         if self.state == WindowState.Tiled:
             if self.is_interactable():
                 # Place in layout if not detected before
-                if not self.space:
+                if not self.space and not self.wm_hidden:
                     self.auto_place_into_space()
             else:
                 # Remove from layout if no longer interactable
                 if self.space and self.space.visible and self.wm_visible_duration() > 0.05:
-                    print(f"remove no interact {self}")
                     self.space.remove_window(self)
 
     def apply_filters(self):
@@ -124,14 +153,15 @@ class Window:
         if not self.space and self.state == WindowState.Tiled:
             self.auto_place_into_space(initial_space=True)
 
-        pylewm.filters.trigger_all_filters(self, post=True)
+        if not Window.InInitialPlacement:
+            pylewm.filters.trigger_all_filters(self, post=True)
 
     def auto_place_into_space(self, initial_space=False):
         space = None
         slot = None
 
         filter_monitor = pylewm.filters.get_monitor(self)
-        if filter_monitor is not None:
+        if filter_monitor is not None and (Window.InInitialPlacement or initial_space):
             filter_monitor = min(filter_monitor, len(pylewm.monitors.Monitors)-1)
             space = pylewm.monitors.Monitors[filter_monitor].visible_space
         elif Window.InInitialPlacement or not initial_space:
@@ -141,7 +171,10 @@ class Window:
         else:
             space = pylewm.focus.get_cursor_space()
 
-        space.add_window(self, at_slot=slot)
+        if Window.InInitialPlacement:
+            space.initial_windows.append(self)
+        else:
+            space.add_window(self, at_slot=slot)
 
     def update_info_from_proxy(self):
         with WindowProxyLock:

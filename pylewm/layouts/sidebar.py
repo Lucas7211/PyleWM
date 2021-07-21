@@ -295,7 +295,7 @@ class SidebarLayout(Layout):
             self.sidebar = []
 
             for window in window_list[:-1]:
-                drop_slot, force_drop = self.get_drop_slot(window.rect.center, window.rect)
+                drop_slot, force_drop = self.get_drop_slot(window.real_position.center, window.real_position)
                 if drop_slot == 0:
                     drop_slot = 1
                 self.add_window(window, at_slot=drop_slot)

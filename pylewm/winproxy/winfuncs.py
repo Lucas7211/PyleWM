@@ -122,6 +122,7 @@ HWND_NOTOPMOST = -2
 
 SW_SHOW = 5
 SW_SHOWNOACTIVATE = 4
+SW_FORCEMINIMIZE = 11
 SW_HIDE = 0
 
 SWP_NOACTIVATE = 0x0010
@@ -171,3 +172,28 @@ ShowWindowAsync = c.windll.user32.ShowWindowAsync
 ShowWindowAsync.errcheck = no_errcheck
 ShowWindowAsync.restype = w.BOOL
 ShowWindowAsync.argtypes = (w.HWND, c.c_int)
+
+WM_CLOSE = 0x0010
+
+PostMessageW = c.windll.user32.PostMessageW
+PostMessageW.errcheck = no_errcheck
+PostMessageW.restype = w.BOOL
+PostMessageW.argtypes = (
+    w.HWND, # Window Handle
+    w.UINT, # Message Type
+    w.WPARAM, # wParam
+    w.LPARAM, # lParam
+)
+
+MessageBoxW = c.windll.user32.MessageBoxW
+MessageBoxW.errcheck = no_errcheck
+MessageBoxW.restype = c.c_int
+MessageBoxW.argtypes = (
+    w.HWND, # Parent Window Handle
+    w.LPCWSTR, # Text
+    w.LPCWSTR, # Caption
+    w.UINT, # uType
+)
+
+def ShowMessageBox(title, content):
+    MessageBoxW(None, content, title, 0)

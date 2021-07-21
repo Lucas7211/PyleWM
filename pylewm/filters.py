@@ -86,8 +86,7 @@ def TemporarySpace(window):
 
 @Filter.post
 def AutoPoke(window):
-    #window.poke()
-    pass
+    window.poke()
 
 @Filter
 def AlwaysOnTop(window):

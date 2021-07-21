@@ -156,7 +156,6 @@ class AutoGridLayout(Layout):
 
     def remove_window(self, window):
         self.windows.remove(window)
-        print(f"remove {window} now {len(self.windows)}")
 
         for column in self.columns:
             if window in column:

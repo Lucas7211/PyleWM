@@ -36,7 +36,9 @@ def update_focused_window():
     force_update = False
 
     if PendingFocusProxy:
-        if CurFocus == PendingFocusProxy._hwnd:
+        if not PendingFocusProxy.valid:
+            PendingFocusProxy = None
+        elif CurFocus == PendingFocusProxy._hwnd:
             # We've completed focusing our pending window
             PendingFocusProxy = None
         else:

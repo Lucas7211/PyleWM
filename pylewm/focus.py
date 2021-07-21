@@ -24,6 +24,7 @@ def set_focus(window : Window):
 
     assert isinstance(window, Window)
 
+    print(f"Make Focus {window}")
     FocusWindow = window
     LastFocusWindow = window
     focus_window(window.proxy, move_mouse=True)
@@ -32,6 +33,7 @@ def set_focus_no_mouse(window : Window):
     global FocusWindow
     global LastFocusWindow
 
+    print(f"Make Focus {window}")
     FocusWindow = window
     LastFocusWindow = window
     focus_window(window.proxy, move_mouse=False)
@@ -74,6 +76,7 @@ def on_focus_changed(proxy):
     global LastFocusWindow
 
     FocusWindow = get_window(proxy)
+    print(f"Focus Change {FocusWindow}")
     if FocusWindow and not FocusWindow.is_ignored():
         LastFocusWindow = FocusWindow
 

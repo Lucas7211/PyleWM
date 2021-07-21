@@ -1,6 +1,5 @@
 from pylewm.commands import PyleCommand
 from pylewm.rects import Rect
-import pylewm.windows
 import pylewm.window
 import pylewm.focus
 import win32gui

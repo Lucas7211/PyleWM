@@ -22,7 +22,7 @@ def filters(added_filters):
     CONFIG_FILTERS += added_filters
 
 def get_config_dir():
-    return os.path.expandvars(r"%APPDATA%\PyleWM3")
+    return os.path.expandvars(r"%APPDATA%\PyleWM")
 
 def apply():
     config_dir = get_config_dir()
@@ -54,4 +54,4 @@ def apply():
     for key, val in CONFIG_HOTKEYS.items():
         if val:
             pylewm.hotkeys.register(key, val)
-    #pylewm.filters.Filters = CONFIG_FILTERS
+    pylewm.filters.Filters = CONFIG_FILTERS

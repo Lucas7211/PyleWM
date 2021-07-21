@@ -3,6 +3,7 @@ from pylewm.commands import CommandQueue, Commands
 from pylewm.rects import Rect
 
 from threading import Lock
+import functools
 
 WindowProxyLock = Lock()
 WindowsByHandle : dict[int, 'WindowProxy'] = dict()
@@ -10,6 +11,7 @@ ProxyCommands = CommandQueue()
 
 WS_SIZEBOX = 0x00040000
 WS_MINIMIZE = 0x20000000
+WS_MAXIMIZE = 0x01000000
 WS_EX_NOACTIVATE = 0x08000000
 WS_EX_APPWINDOW = 0x00040000
 
@@ -45,6 +47,9 @@ class WindowInfo:
     def is_minimized(self):
         return (self._winStyle & WS_MINIMIZE) != 0
 
+    def is_maximized(self):
+        return (self._winStyle & WS_MAXIMIZE) != 0
+
 class WindowProxy:
     def __init__(self, hwnd):
         self._hwnd = hwnd
@@ -53,6 +58,7 @@ class WindowProxy:
         self.valid = True
         self.changed = False
         self.window_info = WindowInfo()
+        self.always_top = False
 
         self._dirty = False
         self._info = WindowInfo()
@@ -65,6 +71,7 @@ class WindowProxy:
         self._applied_position = Rect()
 
         self._proxy_hidden = False
+        self._proxy_always_top = False
 
     def _initialize(self):
         self.initialized = True
@@ -77,6 +84,8 @@ class WindowProxy:
     def _cleanup(self):
         if self._proxy_hidden:
             winfuncs.ShowWindowAsync(self._hwnd, winfuncs.SW_SHOWNOACTIVATE)
+        if self._proxy_always_top:
+            self._apply_always_top(False)
 
     def __str__(self):
         return f"{{ PROXY {self._info.window_title} | {self._info.window_class} @{self._hwnd} }}"
@@ -240,18 +249,28 @@ class WindowProxy:
             self._layout_dirty = True
 
     def _zorder_top(self):
-        #if self.force_always_top:
-            #return
+        zpos = winfuncs.HWND_TOP
+        if self._proxy_always_top:
+            zpos = winfuncs.HWND_TOPMOST
 
-        winfuncs.SetWindowPos(self._hwnd, winfuncs.HWND_TOP, 0, 0, 0, 0,
+        winfuncs.SetWindowPos(self._hwnd, zpos, 0, 0, 0, 0,
                 winfuncs.SWP_NOACTIVATE | winfuncs.SWP_NOMOVE | winfuncs.SWP_NOSIZE)
 
     def _zorder_bottom(self):
-        #if self.force_always_top:
-            #return
+        if self._proxy_always_top:
+            return
 
         winfuncs.SetWindowPos(self._hwnd, winfuncs.HWND_BOTTOM, 0, 0, 0, 0,
                 winfuncs.SWP_NOACTIVATE | winfuncs.SWP_NOMOVE | winfuncs.SWP_NOSIZE)
+
+    def _apply_always_top(self, always_top):
+        self._proxy_always_top = always_top
+        if always_top:
+            winfuncs.SetWindowPos(self._hwnd, winfuncs.HWND_TOPMOST, 0, 0, 0, 0,
+                    winfuncs.SWP_NOACTIVATE | winfuncs.SWP_NOMOVE | winfuncs.SWP_NOSIZE)
+        else:
+            winfuncs.SetWindowPos(self._hwnd, winfuncs.HWND_NOTOPMOST, 0, 0, 0, 0,
+                    winfuncs.SWP_NOACTIVATE | winfuncs.SWP_NOMOVE | winfuncs.SWP_NOSIZE)
 
     def show(self):
         def proxy_show():
@@ -265,3 +284,34 @@ class WindowProxy:
             self._proxy_hidden = True
             winfuncs.ShowWindowAsync(self._hwnd, winfuncs.SW_HIDE)
         ProxyCommands.queue(proxy_hide)
+
+    def close(self):
+        def proxy_close():
+            winfuncs.PostMessageW(self._hwnd, winfuncs.WM_CLOSE, 0, 0)
+        ProxyCommands.queue(proxy_close)
+
+    def poke(self):
+        def proxy_poke():
+            zorder = winfuncs.HWND_BOTTOM
+            if self._proxy_always_top:
+                zorder = winfuncs.HWND_TOPMOST
+            winfuncs.SetWindowPos(self._hwnd, zorder,
+                self._info.rect.left-2, self._info.rect.top-2,
+                self._info.rect.width+4, self._info.rect.height+4,
+                winfuncs.SWP_NOACTIVATE)
+            winfuncs.SetWindowPos(self._hwnd, zorder,
+                self._info.rect.left, self._info.rect.top,
+                self._info.rect.width, self._info.rect.height,
+                winfuncs.SWP_NOACTIVATE)
+        ProxyCommands.queue(proxy_poke)
+
+    def set_always_on_top(self, always_on_top):
+        if self.always_top == always_on_top:
+            return
+        self.always_top = always_on_top
+        ProxyCommands.queue(functools.partial(self._apply_always_top, always_on_top))
+
+    def minimize(self):
+        def proxy_minimize():
+            winfuncs.ShowWindowAsync(self._hwnd, winfuncs.SW_FORCEMINIMIZE)
+        ProxyCommands.queue(proxy_minimize)
