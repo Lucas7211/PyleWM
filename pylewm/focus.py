@@ -6,34 +6,35 @@ import win32api
 import traceback
 import ctypes
 
-from pylewm.window import Window, get_window
+import pylewm.window
 from pylewm.winproxy.winfocus import focus_window, focus_shell_window, get_cursor_position
 from pylewm.commands import PyleCommand
 
-FocusWindow : Window = None
-LastFocusWindow : Window = None
+FocusWindow = None
+LastFocusWindow = None
 
 @PyleCommand
 def focus_monitor(monitor_index):
     monitor = pylewm.monitors.get_monitor_by_index(monitor_index)
     set_focus_space(monitor.visible_space)
 
-def set_focus(window : Window):
+def set_focus(window):
     global FocusWindow
     global LastFocusWindow
 
-    assert isinstance(window, Window)
-
+    assert isinstance(window, pylewm.window.Window)
     print(f"Make Focus {window}")
+
     FocusWindow = window
     LastFocusWindow = window
     focus_window(window.proxy, move_mouse=True)
 
-def set_focus_no_mouse(window : Window):
+def set_focus_no_mouse(window):
     global FocusWindow
     global LastFocusWindow
 
     print(f"Make Focus {window}")
+
     FocusWindow = window
     LastFocusWindow = window
     focus_window(window.proxy, move_mouse=False)
@@ -47,6 +48,7 @@ def set_focus_space(space):
         set_focus_monitor(space.monitor)
 
 def set_focus_monitor(monitor):
+    print(f"Make Focus Monitor {monitor}")
     rect = monitor.rect.copy()
     focus_shell_window(rect)
 
@@ -75,8 +77,7 @@ def on_focus_changed(proxy):
     global FocusWindow
     global LastFocusWindow
 
-    FocusWindow = get_window(proxy)
-    print(f"Focus Change {FocusWindow}")
+    FocusWindow = pylewm.window.get_window(proxy)
     if FocusWindow and not FocusWindow.is_ignored():
         LastFocusWindow = FocusWindow
 

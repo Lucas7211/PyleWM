@@ -5,7 +5,8 @@ import time
 
 from pylewm.window import Window, WindowsByProxy
 
-StartTime = time.time()
+HiddenFocusSpace = None
+HiddenFocusSpaceSince = None
 
 def window_update():
     # Update spaces on all monitors
@@ -19,17 +20,50 @@ def window_update():
     for proxy, window in WindowsByProxy.items():
         window.update()
 
-    # Once we've been running for one second we are no longer in initial placement mode
-    if Window.InInitialPlacement:
-        if time.time() > StartTime + 0.25:
-            window_initial_placement()
-            Window.InInitialPlacement = False
+    # If the currently focused window is on a hidden space,
+    # switch that monitor to the space the window is in.
+    #  This can happen if some other application focuses it,
+    #  for example clicking a link focusing the browser window
+    #  from a different space.
+    global HiddenFocusSpace
+    global HiddenFocusSpaceSince
+    if pylewm.focus.FocusWindow:
+        space = pylewm.focus.FocusWindow.space
+        if space and not space.visible:
+            if space == HiddenFocusSpace:
+                if (time.time() - HiddenFocusSpaceSince) > 0.05:
+                    space.monitor.switch_to_space(space)
+            else:
+                HiddenFocusSpace = space
+                HiddenFocusSpaceSince = time.time()
+        else:
+            HiddenFocusSpace = None
+    else:
+        HiddenFocusSpace = None
 
+    # Update any registered update functions
+    for update_func in WINDOW_UPDATE_FUNCS:
+        update_func()
+
+WINDOW_UPDATE_FUNCS = []
+def PyleWindowUpdate(func):
+    WINDOW_UPDATE_FUNCS.append(func)
+    return func
 
 def window_initial_placement():
     """ Place windows detected during initial startup and place them correctly. """
+    if not Window.InInitialPlacement:
+        return
+
     windows = []
 
+    # Update all windows so they have a chance to be placed into spaces
+    for proxy, window in WindowsByProxy.items():
+        window.update()
+        if window.is_tiled():
+            window.auto_place_into_space()
+
+    Window.InInitialPlacement = False
     for monitor in pylewm.monitors.Monitors:
         for space in [*monitor.spaces, *monitor.temp_spaces]:
             handled = False

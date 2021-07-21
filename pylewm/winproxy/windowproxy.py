@@ -12,6 +12,7 @@ ProxyCommands = CommandQueue()
 WS_SIZEBOX = 0x00040000
 WS_MINIMIZE = 0x20000000
 WS_MAXIMIZE = 0x01000000
+WS_CAPTION = 0x00C00000
 WS_EX_NOACTIVATE = 0x08000000
 WS_EX_APPWINDOW = 0x00040000
 
@@ -152,10 +153,10 @@ class WindowProxy:
 
         if self._layout_margin is not None:
             # Apply a preset margin to the window
-            try_position[0] += self.margin
-            try_position[1] += self.margin
-            try_position[2] -= self.margin*2
-            try_position[3] -= self.margin*2
+            try_position[0] += self._layout_margin
+            try_position[1] += self._layout_margin
+            try_position[2] -= self._layout_margin*2
+            try_position[3] -= self._layout_margin*2
         else:
             # Find the margin that this window wants from the OS
             adjustedRect = winfuncs.w.RECT()
@@ -179,10 +180,17 @@ class WindowProxy:
         set_position_allowed = True
         needed_tries = 0
         for tries in range(0, 10):
-            set_position_allowed = winfuncs.WindowSetPositionInLayout(
+            zorder = winfuncs.HWND_BOTTOM
+            if self._proxy_always_top:
+                zorder = winfuncs.HWND_TOPMOST
+            set_position_allowed = winfuncs.SetWindowPos(
                 self._hwnd,
+                zorder,
                 try_position[0], try_position[1],
-                try_position[2], try_position[3])
+                try_position[2], try_position[3],
+                winfuncs.SWP_NOACTIVATE
+            )
+
             if not set_position_allowed:
                 break
 
@@ -279,6 +287,19 @@ class WindowProxy:
             self._zorder_top()
         ProxyCommands.queue(proxy_show)
 
+    def show_with_rect(self, new_rect):
+        def proxy_show_rect():
+            self._proxy_hidden = False
+            zorder = winfuncs.HWND_TOP
+            if self._proxy_always_top:
+                zorder = winfuncs.HWND_TOPMOST
+            winfuncs.SetWindowPos(self._hwnd, zorder,
+                new_rect.left, new_rect.top,
+                new_rect.width, new_rect.height,
+                winfuncs.SWP_NOACTIVATE)
+            winfuncs.ShowWindowAsync(self._hwnd, winfuncs.SW_SHOWNOACTIVATE)
+        ProxyCommands.queue(proxy_show_rect)
+
     def hide(self):
         def proxy_hide():
             self._proxy_hidden = True
@@ -315,3 +336,21 @@ class WindowProxy:
         def proxy_minimize():
             winfuncs.ShowWindowAsync(self._hwnd, winfuncs.SW_FORCEMINIMIZE)
         ProxyCommands.queue(proxy_minimize)
+
+    def restore(self):
+        def proxy_restore():
+            winfuncs.ShowWindowAsync(self._hwnd, winfuncs.SW_RESTORE)
+        ProxyCommands.queue(proxy_restore)
+
+    def remove_maximized(self):
+        def proxy_unmaximize():
+            winfuncs.ShowWindowAsync(self._hwnd, winfuncs.SW_SHOWNOACTIVATE)
+        ProxyCommands.queue(proxy_unmaximize)
+
+    def remove_titlebar(self):
+        def proxy_remove_titlebar():
+            style = self._info._winStyle
+            if style & WS_CAPTION:
+                style = style & ~WS_CAPTION
+                winfuncs.WindowSetStyle(self._hwnd, style)
+        ProxyCommands.queue(proxy_remove_titlebar)

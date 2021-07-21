@@ -156,7 +156,7 @@ class OverlayMode(pylewm.hotkeys.Mode):
         global OVERLAY_WINDOW
         if not OVERLAY_WINDOW:
             OVERLAY_WINDOW = OverlayWindow()
-        self.overlay_rect = window.rect
+        self.overlay_rect = window.real_position
         OVERLAY_WINDOW.show(self, self.overlay_rect)
 
     def overlay_monitor(self, monitor):

@@ -1,7 +1,7 @@
 import pylewm.winproxy.winfuncs as winfuncs
 from pylewm.commands import Commands
 from pylewm.rects import Rect
-from pylewm.winproxy.windowproxy import WindowsByHandle, WindowProxy, ProxyCommands
+from pylewm.winproxy.windowproxy import WindowsByHandle, WindowProxy, ProxyCommands, WindowProxyLock
 
 import pythoncom, win32com
 import functools
@@ -38,18 +38,18 @@ def update_focused_window():
     if PendingFocusProxy:
         if not PendingFocusProxy.valid:
             PendingFocusProxy = None
-        elif CurFocus == PendingFocusProxy._hwnd:
-            # We've completed focusing our pending window
-            PendingFocusProxy = None
         else:
             # Attempt to set focus, if it takes too many tries we stop
             attempt_focus_window_handle(PendingFocusProxy._hwnd, PendingFocusRect)
 
             PendingFocusTries += 1
-            if PendingFocusTries > 10:
-                PendingFocusProxy = None
+            CurFocus = winfuncs.GetForegroundWindow()
 
-                CurFocus = winfuncs.GetForegroundWindow()
+            if CurFocus == PendingFocusProxy._hwnd:
+                # We've completed focusing our pending window
+                PendingFocusProxy = None
+            elif PendingFocusTries > 10:
+                PendingFocusProxy = None
                 force_update = True
             else:
                 CurFocus = PendingFocusProxy._hwnd
@@ -67,6 +67,7 @@ def update_focused_window():
 
 COM_INITIALIZED = False
 def attempt_focus_window_handle(hwnd, rect=None):
+    print(f"Attempt focus {get_proxy(hwnd)}")
     try:
         global COM_INITIALIZED
         if not COM_INITIALIZED:
@@ -81,8 +82,6 @@ def attempt_focus_window_handle(hwnd, rect=None):
         shell.SendKeys('{F15}')
     except Exception as ex:
         pass
-
-    print(f"Attempt focus {get_proxy(hwnd)} - {PendingFocusTries}")
 
     winfuncs.SetForegroundWindow(hwnd)
     if rect:
@@ -99,7 +98,11 @@ def focus_window(proxy : WindowProxy, move_mouse = True):
         PendingFocusProxy = proxy
         PendingFocusTries = 0
         if move_mouse:
-            PendingFocusRect = proxy._info.rect
+            if proxy._layout_dirty:
+                with WindowProxyLock:
+                    PendingFocusRect = proxy._layout_position.copy()
+            else:
+                PendingFocusRect = proxy._info.rect
         else:
             PendingFocusRect = None
     ProxyCommands.queue(focus_cmd)

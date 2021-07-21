@@ -15,7 +15,7 @@ class HintPoint:
 class HintMouseMode(pylewm.modes.overlay_mode.OverlayMode):
     def __init__(self, hintkeys, hotkeys, clickmode):
         self.window = pylewm.focus.FocusWindow
-        self.cover_area = self.window.rect
+        self.cover_area = self.window.real_position
 
         self.clickmode = clickmode
         self.hintkeys = hintkeys
@@ -179,7 +179,7 @@ class HintMouseMode(pylewm.modes.overlay_mode.OverlayMode):
         except:
             pass # Not allowed, probably an administrator window has focus or something
 
-        position = win32gui.ScreenToClient(self.window.handle, win32api.GetCursorPos())
+        position = win32gui.ScreenToClient(self.window.proxy._hwnd, win32api.GetCursorPos())
         if self.clickmode == 'left':
             pylewm.commands.delay_pyle_command(0.1, lambda: win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, position[0], position[1], 0, 0))
             pylewm.commands.delay_pyle_command(0.15, lambda: win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, position[0], position[1], 0, 0))

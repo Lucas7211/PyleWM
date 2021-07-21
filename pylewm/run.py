@@ -57,12 +57,15 @@ def init_registry_vars():
     winreg.CloseKey(reg_conn)
 
 def start():
+    print("-- Starting PyleWM")
+
     import ctypes
     if not ctypes.windll.shell32.IsUserAnAdmin():
         script_name = sys.argv[0]
         if not script_name.endswith(".py"):
             script_name = "-m pylewm"
         argument_str = " ".join((script_name, *sys.argv[1:]))
+        print("-- Requesting UAC admin access")
         ctypes.windll.shell32.ShellExecuteW(None, "runas", find_pythonw_executable(), argument_str, None, 1)
         sys.exit()
         return
@@ -77,8 +80,8 @@ def start():
         fun()
 
     threading.Thread(target=key_process_thread, daemon=True).start()
-    threading.Thread(target=command_thread, daemon=True).start()
-    threading.Thread(target=winproxy_thread, daemon=True).start()
+    threading.Thread(target=command_thread).start()
+    threading.Thread(target=winproxy_thread).start()
 
     atexit.register(pylewm.winproxy.winupdate.proxy_cleanup)
 
@@ -93,6 +96,7 @@ def start():
         pystray.MenuItem("Quit", lambda: run_pyle_command(quit)),
     )
     tray_icon.run()
+    pylewm.commands.stopped = True
 
 def stop_threads():
     pylewm.commands.stopped = True
@@ -103,12 +107,11 @@ def stop_threads():
 @PyleCommand
 def restart():
     stop_threads()
+    time.sleep(0.1)
     pylewm.winproxy.winupdate.proxy_cleanup()
 
     os.execl(sys.executable, sys.executable, *sys.argv)
-    sys.exit()
     
 @PyleCommand
 def quit():
     stop_threads()
-    sys.exit()

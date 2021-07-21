@@ -243,7 +243,7 @@ class AutoGridLayout(Layout):
 
         if direction == Direction.Left:
             if window_column == 0:
-                if len(self.columns) >= wanted_columns:
+                if len(self.columns) >= wanted_columns or len(self.columns[window_column]) == 1:
                     return False, direction
                 else:
                     self.columns[window_column].remove(window)
@@ -264,7 +264,7 @@ class AutoGridLayout(Layout):
             return True, direction
         elif direction == Direction.Right:
             if window_column == len(self.columns)-1:
-                if len(self.columns) >= wanted_columns:
+                if len(self.columns) >= wanted_columns or len(self.columns[window_column]) == 1:
                     return False, direction
                 else:
                     self.columns[window_column].remove(window)

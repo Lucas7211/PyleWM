@@ -30,7 +30,10 @@ class CommandQueue:
     def run_with_update(self, updatefunc):
         global stopped
         while not stopped:
-            updatefunc()
+            try:
+                updatefunc()
+            except Exception as ex:
+                traceback.print_exc()
             self.process(self.suggested_timeout())
         
     def process(self, timeout):

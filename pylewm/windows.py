@@ -2,6 +2,7 @@ from pylewm.commands import PyleCommand
 from pylewm.window import Window, WindowState
 import pylewm.winproxy.winfuncs as winfuncs
 
+import time
 import pylewm.focus
 
 @PyleCommand
@@ -26,6 +27,7 @@ def drop_window_into_layout():
 
     window.make_tiled()
     window.auto_place_into_space()
+    window.ignore_drag_until = time.time() + 0.1
     
 @PyleCommand
 def make_window_floating():
@@ -34,12 +36,14 @@ def make_window_floating():
         return
 
     window.make_floating()
+    window.set_layout(window.floating_rect, apply_margin=False)
+    window.can_drop_tiled = False
 
 @PyleCommand
 def toggle_window_floating():
     window = pylewm.focus.FocusWindow
     if window and window.is_tiled():
-        window.make_floating()
+        make_window_floating().run()
     else:
         drop_window_into_layout().run()
 

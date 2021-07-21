@@ -1,5 +1,6 @@
 import pylewm.filters
 import pylewm.monitors
+import pylewm.focus
 from pylewm.rects import Rect
 
 from pylewm.winproxy.windowproxy import WindowProxy, WindowInfo, WindowProxyLock
@@ -9,6 +10,8 @@ import time
 
 class Window:
     InInitialPlacement = True
+    DraggingWindow = None
+    IsLeftMouseHeld = False
     
     def __init__(self, proxy : WindowProxy):
         self.proxy = proxy
@@ -16,6 +19,9 @@ class Window:
         self.state = WindowState.Unknown
         self.space = None
         self.closed = False
+        self.can_drop_tiled = False
+        self.force_always_top = False
+        self.is_dropdown = False
 
         self.wm_hidden = False
         self.wm_becoming_visible = False
@@ -24,7 +30,20 @@ class Window:
         self.applied_filters = False
 
         self.update_info_from_proxy()
-        self.layout_position = self.real_position
+        self.layout_position = self.real_position.copy()
+        self.layout_margin = None
+        self.floating_rect = self.real_position.copy()
+
+        self.dragging = False
+        self.ignore_drag_until = 0.0
+        self.drag_ticks_with_movement = 0
+        self.drag_ticks_since_start = 0
+        self.drag_ticks_since_last_movement = 0
+        self.drag_last_pos = self.real_position.copy()
+
+        self.drop_space = None
+        self.drop_slot = None
+        self.drop_ticks_inside_slot = 0
 
         self.classify()
 
@@ -48,7 +67,12 @@ class Window:
 
     def make_tiled(self):
         self.state = WindowState.Tiled
-        self.proxy.set_always_on_top(False)
+        self.layout_position = Rect()
+        self.proxy.set_always_on_top(self.force_always_top)
+        self.can_drop_tiled = True
+
+        if self.window_info.is_maximized():
+            self.remove_maximized()
 
     def is_ignored(self):
         return self.state == WindowState.IgnorePermanent or self.state == WindowState.IgnoreTemporary
@@ -83,6 +107,7 @@ class Window:
         self.wm_hidden = True
         self.wm_becoming_visible = False
         self.proxy.hide()
+        self.stop_drag()
 
     def close(self):
         self.closed = True
@@ -92,6 +117,12 @@ class Window:
 
     def minimize(self):
         self.proxy.minimize()
+
+    def restore(self):
+        self.proxy.restore()
+
+    def remove_maximized(self):
+        self.proxy.remove_maximized()
 
     def poke(self):
         self.proxy.poke()
@@ -135,25 +166,41 @@ class Window:
             else:
                 return
 
+        # Update what we're doing with dragging
+        self.update_drag()
+
         if self.state == WindowState.Tiled:
             if self.is_interactable():
                 # Place in layout if not detected before
-                if not self.space and not self.wm_hidden:
-                    self.auto_place_into_space()
+                if not self.space and not self.wm_hidden and not Window.InInitialPlacement:
+                    self.auto_place_into_space(initial_space=True)
+
+                # Switch to floating mode if the window has been moved by the user
+                if self.window_info.is_maximized() or (self.dragging and (self.drag_ticks_with_movement > 2 or Window.IsLeftMouseHeld)):
+                    self.make_floating()
             else:
                 # Remove from layout if no longer interactable
                 if self.space and self.space.visible and self.wm_visible_duration() > 0.05:
+                    prev_space = self.space
                     self.space.remove_window(self)
+                    if pylewm.focus.FocusWindow == self:
+                        pylewm.focus.set_focus_space(prev_space)
+
+        elif self.state == WindowState.Floating:
+            # Drop into a tiling layout if we can
+            if self.dragging or self.drop_space:
+                self.update_float_drop()
+
 
     def apply_filters(self):
         self.applied_filters = True
         pylewm.filters.trigger_all_filters(self, post=False)
 
         # We place into a space before we trigger post filters
-        if not self.space and self.state == WindowState.Tiled:
-            self.auto_place_into_space(initial_space=True)
-
         if not Window.InInitialPlacement:
+            if not self.space and self.state == WindowState.Tiled:
+                self.auto_place_into_space(initial_space=True)
+
             pylewm.filters.trigger_all_filters(self, post=True)
 
     def auto_place_into_space(self, initial_space=False):
@@ -181,15 +228,114 @@ class Window:
             self.window_info.set(self.proxy.window_info)
             self.proxy.changed = False
 
+    def stop_drag(self):
+        if self.dragging:
+            Window.DraggingWindow = None
+            self.dragging = False
+
+    def update_drag(self):
+        if not self.is_interactable():
+            if self.dragging:
+                self.stop_drag()
+            return
+
+        new_rect = self.real_position
+        if self.ignore_drag_until > time.time():
+            self.drag_last_pos.assign(new_rect)
+            self.dragging = False
+            self.remove_drop_space()
+
+        # Some rudimentary tracking for when windows are being dragged
+        if not new_rect.equals(self.drag_last_pos):
+            if Window.IsLeftMouseHeld and (Window.DraggingWindow is None or self.dragging):
+                if self.dragging:
+                    self.drag_ticks_since_last_movement = 0
+                    self.drag_ticks_since_start += 1
+                    self.drag_ticks_with_movement += 1
+                else:
+                    self.dragging = True
+                    Window.DraggingWindow = self
+
+                    self.drag_ticks_since_last_movement = 0
+                    self.drag_ticks_since_start = 1
+                    self.drag_ticks_with_movement = 1
+        else:
+            if self.dragging:
+                self.drag_ticks_since_start += 1
+                self.drag_ticks_since_last_movement += 1
+
+                if not Window.IsLeftMouseHeld:
+                    self.dragging = False
+                    Window.DraggingWindow = None
+
+        self.drag_last_pos.assign(new_rect)
+        if self.is_floating():
+            self.floating_rect.assign(new_rect)
+
+    def update_float_drop(self):
+        if not self.can_drop_tiled:
+            return
+        if self.dragging and self.drag_ticks_with_movement > 5:
+            hover_space = pylewm.focus.get_cursor_space()
+            hover_slot = None
+            if hover_space:
+                hover_slot, force_drop = hover_space.get_drop_slot(pylewm.focus.get_cursor_position(), self.real_position)
+
+                # Only allow forced drops when drag&dropping
+                if not force_drop:
+                    hover_slot = None
+            
+            if hover_slot is not None:
+                self.set_drop_space(hover_space, hover_slot)
+            else:
+                self.remove_drop_space()
+        elif not self.dragging and self.drop_space and self.drop_slot is not None and self.drop_ticks_inside_slot >= 3:
+            self.ignore_drag_until = time.time() + 0.2
+            self.make_tiled()
+            self.drop_space.add_window(self, at_slot=self.drop_slot)
+            self.remove_drop_space()
+        else:
+            self.remove_drop_space()
+
+    def set_drop_space(self, new_space, new_slot):
+        if self.drop_space == new_space and self.drop_slot == new_slot:
+            if self.drop_ticks_inside_slot == 2:
+                self.drop_space.set_pending_drop_slot(self.drop_slot)
+            self.drop_ticks_inside_slot += 1
+        else:
+            if self.drop_space:
+                self.drop_space.set_pending_drop_slot(None)
+            self.drop_space = new_space
+            self.drop_slot = new_slot
+            self.drop_ticks_inside_slot = 0
+
+    def remove_drop_space(self):
+        if self.drop_space:
+            self.drop_space.set_pending_drop_slot(None)
+        self.drop_ticks_inside_slot = 0
+        self.drop_space = None
+        self.drop_slot = None
+
+    def remove_titlebar(self):
+        self.proxy.remove_titlebar()
+
+    def on_removed(self):
+        self.remove_drop_space()
+        self.stop_drag()
+
     @property
     def real_position(self):
         return self.window_info.rect
 
-    def set_layout(self, new_position : Rect):
+    def set_layout(self, new_position : Rect, apply_margin = True):
         if new_position.equals(self.layout_position):
             return
         self.layout_position.assign(new_position)
-        self.proxy.set_layout(new_position)
+
+        if apply_margin:
+            self.proxy.set_layout(new_position, self.layout_margin)
+        else:
+            self.proxy.set_layout(new_position)
 
     @property
     def window_title(self):
@@ -208,6 +354,7 @@ def on_proxy_added(proxy):
     window = Window(proxy)
     WindowsByProxy[proxy] = window
 
+
 def on_proxy_removed(proxy):
     if proxy not in WindowsByProxy:
         return
@@ -216,6 +363,7 @@ def on_proxy_removed(proxy):
     window.closed = True
     if window.space:
         window.space.remove_window(window)
+    window.on_removed()
 
     del WindowsByProxy[proxy]
 

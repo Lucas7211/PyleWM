@@ -56,6 +56,11 @@ GetWindowLongA.errcheck = no_errcheck
 GetWindowLongA.restype = w.LONG
 GetWindowLongA.argtypes = (w.HWND, c.c_int)
 
+SetWindowLongA = c.windll.user32.SetWindowLongA
+SetWindowLongA.errcheck = no_errcheck
+SetWindowLongA.restype = w.LONG
+SetWindowLongA.argtypes = (w.HWND, c.c_int, w.LONG)
+
 GWL_EXSTYLE = -20
 def WindowGetExStyle(hwnd):
     return GetWindowLongA(hwnd, GWL_EXSTYLE)
@@ -63,6 +68,9 @@ def WindowGetExStyle(hwnd):
 GWL_STYLE = -16
 def WindowGetStyle(hwnd):
     return GetWindowLongA(hwnd, GWL_STYLE)
+
+def WindowSetStyle(hwnd, style):
+    return SetWindowLongA(hwnd, GWL_STYLE, style)
 
 GetWindowLongPtrW = c.windll.user32.GetWindowLongPtrW
 GetWindowLongPtrW.errcheck = no_errcheck
@@ -123,20 +131,12 @@ HWND_NOTOPMOST = -2
 SW_SHOW = 5
 SW_SHOWNOACTIVATE = 4
 SW_FORCEMINIMIZE = 11
+SW_RESTORE = 9
 SW_HIDE = 0
 
 SWP_NOACTIVATE = 0x0010
 SWP_NOMOVE = 0x0002
 SWP_NOSIZE = 0x0001
-
-def WindowSetPositionInLayout(hwnd, pos_x, pos_y, pos_cx, pos_cy):
-    return SetWindowPos(
-        hwnd,
-        HWND_BOTTOM,
-        pos_x, pos_y,
-        pos_cx, pos_cy,
-        SWP_NOACTIVATE,
-    )
 
 GetForegroundWindow = c.windll.user32.GetForegroundWindow
 GetForegroundWindow.errcheck = no_errcheck
@@ -197,3 +197,10 @@ MessageBoxW.argtypes = (
 
 def ShowMessageBox(title, content):
     MessageBoxW(None, content, title, 0)
+
+GetAsyncKeyState = c.windll.user32.GetAsyncKeyState
+GetAsyncKeyState.errcheck = no_errcheck
+GetAsyncKeyState.restype = w.SHORT
+GetAsyncKeyState.argtypes = (
+    c.c_int, # vKey
+)

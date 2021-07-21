@@ -8,11 +8,13 @@ import win32con
 
 ALWAYS_IGNORE_TITLES = {
     "PyleWM_Internal",
+    "DesktopWindowXamlSource",
 }
 
 ALWAYS_IGNORE_CLASSES = {
     "progman",
     "ime",
+    "dwm",
 }
 
 ALWAYS_FLOATING_CLASSES = {
@@ -54,6 +56,10 @@ def classify_window(window):
     if pylewm.filters.is_ignored(window):
         return WindowState.IgnorePermanent, "Ignored by Filter"
 
+    # Windows with no title are temporary and should be ignored
+    if window.window_title in ALWAYS_IGNORE_TITLES:
+        return WindowState.IgnorePermanent, "Always Ignored by Name"
+
     # Invisible windows are ignored until they become visible
     if not window.window_info.visible:
         return WindowState.IgnoreTemporary, "Invisible"
@@ -70,10 +76,6 @@ def classify_window(window):
     if window.real_position.height == 0 or window.real_position.width == 0:
         return WindowState.IgnorePermanent, "Zero Size"
 
-    # Windows with no title are temporary and should be ignored
-    if window.window_title in ALWAYS_IGNORE_TITLES:
-        return WindowState.IgnoreTemporary, "Always Ignored by Name"
-
     # Don't bother with windows that don't overlap the desktop at all
     if not window.real_position.overlaps(pylewm.monitors.DesktopArea):
         return WindowState.IgnoreTemporary, "Off Screen"
@@ -82,6 +84,10 @@ def classify_window(window):
     # we can usually assume these aren't available for tiling.
     if not window.window_info.can_resize():
         return WindowState.Floating, "No Resize"
+
+    # If a filter specifies floating, set it to floating
+    if pylewm.filters.is_floating(window):
+        return WindowState.Floating, "Floating by Filter"
 
     # Some classes that Windows uses should always be realistically floating
     if window_class in ALWAYS_FLOATING_CLASSES:

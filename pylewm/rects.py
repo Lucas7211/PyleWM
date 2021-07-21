@@ -132,6 +132,21 @@ class Rect:
     def bottom(self, pos):
         self.position = (self.position[0], self.position[1], self.position[2], pos)
 
+    def for_relative_parent(self, prev_parent, new_parent):
+        """ Create a rect with the same relative position within the new parent. """
+        rel_x1 = float(self.left - prev_parent.left) / float(prev_parent.width)
+        rel_x2 = float(self.right - prev_parent.left) / float(prev_parent.width)
+        rel_y1 = float(self.top - prev_parent.top) / float(prev_parent.height)
+        rel_y2 = float(self.bottom - prev_parent.top) / float(prev_parent.height)
+
+        return Rect((
+            new_parent.left + int(float(rel_x1) * float(new_parent.width)),
+            new_parent.top + int(float(rel_y1) * float(new_parent.height)),
+            new_parent.left + int(float(rel_x2) * float(new_parent.width)),
+            new_parent.top + int(float(rel_y2) * float(new_parent.height)),
+        ))
+
+
     def shifted(self, pos):
         return Rect((
             self.position[0] + pos[0],

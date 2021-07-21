@@ -40,14 +40,12 @@ class Filter:
 @Filter
 def Floating(window):
     """ Start the window on the floating layer when spawned. """
-    #window.floating = True
-    #window.can_tile = False
+    pass
 
 @Filter
 def Tiling(window):
     """ Do not start the window as floating when spawned. """
-    #window.can_tile = True
-    #window.floating = False
+    pass
 
 @Filter
 def Ignore(window):
@@ -57,7 +55,7 @@ def Ignore(window):
 @Filter.post
 def NoTitlebar(window):
     """ Remove the titlebar from displaying on the window. """
-    #window.remove_titlebar()
+    window.remove_titlebar()
 
 @Filter
 def Monitor(window, monitor):
@@ -72,17 +70,17 @@ def KeepStartMonitor(window):
 @Filter
 def IgnoreBorders(window):
     """ Don't take into account window borders for this window's positioning. """
-    #window.force_borders = 0
+    window.layout_margin = 0
 
 @Filter
 def ForceBorders(window, border_size):
     """ Force this window to have borders of a particular size in positioning. """
-    #window.force_borders = border_size
+    window.layout_margin = border_size
 
 @Filter.post
 def TemporarySpace(window):
     """ The window gets a new desktop on its monitor when spawned. """
-    #pylewm.spaces.move_window_to_new_temporary_space(window)
+    pylewm.spaces.move_window_to_new_temporary_space(window)
 
 @Filter.post
 def AutoPoke(window):
@@ -90,8 +88,7 @@ def AutoPoke(window):
 
 @Filter
 def AlwaysOnTop(window):
-    #window.force_always_top = True
-    pass
+    window.force_always_top = True
 
 def trigger_all_filters(window, post=False):
     for f in FunctionsByFilter:
@@ -126,7 +123,7 @@ def get_monitor(window):
     if KeepStartMonitor in FiltersByFunction:
         for filt in FiltersByFunction[KeepStartMonitor]:
             if pylewm.selector.matches(window, filt[0]):
-                return pylewm.monitors.get_covering_monitor(window.rect).monitor_index
+                return pylewm.monitors.get_covering_monitor(window.real_position).monitor_index
     return None
 
 @PyleInit
