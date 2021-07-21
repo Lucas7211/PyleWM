@@ -15,6 +15,8 @@ PendingFocusProxy = None
 PendingFocusRect = None
 PendingFocusTries = 0
 
+ShellWindowProxy = None
+
 CursorPos = (0, 0)
 CursorPoint = winfuncs.w.POINT()
 
@@ -52,14 +54,13 @@ def update_focused_window():
 
 
     if CurFocus != FocusHWND or force_update:
-        FocusHWND = CurFocus
-        if FocusHWND in WindowsByHandle:
-            FocusWindowProxy = WindowsByHandle[FocusHWND]
-        else:
-            FocusWindowProxy = None
+        proxy = get_proxy(CurFocus)
+        if proxy and proxy.initialized:
+            FocusHWND = CurFocus
+            FocusWindowProxy = proxy
 
-        # Send a message to the command thread to indicate that the focused window has changed
-        Commands.queue(functools.partial(OnFocusChanged, FocusWindowProxy))
+            # Send a message to the command thread to indicate that the focused window has changed
+            Commands.queue(functools.partial(OnFocusChanged, FocusWindowProxy))
 
 
 COM_INITIALIZED = False
@@ -78,6 +79,8 @@ def attempt_focus_window_handle(hwnd, rect=None):
         shell.SendKeys('{F15}')
     except Exception as ex:
         pass
+
+    print(f"Attempt focus {get_proxy(hwnd)} - {PendingFocusTries}")
 
     winfuncs.SetForegroundWindow(hwnd)
     if rect:
@@ -105,11 +108,23 @@ def focus_shell_window(rect : Rect):
         global PendingFocusProxy
         global PendingFocusTries
         global PendingFocusRect
+        global ShellWindowProxy
 
-        PendingFocusProxy = winfuncs.GetShellWindow()
+        if not ShellWindowProxy:
+            shell_hwnd = winfuncs.GetShellWindow()
+            ShellWindowProxy = get_proxy(shell_hwnd)
+
+        PendingFocusProxy = ShellWindowProxy
         PendingFocusTries = 0
         PendingFocusRect = rect
     ProxyCommands.queue(focus_cmd)
 
 def get_cursor_position():
     return CursorPos
+
+def get_proxy(hwnd) -> WindowProxy:
+    global WindowsByHandle
+    if hwnd in WindowsByHandle:
+        return WindowsByHandle[hwnd]
+    else:
+        return None

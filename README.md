@@ -80,7 +80,7 @@ updated configuration.
 Dependencies
 ============
 Written for minimum Python version 3.6.
-Requires `pypiwin32`, `pystray`, `pygame`, `fuzzywuzzy`, and `pylnk3`.
+Requires `pywin32`, `pystray`, `pygame`, `fuzzywuzzy`, and `pylnk3`.
 
 Permissions
 ===========

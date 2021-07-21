@@ -9,6 +9,7 @@ import pystray
 from PIL import Image
 
 import threading
+import atexit
 
 from pylewm.commands import PyleCommand, InitFunctions, CommandQueue, queue_pyle_command, run_pyle_command, Commands
 
@@ -79,6 +80,8 @@ def start():
     threading.Thread(target=command_thread, daemon=True).start()
     threading.Thread(target=winproxy_thread, daemon=True).start()
 
+    atexit.register(pylewm.winproxy.winupdate.proxy_cleanup)
+
     global tray_icon
     tray_icon = pystray.Icon('PyleWM')
     png_path = os.path.join(os.path.dirname(__file__), "PyleWM.png")
@@ -94,18 +97,18 @@ def start():
 def stop_threads():
     pylewm.commands.stopped = True
     Commands.queue_event.set()
+    pylewm.winproxy.winupdate.ProxyCommands.queue_event.set()
     tray_icon.stop()
 
 @PyleCommand
 def restart():
-    #pylewm.windows.reset_all()
     stop_threads()
+    pylewm.winproxy.winupdate.proxy_cleanup()
 
     os.execl(sys.executable, sys.executable, *sys.argv)
     sys.exit()
     
 @PyleCommand
 def quit():
-    #pylewm.windows.reset_all()
     stop_threads()
     sys.exit()

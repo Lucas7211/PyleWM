@@ -46,3 +46,10 @@ def update_tracked_windows():
     for window in invalid_windows:
         del WindowsByHandle[window._hwnd]
         Commands.queue(functools.partial(on_proxy_removed, window))
+
+def proxy_cleanup():
+    """ Cleanup all proxies when the program is shutting down. """
+    global WindowsByHandle
+    for hwnd, proxy in WindowsByHandle.items():
+        proxy._cleanup()
+    WindowsByHandle = dict()

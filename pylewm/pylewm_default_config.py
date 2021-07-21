@@ -38,8 +38,8 @@ def apply(MOD=('ctrl','alt')):
         #(*MOD, 'shift', 'p')     : pylewm.yank.drop_all_windows,
 
         ## -- MOD+Space to flip between the front and back sides of a monitor's desktop
-        #(*MOD, ' ')              : pylewm.spaces.flip,
-        #(*MOD, 'shift', ' ')     : pylewm.spaces.move_flip,
+        (*MOD, ' ')              : pylewm.spaces.flip,
+        (*MOD, 'shift', ' ')     : pylewm.spaces.move_flip,
 
         ## -- MOD+Enter opens a fuzzy search window to start any application with a start menu / desktop shortcut
         #(*MOD, 'enter')          : pylewm.modes.select_application.run_application,
@@ -48,17 +48,17 @@ def apply(MOD=('ctrl','alt')):
         #(*MOD, 'w')              : pylewm.modes.goto_window.start_goto_window,
 
         ## -- Temporary spaces are created and deleted when necessary per monitor
-        #(*MOD, 's')              : pylewm.spaces.goto_temporary,
-        #(*MOD, 'n')              : pylewm.spaces.next_temporary,
-        #(*MOD, 'm')              : pylewm.spaces.previous_temporary,
+        (*MOD, 's')              : pylewm.spaces.goto_temporary,
+        (*MOD, 'n')              : pylewm.spaces.next_temporary,
+        (*MOD, 'm')              : pylewm.spaces.previous_temporary,
 
-        #(*MOD, 'shift', 's')     : pylewm.spaces.move_to_new_temporary_space,
+        (*MOD, 'shift', 's')     : pylewm.spaces.move_to_new_temporary_space,
 
         ## -- Application management
         (*MOD, 'a')              : pylewm.execution.command_prompt,
-        #(*MOD, 'd')              : pylewm.execution.start_menu,
+        (*MOD, 'd')              : pylewm.execution.start_menu,
         (*MOD, 'f')              : pylewm.execution.file_explorer,
-        #(*MOD, 'shift', 'f')     : pylewm.execution.this_pc,
+        (*MOD, 'shift', 'f')     : pylewm.execution.this_pc,
 
         ## -- Reload PyleWM with MOD+SHIFT+R
         (*MOD, 'r')     : pylewm.run.restart,

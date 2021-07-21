@@ -47,14 +47,17 @@ class Space:
                 self.focus = focus_window
                 if self.focus != self.last_focus:
                     self.last_focus = self.focus
+                    print(f"last focus {focus_window}")
             else:
                 self.focus = None
         else:
             self.focus = None
 
         if self.last_focus and self.last_focus.closed:
+            print(f" clear last focus closed")
             self.last_focus = None
         if self.last_focus and self.last_focus not in self.windows:
+            print(f" clear last focus not window")
             self.last_focus = None
 
         # Update the focus MRU stack

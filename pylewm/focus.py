@@ -18,15 +18,17 @@ def focus_monitor(monitor_index):
     monitor = pylewm.monitors.get_monitor_by_index(monitor_index)
     set_focus_space(monitor.visible_space)
 
-def set_focus(window):
+def set_focus(window : Window):
     global FocusWindow
     global LastFocusWindow
+
+    assert isinstance(window, Window)
 
     FocusWindow = window
     LastFocusWindow = window
     focus_window(window.proxy, move_mouse=True)
 
-def set_focus_no_mouse(window):
+def set_focus_no_mouse(window : Window):
     global FocusWindow
     global LastFocusWindow
 

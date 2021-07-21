@@ -64,6 +64,8 @@ class WindowProxy:
         self._layout_margin = None
         self._applied_position = Rect()
 
+        self._proxy_hidden = False
+
     def _initialize(self):
         self.initialized = True
 
@@ -71,6 +73,10 @@ class WindowProxy:
 
         self._update_info()
         self._transfer_info()
+
+    def _cleanup(self):
+        if self._proxy_hidden:
+            winfuncs.ShowWindowAsync(self._hwnd, winfuncs.SW_SHOWNOACTIVATE)
 
     def __str__(self):
         return f"{{ PROXY {self._info.window_title} | {self._info.window_class} @{self._hwnd} }}"
@@ -122,12 +128,6 @@ class WindowProxy:
 
                 self._info.rect.position = (self._position.left, self._position.top, self._position.right, self._position.bottom)
                 self._dirty = True
-
-    def set_layout(self, new_position, margin=None):
-        with WindowProxyLock:
-            self._layout_position.assign(new_position)
-            self._layout_margin = margin
-            self._layout_dirty = True
 
     def _update_layout(self):
         with WindowProxyLock:
@@ -192,9 +192,7 @@ class WindowProxy:
                 needed_tries = tries+1
                 break
 
-        if set_position_allowed:
-            print(f"Received {self._position} for {self} which wants {try_position} after {needed_tries} tries")
-        else:
+        if not set_position_allowed:
             print(f"Failed to set {try_position} on {self}")
 
     def _transfer_info(self):
@@ -234,3 +232,36 @@ class WindowProxy:
         self._update_info()
         if self._dirty:
             self._transfer_info()
+
+    def set_layout(self, new_position, margin=None):
+        with WindowProxyLock:
+            self._layout_position.assign(new_position)
+            self._layout_margin = margin
+            self._layout_dirty = True
+
+    def _zorder_top(self):
+        #if self.force_always_top:
+            #return
+
+        winfuncs.SetWindowPos(self._hwnd, winfuncs.HWND_TOP, 0, 0, 0, 0,
+                winfuncs.SWP_NOACTIVATE | winfuncs.SWP_NOMOVE | winfuncs.SWP_NOSIZE)
+
+    def _zorder_bottom(self):
+        #if self.force_always_top:
+            #return
+
+        winfuncs.SetWindowPos(self._hwnd, winfuncs.HWND_BOTTOM, 0, 0, 0, 0,
+                winfuncs.SWP_NOACTIVATE | winfuncs.SWP_NOMOVE | winfuncs.SWP_NOSIZE)
+
+    def show(self):
+        def proxy_show():
+            self._proxy_hidden = False
+            winfuncs.ShowWindowAsync(self._hwnd, winfuncs.SW_SHOWNOACTIVATE)
+            self._zorder_top()
+        ProxyCommands.queue(proxy_show)
+
+    def hide(self):
+        def proxy_hide():
+            self._proxy_hidden = True
+            winfuncs.ShowWindowAsync(self._hwnd, winfuncs.SW_HIDE)
+        ProxyCommands.queue(proxy_hide)

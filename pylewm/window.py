@@ -5,6 +5,8 @@ from pylewm.rects import Rect
 from pylewm.winproxy.windowproxy import WindowProxy, WindowInfo, WindowProxyLock
 from pylewm.window_classification import WindowState, classify_window
 
+import time
+
 class Window:
     InInitialPlacement = True
     
@@ -14,6 +16,10 @@ class Window:
         self.state = WindowState.Unknown
         self.space = None
         self.closed = False
+
+        self.wm_hidden = False
+        self.wm_becoming_visible = False
+        self.wm_visible_since = 0
         
         self.applied_filters = False
 
@@ -47,10 +53,23 @@ class Window:
         return True
 
     def show(self):
-        pass
+        self.wm_hidden = False
+        self.wm_becoming_visible = True
+        self.wm_visible_since = time.time()
+        self.proxy.show()
+
+    def show_with_rect(self, new_rect):
+        self.wm_hidden = False
+        self.wm_becoming_visible = True
+        self.proxy.show_with_rect(new_rect)
 
     def hide(self):
-        pass
+        self.wm_hidden = True
+        self.wm_becoming_visible = False
+        self.proxy.hide()
+
+    def wm_visible_duration(self):
+        return time.time() - self.wm_visible_since
 
     def can_move(self):
         """ Whether this window can be moved within the layout or between spaces. """
@@ -75,6 +94,17 @@ class Window:
         if not self.applied_filters:
             self.apply_filters()
 
+        # Don't do any window management if we've hidden the window ourselves
+        if self.wm_hidden:
+            return
+
+        # Wait for the window to become visible
+        if self.wm_becoming_visible:
+            if self.window_info.visible:
+                self.wm_becoming_visible = False
+            else:
+                return
+
         if self.state == WindowState.Tiled:
             if self.is_interactable():
                 # Place in layout if not detected before
@@ -82,7 +112,8 @@ class Window:
                     self.auto_place_into_space()
             else:
                 # Remove from layout if no longer interactable
-                if self.space and self.space.visible:
+                if self.space and self.space.visible and self.wm_visible_duration() > 0.05:
+                    print(f"remove no interact {self}")
                     self.space.remove_window(self)
 
     def apply_filters(self):

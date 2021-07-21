@@ -9,9 +9,11 @@ def goto_space(other_space):
     other_space.monitor.switch_to_space(other_space)
 
     if other_space.last_focus:
+        print(f"from last focus {other_space.last_focus}")
         focus_window = other_space.last_focus
         pylewm.focus.set_focus(focus_window)
     elif other_space.windows:
+        print(f"from first window {other_space.windows[0]}")
         focus_window = other_space.windows[0]
         pylewm.focus.set_focus(focus_window)
     else:
