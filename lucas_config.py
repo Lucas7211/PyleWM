@@ -2,9 +2,11 @@
 # Keys are based on a custom dvorak keyboard layout.
 
 import pylewm
-import pylewm.modes.keynav
+import pylewm.modes
 import pylewm.modes.hint_mouse
 import pylewm.modes.hint_window
+import pylewm.modes.hint_controls
+import pylewm.modes.keynav
 import pylewm.modes.goto_window
 import pylewm.modes.select_application
 from pylewm.filters import *
@@ -18,6 +20,7 @@ pylewm.config.hotkeys({
     # Focus management
     (*MOD, 'h')              : pylewm.spaces.focus_left,
     (*MOD, 's')              : pylewm.spaces.focus_right,
+    (*MOD, '/')              : pylewm.spaces.focus_right,
     (*MOD, 't')              : pylewm.spaces.focus_down,
     (*MOD, 'n')              : pylewm.spaces.focus_up,
 
@@ -29,6 +32,7 @@ pylewm.config.hotkeys({
     # Move window slots
     (*MOD, 'shift', 'h')     : pylewm.spaces.move_left,
     (*MOD, 'shift', 's')     : pylewm.spaces.move_right,
+    (*MOD, 'shift', '/')     : pylewm.spaces.move_right,
     (*MOD, 'shift', 't')     : pylewm.spaces.move_down,
     (*MOD, 'shift', 'n')     : pylewm.spaces.move_up,
 
@@ -49,7 +53,6 @@ pylewm.config.hotkeys({
     (*MOD, "shift", "'")     : pylewm.windows.make_window_floating,
 
     (*MOD, 'shift', 'm')     : pylewm.windows.minimize,
-    (*MOD, 'shift', 'b')     : pylewm.windows.vanish,
 
     (*MOD, 'y')              : pylewm.yank.yank_window,
     (*MOD, 'i')              : pylewm.yank.drop_window,
@@ -102,7 +105,7 @@ pylewm.config.hotkeys({
 
     (*MOD, '.')              : pylewm.execution.run([r'C:\mpd\toggle.bat']),
     (*MOD, 'shift', '.')     : pylewm.execution.run([r'C:\mpd\mpc.exe', 'next']),
-
+        
     # PyleWM management
     (*MOD, 'shift', 'q')     : pylewm.run.restart,
     (*MOD, 'shift', '\\')    : pylewm.windows.show_window_info,
@@ -113,10 +116,13 @@ pylewm.config.hotkeys({
     (*MOD, ',')              : pylewm.modes.select_application.run_application,
     (*MOD, 'enter')          : pylewm.modes.goto_window.start_goto_window,
     (*MOD, 'e')              : pylewm.modes.hint_window.start_hint_window(hintkeys="aoeuhtns"),
+    (*MOD, 'f')              : pylewm.modes.hint_window.start_hint_floating_window(hintkeys="aoeuhtns"),
 
     # Mouse control mode
-    (*MOD, 'j')              : pylewm.modes.hint_mouse.start_hint_mouse(hintkeys="aoeuhtns"),
-    (*MOD, 'shift', 'j')     : pylewm.modes.hint_mouse.start_hint_mouse(hintkeys="aoeuhtns", clickmode="right"),
+    (*MOD, 'z')              : pylewm.modes.hint_mouse.start_hint_mouse(hintkeys="abcdefghijklmnopqrstuvwxyz"),
+    (*MOD, 'shift', 'z')     : pylewm.modes.hint_mouse.start_hint_mouse(hintkeys="abcdefghijklmnopqrstuvwxyz", clickmode="right"),
+    (*MOD, 'j')              : pylewm.modes.hint_controls.start_hint_controls(),
+    (*MOD, 'q')              : pylewm.modes.hint_controls.start_hint_controls(clickmode="right"),
 
     # System management
     (*MOD, 'ctrl', '$')     : pylewm.execution.run([r'C:\bin\GoToSleep.bat'], cmd_window=True),
@@ -125,6 +131,8 @@ pylewm.config.hotkeys({
 pylewm.config.filters([
     ({"class": "mintty"}, NoTitlebar, AutoPoke),
     ({"title": "Windows Terminal"}, NoTitlebar),
+    ({"title": "Slack *"}, Tiling, Monitor(2)),
+    ({"title": "* Discord"}, Tiling, Monitor(2)),
     ({"class": "MediaPlayerClassicW"}, Floating),
 
     # Visual Studio
@@ -136,6 +144,4 @@ pylewm.config.filters([
     ({"class": "SplashScreenClass"}, Ignore),
     ({"class": "UnrealWindow", "child": True}, Floating),
     ({"title": "*PCD3D_SM5*", "class": "UnrealWindow"}, Tiling, Monitor(1), TemporarySpace),
-
-    ({"title": "DesktopWindowXamlSource"}, Ignore),
 ])

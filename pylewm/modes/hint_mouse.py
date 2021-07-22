@@ -275,8 +275,9 @@ class HintMouseMode(pylewm.modes.overlay_mode.OverlayMode):
 
                 overlay.draw_box(Rect.centered_around(point.position, (6, 6)), self.hint_color)
 
-@pylewm.commands.PyleCommand.Threaded
+@pylewm.commands.PyleCommand
 def start_hint_mouse(hotkeys={}, hintkeys="asdfjkl;", clickmode="left"):
+    """ Create hints spaces evenly across the screen to allow the mouse to be controlled. """
     if not pylewm.focus.FocusWindow:
         return
     HintMouseMode(hintkeys, hotkeys, clickmode)()

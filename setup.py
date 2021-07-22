@@ -12,6 +12,7 @@ setup(
         "fuzzywuzzy>=0.18.0",
         "python-levenshtein>=0.12.0",
         "pylnk3>=0.4.2",
+        "pywinauto==0.6.8",
     ],
     package_data={
         "pylewm": ["PyleWM.png", "data/*"],
