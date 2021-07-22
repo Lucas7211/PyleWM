@@ -6,60 +6,50 @@ tEnumWindowFunc = c.CFUNCTYPE(None, w.HWND, w.LPARAM)
 def no_errcheck(result, func, args):
     return result
 
-EnumWindows = c.windll.user32.EnumWindows
-EnumWindows.errcheck = no_errcheck
-EnumWindows.argtypes = (
-    tEnumWindowFunc,
-    w.LPARAM,
-)
+EnumWindows = c.WINFUNCTYPE(
+    w.BOOL,
+    tEnumWindowFunc, w.LPARAM
+)(("EnumWindows", c.windll.user32))
 
-GetWindowTextW = c.windll.user32.GetWindowTextW
-GetWindowTextW.errcheck = no_errcheck
-GetWindowTextW.restype = c.c_int
-GetWindowTextW.argtypes = (
-    w.HWND, # Window handle
-    w.LPWSTR, # Output String buffer
-    c.c_int, # Output buffer length
-)
+GetWindowTextW = c.WINFUNCTYPE(
+    c.c_int,
+    w.HWND, w.LPWSTR, c.c_int,
+)(("GetWindowTextW", c.windll.user32))
 
 def WindowGetTitle(hwnd):
     buffer = c.create_unicode_buffer(256)
     GetWindowTextW(hwnd, buffer, c.sizeof(buffer))
     return buffer.value
 
-GetClassNameW = c.windll.user32.GetClassNameW
-GetClassNameW.errcheck = no_errcheck
-GetClassNameW.restype = c.c_int
-GetClassNameW.argtypes = (
-    w.HWND, # Window handle
-    w.LPWSTR, # Output String buffer
-    c.c_int, # Output buffer length
-)
-
-IsWindow = c.windll.user32.IsWindow
-IsWindow.errcheck = no_errcheck
-IsWindow.restype = c.c_bool
-IsWindow.argtypes = (w.HWND,)
-
-IsWindowVisible = c.windll.user32.IsWindowVisible
-IsWindowVisible.errcheck = no_errcheck
-IsWindowVisible.restype = c.c_bool
-IsWindowVisible.argtypes = (w.HWND,)
+GetClassNameW = c.WINFUNCTYPE(
+    c.c_int,
+    w.HWND, w.LPWSTR, c.c_int,
+)(("GetClassNameW", c.windll.user32))
 
 def WindowGetClass(hwnd):
     buffer = c.create_unicode_buffer(256)
     GetClassNameW(hwnd, buffer, c.sizeof(buffer))
     return buffer.value
 
-GetWindowLongA = c.windll.user32.GetWindowLongA
-GetWindowLongA.errcheck = no_errcheck
-GetWindowLongA.restype = w.LONG
-GetWindowLongA.argtypes = (w.HWND, c.c_int)
+IsWindow = c.WINFUNCTYPE(
+    w.BOOL,
+    w.HWND,
+)(("IsWindow", c.windll.user32))
 
-SetWindowLongA = c.windll.user32.SetWindowLongA
-SetWindowLongA.errcheck = no_errcheck
-SetWindowLongA.restype = w.LONG
-SetWindowLongA.argtypes = (w.HWND, c.c_int, w.LONG)
+IsWindowVisible = c.WINFUNCTYPE(
+    w.BOOL,
+    w.HWND,
+)(("IsWindowVisible", c.windll.user32))
+
+GetWindowLongA = c.WINFUNCTYPE(
+    w.LONG,
+    w.HWND, c.c_int,
+)(("GetWindowLongA", c.windll.user32))
+
+SetWindowLongA = c.WINFUNCTYPE(
+    w.LONG,
+    w.HWND, c.c_int, w.LONG,
+)(("SetWindowLongA", c.windll.user32))
 
 GWL_EXSTYLE = -20
 def WindowGetExStyle(hwnd):
@@ -72,23 +62,19 @@ def WindowGetStyle(hwnd):
 def WindowSetStyle(hwnd, style):
     return SetWindowLongA(hwnd, GWL_STYLE, style)
 
-GetWindowLongPtrW = c.windll.user32.GetWindowLongPtrW
-GetWindowLongPtrW.errcheck = no_errcheck
-GetWindowLongPtrW.restype = w.HANDLE
-GetWindowLongPtrW.argtypes = (w.HWND, c.c_int)
+GetWindowLongPtrW = c.WINFUNCTYPE(
+    w.HANDLE,
+    w.HWND, c.c_int,
+)(("GetWindowLongPtrW", c.windll.user32))
 
 GWL_HWNDPARENT = -8
 def WindowIsChild(hwnd):
     return IsWindow(GetWindowLongPtrW(hwnd, GWL_HWNDPARENT))
 
-DwmGetWindowAttribute = c.windll.dwmapi.DwmGetWindowAttribute
-DwmGetWindowAttribute.errcheck = no_errcheck
-DwmGetWindowAttribute.argtypes = (
-    w.HWND, # Window Handle
-    w.DWORD, # Attribute ID
-    c.c_void_p, # Buffer pointer
-    w.DWORD, # Buffer size (bytes)
-)
+DwmGetWindowAttribute = c.WINFUNCTYPE(
+    None,
+    w.HWND, w.DWORD, c.c_void_p, w.DWORD,
+)(("DwmGetWindowAttribute", c.windll.dwmapi))
 
 DWMWA_CLOAKED = 14
 def WindowIsCloaked(hwnd):
@@ -96,24 +82,19 @@ def WindowIsCloaked(hwnd):
     DwmGetWindowAttribute(hwnd, DWMWA_CLOAKED, output, 4)
     return output[0] != 0
 
-GetWindowRect = c.windll.user32.GetWindowRect
-GetWindowRect.errcheck = no_errcheck
-GetWindowRect.restype = c.c_bool
-GetWindowRect.argtypes = (w.HWND, c.POINTER(w.RECT))
+GetWindowRect = c.WINFUNCTYPE(
+    w.BOOL,
+    w.HWND, c.POINTER(w.RECT),
+)(("GetWindowRect", c.windll.user32))
 
-AdjustWindowRectEx = c.windll.user32.AdjustWindowRectEx
-AdjustWindowRectEx.errcheck = no_errcheck
-AdjustWindowRectEx.argtypes = (
-    c.POINTER(w.RECT),
-    c.c_uint,
-    c.c_bool,
-    c.c_uint,
-)
+AdjustWindowRectEx = c.WINFUNCTYPE(
+    w.BOOL,
+    c.POINTER(w.RECT), c.c_uint, c.c_bool, c.c_uint,
+)(("AdjustWindowRectEx", c.windll.user32))
 
-SetWindowPos = c.windll.user32.SetWindowPos
-SetWindowPos.errcheck = no_errcheck
-SetWindowPos.restype = w.BOOL
-SetWindowPos.argtypes = (
+SetWindowPos = c.WINFUNCTYPE(
+    w.BOOL,
+
     w.HWND, # Window Handle
     w.HWND, # Insert after Window
     c.c_int, # X
@@ -121,7 +102,7 @@ SetWindowPos.argtypes = (
     c.c_int, # cx
     c.c_int, # cy
     w.UINT, # uFlags
-)
+)(("SetWindowPos", c.windll.user32))
 
 HWND_BOTTOM = 1
 HWND_TOP = 0
@@ -138,69 +119,63 @@ SWP_NOACTIVATE = 0x0010
 SWP_NOMOVE = 0x0002
 SWP_NOSIZE = 0x0001
 
-GetForegroundWindow = c.windll.user32.GetForegroundWindow
-GetForegroundWindow.errcheck = no_errcheck
-GetForegroundWindow.restype = w.HWND
-GetForegroundWindow.argtypes = ()
+GetForegroundWindow = c.WINFUNCTYPE(
+    w.HWND,
+)(("GetForegroundWindow", c.windll.user32))
 
-SetForegroundWindow = c.windll.user32.SetForegroundWindow
-SetForegroundWindow.errcheck = no_errcheck
-SetForegroundWindow.restype = w.BOOL
-SetForegroundWindow.argtypes = (w.HWND,)
+SetForegroundWindow = c.WINFUNCTYPE(
+    w.BOOL,
+    w.HWND,
+)(("SetForegroundWindow", c.windll.user32))
 
-SetCursorPos = c.windll.user32.SetCursorPos
-SetCursorPos.errcheck = no_errcheck
-SetCursorPos.restype = w.BOOL
-SetCursorPos.argtypes = (c.c_int, c.c_int)
+SetCursorPos = c.WINFUNCTYPE(
+    w.BOOL,
+    c.c_int, c.c_int,
+)(("SetCursorPos", c.windll.user32))
 
-GetCursorPos = c.windll.user32.GetCursorPos
-GetCursorPos.errcheck = no_errcheck
-GetCursorPos.restype = w.BOOL
-GetCursorPos.argtypes = (w.LPPOINT,)
+GetCursorPos = c.WINFUNCTYPE(
+    w.BOOL,
+    w.LPPOINT,
+)(("GetCursorPos", c.windll.user32))
 
-GetShellWindow = c.windll.user32.GetShellWindow
-GetShellWindow.errcheck = no_errcheck
-GetShellWindow.restype = w.HWND
-GetShellWindow.argtypes = ()
+GetShellWindow = c.WINFUNCTYPE(
+    w.HWND,
+)(("GetShellWindow", c.windll.user32))
 
-IsHungAppWindow = c.windll.user32.IsHungAppWindow
-IsHungAppWindow.errcheck = no_errcheck
-IsHungAppWindow.restype = w.BOOL
-IsHungAppWindow.argtypes = (w.HWND,)
+IsHungAppWindow = c.WINFUNCTYPE(
+    w.BOOL,
+    w.HWND,
+)(("IsHungAppWindow", c.windll.user32))
 
-ShowWindowAsync = c.windll.user32.ShowWindowAsync
-ShowWindowAsync.errcheck = no_errcheck
-ShowWindowAsync.restype = w.BOOL
-ShowWindowAsync.argtypes = (w.HWND, c.c_int)
+ShowWindowAsync = c.WINFUNCTYPE(
+    w.BOOL,
+    w.HWND, c.c_int,
+)(("ShowWindowAsync", c.windll.user32))
 
 WM_CLOSE = 0x0010
 
-PostMessageW = c.windll.user32.PostMessageW
-PostMessageW.errcheck = no_errcheck
-PostMessageW.restype = w.BOOL
-PostMessageW.argtypes = (
+PostMessageW = c.WINFUNCTYPE(
+    w.BOOL,
+
     w.HWND, # Window Handle
     w.UINT, # Message Type
     w.WPARAM, # wParam
     w.LPARAM, # lParam
-)
+)(("PostMessageW", c.windll.user32))
 
-MessageBoxW = c.windll.user32.MessageBoxW
-MessageBoxW.errcheck = no_errcheck
-MessageBoxW.restype = c.c_int
-MessageBoxW.argtypes = (
+MessageBoxW = c.WINFUNCTYPE(
+    c.c_int,
+
     w.HWND, # Parent Window Handle
     w.LPCWSTR, # Text
     w.LPCWSTR, # Caption
     w.UINT, # uType
-)
+)(("MessageBoxW", c.windll.user32))
 
 def ShowMessageBox(title, content):
     MessageBoxW(None, content, title, 0)
 
-GetAsyncKeyState = c.windll.user32.GetAsyncKeyState
-GetAsyncKeyState.errcheck = no_errcheck
-GetAsyncKeyState.restype = w.SHORT
-GetAsyncKeyState.argtypes = (
-    c.c_int, # vKey
-)
+GetAsyncKeyState = c.WINFUNCTYPE(
+    w.SHORT,
+    c.c_int,
+)(("GetAsyncKeyState", c.windll.user32))

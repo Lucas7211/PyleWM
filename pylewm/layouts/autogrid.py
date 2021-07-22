@@ -320,23 +320,20 @@ class AutoGridLayout(Layout):
 
         return False, direction
 
-    def get_drop_slot(self, position, rect, fake_window_count=-1):
+    def get_drop_slot(self, position, rect, fake_window_count=-1, allow_drop_zones=True):
         window_count = len(self.windows) + 1
         if fake_window_count != -1:
             window_count = fake_window_count
 
-        # Allow dropping at the top of an empty screen for auto-tile
-        if window_count <= 1:
+        if window_count <= 1 and allow_drop_zones:
+            # Allow dropping at the top of an empty screen for auto-tile
             if (position[1] < self.rect.top + 100
                 or position[1] > self.rect.bottom - 100
                 or position[0] < self.rect.left + 50
                 or position[0] > self.rect.right - 50):
                 return Direction.InsertLeft, True
-            else:
-                return None, False
 
-        # Allow dropping around the center of a single column to split
-        if len(self.windows) == 1:
+            # Allow dropping around the center of a single column to split
             if position[0] < self.rect.left + 50:
                 return Direction.InsertLeft, True
             elif position[0] > self.rect.right - 50:
@@ -345,6 +342,7 @@ class AutoGridLayout(Layout):
                 return (0, 0), True
             elif position[1] > self.rect.bottom - 100:
                 return (0, 1), True
+
             return None, False
 
         wanted_columns, wanted_rows = self.get_wanted_grid_dimensions(window_count)
@@ -377,11 +375,11 @@ class AutoGridLayout(Layout):
                 return (column_index, 0), False
 
             # On the first column, dropping on the left means a new column to the left
-            if column_index == 0 and position[0] < column_splits[column_index] + 50:
+            if column_index == 0 and position[0] < column_splits[column_index] + 50 and allow_drop_zones:
                 return Direction.InsertLeft, True
 
             # On the last column, dropping on the right means a new column to the right
-            if column_index == column_count-1 and position[0] > column_splits[column_index+1] - 50:
+            if column_index == column_count-1 and position[0] > column_splits[column_index+1] - 50 and allow_drop_zones:
                 return Direction.InsertRight, True
 
             # Allow force dropping at the edge of the column
@@ -511,7 +509,7 @@ class AutoGridLayout(Layout):
 
         # Put windows in the most appropriate positions
         for window in window_list:
-            drop_slot, force_drop = self.get_drop_slot(window.layout_position.center, window.layout_position, fake_window_count=window_count)
+            drop_slot, force_drop = self.get_drop_slot(window.real_position.center, window.real_position, fake_window_count=window_count, allow_drop_zones=False)
             self.add_window(window, at_slot=drop_slot)
 
         # Remove columns that didn't get any windows

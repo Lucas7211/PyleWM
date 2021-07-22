@@ -23,7 +23,6 @@ def set_focus(window):
     global LastFocusWindow
 
     assert isinstance(window, pylewm.window.Window)
-    print(f"Make Focus {window}")
 
     FocusWindow = window
     LastFocusWindow = window
@@ -32,8 +31,6 @@ def set_focus(window):
 def set_focus_no_mouse(window):
     global FocusWindow
     global LastFocusWindow
-
-    print(f"Make Focus {window}")
 
     FocusWindow = window
     LastFocusWindow = window
@@ -48,7 +45,6 @@ def set_focus_space(space):
         set_focus_monitor(space.monitor)
 
 def set_focus_monitor(monitor):
-    print(f"Make Focus Monitor {monitor}")
     rect = monitor.rect.copy()
     focus_shell_window(rect)
 

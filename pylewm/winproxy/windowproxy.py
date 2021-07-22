@@ -15,6 +15,7 @@ WS_MAXIMIZE = 0x01000000
 WS_CAPTION = 0x00C00000
 WS_EX_NOACTIVATE = 0x08000000
 WS_EX_APPWINDOW = 0x00040000
+WS_SYSMENU = 0x00080000
 
 class WindowInfo:
     def __init__(self):
@@ -68,7 +69,8 @@ class WindowProxy:
 
         self._layout_dirty = False
         self._layout_position = Rect()
-        self._layout_margin = None
+        self._layout_applied = False
+        self._has_layout_position = None
         self._applied_position = Rect()
 
         self._proxy_hidden = False
@@ -157,6 +159,11 @@ class WindowProxy:
             try_position[1] += self._layout_margin
             try_position[2] -= self._layout_margin*2
             try_position[3] -= self._layout_margin*2
+        elif not (self._info._winStyle & WS_SYSMENU):
+            # Window controls its own border, we have some hardcoded offset that behaves nicely
+            try_position[0] += 2
+            try_position[2] -= 4
+            try_position[3] -= 3
         else:
             # Find the margin that this window wants from the OS
             adjustedRect = winfuncs.w.RECT()
@@ -253,8 +260,14 @@ class WindowProxy:
     def set_layout(self, new_position, margin=None):
         with WindowProxyLock:
             self._layout_position.assign(new_position)
+            self._has_layout_position = True
             self._layout_margin = margin
             self._layout_dirty = True
+        
+    def restore_layout(self):
+        with WindowProxyLock:
+            if self._has_layout_position:
+                self._layout_dirty = True
 
     def _zorder_top(self):
         zpos = winfuncs.HWND_TOP

@@ -38,4 +38,5 @@ def start_goto_window(hotkeys = {}):
         option = WindowOption(window)
         options.append(option)
 
-    pylewm.modes.list_mode.ListMode(hotkeys, options)()
+    mode = pylewm.modes.list_mode.ListMode(hotkeys, options)
+    mode()

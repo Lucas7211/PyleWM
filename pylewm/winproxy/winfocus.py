@@ -67,7 +67,6 @@ def update_focused_window():
 
 COM_INITIALIZED = False
 def attempt_focus_window_handle(hwnd, rect=None):
-    print(f"Attempt focus {get_proxy(hwnd)}")
     try:
         global COM_INITIALIZED
         if not COM_INITIALIZED:

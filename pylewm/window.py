@@ -176,7 +176,7 @@ class Window:
                     self.auto_place_into_space(initial_space=True)
 
                 # Switch to floating mode if the window has been moved by the user
-                if self.window_info.is_maximized() or (self.dragging and (self.drag_ticks_with_movement > 2 or Window.IsLeftMouseHeld)):
+                if self.window_info.is_maximized() or (self.dragging and (self.drag_ticks_with_movement > 2 or (Window.IsLeftMouseHeld and Window.DraggingWindow is self))):
                     self.make_floating()
             else:
                 # Remove from layout if no longer interactable
@@ -230,7 +230,8 @@ class Window:
 
     def stop_drag(self):
         if self.dragging:
-            Window.DraggingWindow = None
+            if Window.DraggingWindow is self:
+                Window.DraggingWindow = None
             self.dragging = False
 
     def update_drag(self):
@@ -244,29 +245,38 @@ class Window:
             self.drag_last_pos.assign(new_rect)
             self.dragging = False
             self.remove_drop_space()
+            return
 
         # Some rudimentary tracking for when windows are being dragged
         if not new_rect.equals(self.drag_last_pos):
-            if Window.IsLeftMouseHeld and (Window.DraggingWindow is None or self.dragging):
-                if self.dragging:
-                    self.drag_ticks_since_last_movement = 0
-                    self.drag_ticks_since_start += 1
-                    self.drag_ticks_with_movement += 1
-                else:
-                    self.dragging = True
+            if self.dragging:
+                self.drag_ticks_since_last_movement = 0
+                self.drag_ticks_since_start += 1
+                self.drag_ticks_with_movement += 1
+            else:
+                self.dragging = True
+
+                if Window.DraggingWindow is None and Window.IsLeftMouseHeld:
                     Window.DraggingWindow = self
 
-                    self.drag_ticks_since_last_movement = 0
-                    self.drag_ticks_since_start = 1
-                    self.drag_ticks_with_movement = 1
+                self.drag_ticks_since_last_movement = 0
+                self.drag_ticks_since_start = 1
+                self.drag_ticks_with_movement = 1
         else:
             if self.dragging:
                 self.drag_ticks_since_start += 1
                 self.drag_ticks_since_last_movement += 1
 
-                if not Window.IsLeftMouseHeld:
+                if Window.DraggingWindow is None and Window.IsLeftMouseHeld:
+                    Window.DraggingWindow = self
+
+                if not Window.IsLeftMouseHeld or Window.DraggingWindow is not self:
                     self.dragging = False
-                    Window.DraggingWindow = None
+                    if Window.DraggingWindow is self:
+                        Window.DraggingWindow = None
+
+                    if self.is_tiled():
+                        self.restore_layout()
 
         self.drag_last_pos.assign(new_rect)
         if self.is_floating():
@@ -331,11 +341,16 @@ class Window:
         if new_position.equals(self.layout_position):
             return
         self.layout_position.assign(new_position)
+        self.ignore_drag_until = time.time() + 0.2
 
         if apply_margin:
             self.proxy.set_layout(new_position, self.layout_margin)
         else:
             self.proxy.set_layout(new_position)
+
+    def restore_layout(self):
+        self.proxy.restore_layout()
+        self.ignore_drag_until = time.time() + 0.2
 
     @property
     def window_title(self):
