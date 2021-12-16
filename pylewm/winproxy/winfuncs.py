@@ -3,9 +3,6 @@ import ctypes.wintypes as w
 
 tEnumWindowFunc = c.CFUNCTYPE(None, w.HWND, w.LPARAM)
 
-def no_errcheck(result, func, args):
-    return result
-
 EnumWindows = c.WINFUNCTYPE(
     w.BOOL,
     tEnumWindowFunc, w.LPARAM
@@ -16,12 +13,25 @@ GetWindowTextW = c.WINFUNCTYPE(
     w.HWND, w.LPWSTR, c.c_int,
 )(("GetWindowTextW", c.windll.user32))
 
+GetWindowTextLengthW = c.WINFUNCTYPE(
+    c.c_int,
+    w.HWND,
+)(("GetWindowTextLengthW", c.windll.user32))
+
 def WindowGetTitle(hwnd):
-    buffer = c.create_unicode_buffer(256)
-    GetWindowTextW(hwnd, buffer, c.sizeof(buffer))
+    length = GetWindowTextLengthW(hwnd)
+    if length == 0:
+        return ""
+    buffer = c.create_unicode_buffer(length+1)
+    GetWindowTextW(hwnd, buffer, length+1)
     return buffer.value
 
 GetClassNameW = c.WINFUNCTYPE(
+    c.c_int,
+    w.HWND, w.LPWSTR, c.c_int,
+)(("GetClassNameW", c.windll.user32))
+
+GetClassNameLengthW = c.WINFUNCTYPE(
     c.c_int,
     w.HWND, w.LPWSTR, c.c_int,
 )(("GetClassNameW", c.windll.user32))
@@ -179,3 +189,26 @@ GetAsyncKeyState = c.WINFUNCTYPE(
     w.SHORT,
     c.c_int,
 )(("GetAsyncKeyState", c.windll.user32))
+
+tEnumDisplayMonitorFunc = c.CFUNCTYPE(w.BOOL, w.HMONITOR, w.HDC, c.POINTER(w.RECT), w.LPARAM)
+
+EnumDisplayMonitors = c.WINFUNCTYPE(
+    w.BOOL,
+    w.HDC, c.POINTER(w.RECT), tEnumDisplayMonitorFunc, w.LPARAM,
+)(("EnumDisplayMonitors", c.windll.user32))
+
+class MONITORINFO(c.Structure):
+    _fields_ = (
+        ('cbSize',          w.DWORD),
+        ('rcMonitor',       w.RECT),
+        ('rcWork',          w.RECT),
+        ('dwFlags',         w.DWORD),
+    )
+
+    def __init__(self):
+        self.cbSize = c.sizeof(MONITORINFO)
+
+GetMonitorInfoW = c.WINFUNCTYPE(
+    w.BOOL,
+    w.HMONITOR, c.POINTER(MONITORINFO),
+)(("GetMonitorInfoW", c.windll.user32))

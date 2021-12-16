@@ -237,9 +237,7 @@ def move_direction(direction):
         new_monitor = pylewm.monitors.get_monitor_in_direction(current_space.monitor, escape_direction)
         if new_monitor:
             current_space.remove_window(focus_window)
-            print(f"Remove {focus_window} from {current_space} - {current_space.windows}")
             new_monitor.visible_space.add_window(focus_window, direction=escape_direction)
-            print(f"Add {focus_window} to {new_monitor.visible_space} - {new_monitor.visible_space.windows}")
 
     pylewm.focus.set_focus(focus_window)
 

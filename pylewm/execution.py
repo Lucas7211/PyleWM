@@ -13,12 +13,14 @@ import subprocess
 import pywintypes
 import shutil
 
-@PyleCommand.Threaded
+SpawnAsUserSecurityToken = None
+
+@PyleCommand
 def start_menu():
     """ Open the start menu. """
     sendKey(('ctrl', 'esc'))
     
-@PyleCommand.Threaded
+@PyleCommand
 def run(args, cwd=None, as_admin=False, cmd_window=False):
     """ Run an arbitrary command. """
     if isinstance(args, str):
@@ -29,23 +31,25 @@ def run(args, cwd=None, as_admin=False, cmd_window=False):
         cwd = os.getenv("USERPROFILE")
     
     if as_admin:
-        subprocess.call(args, shell=True, cwd=cwd)
+        subprocess.call(
+            args, shell=True, cwd=cwd,
+            creationflags=subprocess.DETACHED_PROCESS|subprocess.CREATE_NEW_PROCESS_GROUP
+        )
     else:
         # We have to do all this nonsense to spawn the process
         # as the logged in user, rather than as the administrator
         # that PyleWM is running as
-        startup_info = STARTUPINFO()
-        process_information = PROCESS_INFORMATION()
-        
-        shell_window = ctypes.windll.user32.GetShellWindow()
-        thread_id, process_id = win32process.GetWindowThreadProcessId(shell_window)
-        shell_handle = win32api.OpenProcess(win32con.PROCESS_QUERY_INFORMATION, False, process_id)
-        shell_token = win32security.OpenProcessToken(shell_handle, win32con.TOKEN_DUPLICATE)
-        
-        spawn_token = win32security.DuplicateTokenEx(shell_token, win32security.SecurityImpersonation,
-                    win32con.TOKEN_QUERY | win32con.TOKEN_ASSIGN_PRIMARY | win32con.TOKEN_DUPLICATE
-                    | win32con.TOKEN_ADJUST_DEFAULT | 0x0100,
-                    win32security.TokenPrimary, None)
+        global SpawnAsUserSecurityToken
+        if SpawnAsUserSecurityToken is None:
+            shell_window = ctypes.windll.user32.GetShellWindow()
+            thread_id, process_id = win32process.GetWindowThreadProcessId(shell_window)
+            shell_handle = win32api.OpenProcess(win32con.PROCESS_QUERY_INFORMATION, False, process_id)
+            shell_token = win32security.OpenProcessToken(shell_handle, win32con.TOKEN_DUPLICATE)
+            
+            SpawnAsUserSecurityToken = win32security.DuplicateTokenEx(shell_token, win32security.SecurityImpersonation,
+                        win32con.TOKEN_QUERY | win32con.TOKEN_ASSIGN_PRIMARY | win32con.TOKEN_DUPLICATE
+                        | win32con.TOKEN_ADJUST_DEFAULT | 0x0100,
+                        win32security.TokenPrimary, None)
 
         escaped_commandline = ""
         for arg in args:
@@ -58,7 +62,9 @@ def run(args, cwd=None, as_admin=False, cmd_window=False):
         if not os.path.isfile(executable):
             executable = shutil.which(executable)
 
-        success = ctypes.windll.advapi32.CreateProcessWithTokenW(int(spawn_token), 0, executable, escaped_commandline,
+        startup_info = STARTUPINFO()
+        process_information = PROCESS_INFORMATION()
+        success = ctypes.windll.advapi32.CreateProcessWithTokenW(int(SpawnAsUserSecurityToken), 0, executable, escaped_commandline,
                     win32con.CREATE_NO_WINDOW if not cmd_window else win32con.CREATE_NEW_CONSOLE, None, os.getcwd(),
                     ctypes.pointer(startup_info), ctypes.pointer(process_information))
 
@@ -69,26 +75,26 @@ def run(args, cwd=None, as_admin=False, cmd_window=False):
                 win32api.FormatMessageW(error))
 
 
-@PyleCommand.Threaded
+@PyleCommand
 def command_prompt(cwd=None, as_admin=False):
     if as_admin:
         run(["start", "cmd.exe"], cwd=cwd, as_admin=True).run()
     else:
         run(["cmd.exe"], cwd=cwd, cmd_window=True).run()
 
-@PyleCommand.Threaded
+@PyleCommand
 def file_explorer(cwd=None):
     cmd = ["explorer.exe"]
     if cwd:
         cmd.append(cwd)
     run(cmd, as_admin=True).run()
 
-@PyleCommand.Threaded
+@PyleCommand
 def this_pc(cwd=None):
     cmd = ["explorer.exe", "/n,", "/e,", "/select,", "C:\\"]
     run(cmd, as_admin=True).run()
 
-@PyleCommand.Threaded
+@PyleCommand
 def open_config(cwd=None):
     file_explorer(pylewm.config.get_config_dir()).run()
 
