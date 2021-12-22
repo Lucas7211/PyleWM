@@ -212,3 +212,14 @@ GetMonitorInfoW = c.WINFUNCTYPE(
     w.BOOL,
     w.HMONITOR, c.POINTER(MONITORINFO),
 )(("GetMonitorInfoW", c.windll.user32))
+
+GetModuleHandleW = c.WINFUNCTYPE(
+    w.HMODULE,
+    w.LPCWSTR,
+)(("GetModuleHandleW", c.windll.kernel32))
+
+ttHookProc = c.CFUNCTYPE(c.c_uint, c.c_uint, c.c_uint, c.POINTER(c.c_uint))
+SetWindowsHookExA = c.WINFUNCTYPE(
+    w.HHOOK,
+    c.c_int, ttHookProc, w.HINSTANCE, w.DWORD,
+)(("SetWindowsHookExA", c.windll.user32))

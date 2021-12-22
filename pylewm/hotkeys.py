@@ -1,6 +1,7 @@
 import pylewm.commands
 import sys, ctypes
 from ctypes import windll, CFUNCTYPE, POINTER, c_int, c_uint, c_void_p, byref, c_ulong, pointer, addressof, create_string_buffer
+import pylewm.winproxy.winfuncs as winfuncs
 import win32con, win32api, win32gui, atexit
 import ctypes.wintypes as wintypes
 
@@ -294,13 +295,10 @@ def wait_for_hotkeys():
                 return windll.user32.CallNextHookEx(windowsHook, nCode, wParam, lParam)
             return 1
 
-    HANDLER = CFUNCTYPE(c_uint, c_uint, c_uint, POINTER(c_uint))
-    handlerPtr = HANDLER(handle_windows)
+    handlerPtr = winfuncs.ttHookProc(handle_windows)
+    module = winfuncs.GetModuleHandleW(None)
 
-    setWindowsHookExA = windll.user32.SetWindowsHookExA
-    setWindowsHookExA.argtypes = (wintypes.DWORD, HANDLER, wintypes.HINSTANCE, wintypes.DWORD)
-
-    windowsHook = setWindowsHookExA(win32con.WH_KEYBOARD_LL, handlerPtr, windll.kernel32.GetModuleHandleW(None), 0)
+    windowsHook = winfuncs.SetWindowsHookExA(win32con.WH_KEYBOARD_LL, handlerPtr, module, 0)
     atexit.register(windll.user32.UnhookWindowsHookEx, windowsHook)
 
     while not pylewm.commands.stopped:
