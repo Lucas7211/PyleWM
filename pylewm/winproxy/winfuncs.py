@@ -213,13 +213,52 @@ GetMonitorInfoW = c.WINFUNCTYPE(
     w.HMONITOR, c.POINTER(MONITORINFO),
 )(("GetMonitorInfoW", c.windll.user32))
 
+LRESULT = c.c_int64
+HOOKPROC = c.CFUNCTYPE(LRESULT, w.INT, w.WPARAM, w.LPARAM)
+
+SetWindowsHookExW = c.WINFUNCTYPE(
+    w.HHOOK,
+    w.INT, HOOKPROC, w.HINSTANCE, w.DWORD
+)(("SetWindowsHookExW", c.windll.user32))
+
 GetModuleHandleW = c.WINFUNCTYPE(
     w.HMODULE,
     w.LPCWSTR,
 )(("GetModuleHandleW", c.windll.kernel32))
 
-ttHookProc = c.CFUNCTYPE(c.c_uint, c.c_uint, c.c_uint, c.POINTER(c.c_uint))
-SetWindowsHookExA = c.WINFUNCTYPE(
+UnhookWindowsHookEx = c.WINFUNCTYPE(
+    w.BOOL,
     w.HHOOK,
-    c.c_int, ttHookProc, w.HINSTANCE, w.DWORD,
-)(("SetWindowsHookExA", c.windll.user32))
+)(("UnhookWindowsHookEx", c.windll.user32))
+
+CallNextHookEx = c.WINFUNCTYPE(
+    LRESULT,
+    w.HHOOK, w.INT, w.WPARAM, w.LPARAM,
+)(("CallNextHookEx", c.windll.user32))
+
+class KBDLLHOOKSTRUCT(c.Structure):
+    _fields_ = (
+        ('vkCode',          w.DWORD),
+        ('scanCode',        w.DWORD),
+        ('flags',           w.DWORD),
+        ('time',            w.DWORD),
+        ('dwExtraInfo',     c.POINTER(w.ULONG)),
+    )
+
+def CastToKbDllHookStruct(lParam):
+    return c.cast(lParam, c.POINTER(KBDLLHOOKSTRUCT))[0]
+
+GetMessageW = c.WINFUNCTYPE(
+    w.BOOL,
+    w.LPMSG, w.HWND, w.UINT, w.UINT,
+)(("GetMessageW", c.windll.user32))
+
+TranslateMessage = c.WINFUNCTYPE(
+    w.BOOL,
+    w.LPMSG,
+)(("TranslateMessage", c.windll.user32))
+
+DispatchMessageW = c.WINFUNCTYPE(
+    LRESULT,
+    w.LPMSG,
+)(("DispatchMessageW", c.windll.user32))

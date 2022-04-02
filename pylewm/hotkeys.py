@@ -1,9 +1,9 @@
 import pylewm.commands
 import sys, ctypes
 from ctypes import windll, CFUNCTYPE, POINTER, c_int, c_uint, c_void_p, byref, c_ulong, pointer, addressof, create_string_buffer
-import pylewm.winproxy.winfuncs as winfuncs
-import win32con, win32api, win32gui, atexit
+import win32con, win32gui, atexit
 import ctypes.wintypes as wintypes
+import pylewm.winproxy.winfuncs as winfuncs
 
 import traceback, threading
 import copy
@@ -281,27 +281,36 @@ def VKToChr(vk, sc):
     
 def wait_for_hotkeys():
     def handle_windows(nCode, wParam, lParam):
+            if nCode < 0:
+                return winfuncs.CallNextHookEx(windowsHook, nCode, wParam, lParam)
+
             isKeyDown = False
             isKeyUp = False
             if wParam == win32con.WM_KEYDOWN or wParam == win32con.WM_SYSKEYDOWN:
                 isKeyDown = True
             if wParam == win32con.WM_KEYUP or wParam == win32con.WM_SYSKEYUP:
                 isKeyUp = True
+
+            keyInfo = winfuncs.CastToKbDllHookStruct(lParam)
             
             shouldContinue = True
             if isKeyDown or isKeyUp:
-                shouldContinue = not handle_python(isKeyDown, lParam[0], lParam[1])
+                shouldContinue = not handle_python(isKeyDown, keyInfo.vkCode, keyInfo.scanCode)
             if shouldContinue:
-                return windll.user32.CallNextHookEx(windowsHook, nCode, wParam, lParam)
+                return winfuncs.CallNextHookEx(windowsHook, nCode, wParam, lParam)
             return 1
 
-    handlerPtr = winfuncs.ttHookProc(handle_windows)
-    module = winfuncs.GetModuleHandleW(None)
+    handlerPtr = winfuncs.HOOKPROC(handle_windows)
+    modulePtr = winfuncs.GetModuleHandleW(None)
 
-    windowsHook = winfuncs.SetWindowsHookExA(win32con.WH_KEYBOARD_LL, handlerPtr, module, 0)
-    atexit.register(windll.user32.UnhookWindowsHookEx, windowsHook)
+    windowsHook = winfuncs.SetWindowsHookExW(win32con.WH_KEYBOARD_LL, handlerPtr, modulePtr, 0)
+    atexit.register(winfuncs.UnhookWindowsHookEx, windowsHook)
 
+    message = winfuncs.w.MSG()
     while not pylewm.commands.stopped:
-        msg = win32gui.GetMessage(None, 0, 0)
-        win32gui.TranslateMessage(byref(msg))
-        win32gui.DispatchMessage(byref(msg))
+        result = winfuncs.GetMessageW(byref(message), None, 0, 0)
+        if result == -1 or result == 0:
+            break
+
+        winfuncs.TranslateMessage(byref(message))
+        winfuncs.DispatchMessageW(byref(message))

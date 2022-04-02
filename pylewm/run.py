@@ -102,7 +102,9 @@ def stop_threads():
     pylewm.commands.stopped = True
     Commands.queue_event.set()
     pylewm.winproxy.winupdate.ProxyCommands.queue_event.set()
-    tray_icon.stop()
+
+    if tray_icon:
+        tray_icon.stop()
 
 @PyleCommand
 def restart():
