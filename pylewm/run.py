@@ -85,18 +85,18 @@ def start():
 
     atexit.register(pylewm.winproxy.winupdate.proxy_cleanup)
 
-    #global tray_icon
-    #tray_icon = pystray.Icon('PyleWM')
-    #png_path = os.path.join(os.path.dirname(__file__), "PyleWM.png")
-    #tray_icon.icon = Image.open(png_path)
-    #tray_icon.title = "PyleWM"
-    #tray_icon.menu = pystray.Menu(
-    #    pystray.MenuItem("Open Config Directory", lambda: run_pyle_command(pylewm.execution.open_config)),
-    #    pystray.MenuItem("Restart", lambda: run_pyle_command(restart)),
-    #    pystray.MenuItem("Quit", lambda: run_pyle_command(quit)),
-    #)
-    #tray_icon.run()
-    #pylewm.commands.stopped = True
+    global tray_icon
+    tray_icon = pystray.Icon('PyleWM')
+    png_path = os.path.join(os.path.dirname(__file__), "PyleWM.png")
+    tray_icon.icon = Image.open(png_path)
+    tray_icon.title = "PyleWM"
+    tray_icon.menu = pystray.Menu(
+        pystray.MenuItem("Open Config Directory", lambda: run_pyle_command(pylewm.execution.open_config)),
+        pystray.MenuItem("Restart", lambda: run_pyle_command(restart)),
+        pystray.MenuItem("Quit", lambda: run_pyle_command(quit)),
+    )
+    tray_icon.run()
+    pylewm.commands.stopped = True
 
 def stop_threads():
     pylewm.commands.stopped = True
