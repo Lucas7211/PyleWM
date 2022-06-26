@@ -5,12 +5,10 @@ import pylewm
 import pylewm.modes
 import pylewm.modes.hint_mouse
 import pylewm.modes.hint_window
-import pylewm.modes.hint_controls
 import pylewm.modes.keynav
 import pylewm.modes.goto_window
 import pylewm.modes.select_application
 from pylewm.filters import *
-import os
 
 # I have remapped the 'app' key to a more convenient place on the keyboard
 # and use it for all my window management shortcuts.
@@ -118,11 +116,9 @@ pylewm.config.hotkeys({
     (*MOD, 'e')              : pylewm.modes.hint_window.start_hint_window(hintkeys="aoeuhtns"),
     (*MOD, 'f')              : pylewm.modes.hint_window.start_hint_floating_window(hintkeys="aoeuhtns"),
 
-    # Mouse control mode
-    (*MOD, 'z')              : pylewm.modes.hint_mouse.start_hint_mouse(hintkeys="abcdefghijklmnopqrstuvwxyz"),
-    (*MOD, 'shift', 'z')     : pylewm.modes.hint_mouse.start_hint_mouse(hintkeys="abcdefghijklmnopqrstuvwxyz", clickmode="right"),
-    (*MOD, 'j')              : pylewm.modes.hint_controls.start_hint_controls(),
-    (*MOD, 'q')              : pylewm.modes.hint_controls.start_hint_controls(clickmode="right"),
+    # Copy-paste shortcuts
+    (*MOD, 'q')              : pylewm.sendkeys.sendkey(('ctrl', 'c')),
+    (*MOD, 'j')              : pylewm.sendkeys.sendkey(('ctrl', 'v')),
 
     # System management
     (*MOD, 'ctrl', '$')     : pylewm.execution.run([r'C:\bin\GoToSleep.bat'], cmd_window=True),
