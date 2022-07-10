@@ -13,6 +13,7 @@ import atexit
 
 from pylewm.commands import PyleCommand, InitFunctions, CommandQueue, queue_pyle_command, run_pyle_command, Commands
 
+import pylewm.winproxy.winfuncs as winfuncs
 import pylewm.winproxy.winupdate
 import pylewm.hotkeys
 import pylewm.commands
@@ -66,7 +67,7 @@ def start():
             script_name = "-m pylewm"
         argument_str = " ".join((script_name, *sys.argv[1:]))
         print("-- Requesting UAC admin access")
-        ctypes.windll.shell32.ShellExecuteW(None, "runas", find_pythonw_executable(), argument_str, None, 1)
+        winfuncs.ShellExecuteW(None, "runas", sys.executable, argument_str, None, 1)
         sys.exit()
         return
     else:

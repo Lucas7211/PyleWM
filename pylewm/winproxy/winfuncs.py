@@ -262,3 +262,8 @@ DispatchMessageW = c.WINFUNCTYPE(
     LRESULT,
     w.LPMSG,
 )(("DispatchMessageW", c.windll.user32))
+
+ShellExecuteW = c.WINFUNCTYPE(
+    w.HINSTANCE,
+    w.HWND, w.LPCWSTR, w.LPCWSTR, w.LPCWSTR, w.LPCWSTR, c.c_int,
+)(("ShellExecuteW", c.windll.shell32))
