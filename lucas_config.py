@@ -14,6 +14,10 @@ from pylewm.filters import *
 # and use it for all my window management shortcuts.
 MOD = ('app',)
 
+def GoToSleep():
+    pylewm.hotkeys.release_all_modifiers().run()
+    pylewm.execution.run([r'C:\bin\GoToSleep.bat'], cmd_window=True).run(),)
+
 pylewm.config.hotkeys({
     # Focus management
     (*MOD, 'h')              : pylewm.spaces.focus_left,
@@ -121,7 +125,7 @@ pylewm.config.hotkeys({
     (*MOD, 'j')              : pylewm.sendkeys.sendkey(('ctrl', 'v')),
 
     # System management
-    (*MOD, 'ctrl', '$')     : pylewm.execution.run([r'C:\bin\GoToSleep.bat'], cmd_window=True),
+    (*MOD, 'ctrl', '$')     : GoToSleep,
 })
 
 pylewm.config.filters([

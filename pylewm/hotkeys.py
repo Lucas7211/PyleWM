@@ -71,6 +71,15 @@ def escape_mode():
             ModeStack.pop(0)
 
 @pylewm.commands.PyleCommand
+def release_all_modifiers():
+    """ Synthetically release all modifiers currently being held. """
+    ActiveKey.alt.release()
+    ActiveKey.win.release()
+    ActiveKey.ctrl.release()
+    ActiveKey.shift.release()
+    ActiveKey.app.release()
+
+@pylewm.commands.PyleCommand
 def absorb_key():
     """ Absorb whatever key is being pressed. """
     pass
@@ -119,6 +128,12 @@ class ModPair:
             isMod = 2
         self.either = False
         return isMod
+    
+    def release(self):
+        self.left = False
+        self.right = False
+        self.either = False
+        self.any_state = False
 
 class KeySpec:
     def __init__(self, key):
