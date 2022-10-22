@@ -1,7 +1,7 @@
 from pylewm.commands import PyleCommand
 from pylewm.rects import Rect
-import pylewm.windows
 import pylewm.window
+import pylewm.window_update
 import pylewm.focus
 import win32gui
 
@@ -11,6 +11,8 @@ DROPDOWN_WINDOW = None
 def set_as_dropdown():
     window = pylewm.focus.FocusWindow
     if not window:
+        return
+    if window.is_ignored():
         return
 
     window.make_floating()
@@ -44,30 +46,24 @@ def toggle_dropdown():
         (width, height),
     )
 
-    if window.hidden:
-        print("Show dropdown window at "+str(dropdown_rect))
+    if window.wm_hidden:
         window.show_with_rect(dropdown_rect)
         pylewm.focus.set_focus_no_mouse(window)
     else:
-        print("Hide dropdown window")
         window.hide()
     
-
-@pylewm.windows.PyleWindowUpdate
+@pylewm.window_update.PyleWindowUpdate
 def update_dropdown():
     global DROPDOWN_WINDOW
     window = DROPDOWN_WINDOW
 
     if window:
-        if window.closed or not win32gui.IsWindow(window.handle):
-            print("Dropdown window closed")
+        if window.closed:
             DROPDOWN_WINDOW = None
-        if not window.hidden:
-            if not window.floating:
-                print("Dropdown window placed into layout")
+        if not window.wm_hidden:
+            if not window.is_floating():
                 window.is_dropdown = False
                 DROPDOWN_WINDOW = None
-            elif not window.focused and not window.becoming_visible:
-                print("Lost focus on dropdown window")
+            elif window != pylewm.focus.FocusWindow and not window.wm_becoming_visible:
                 window.is_dropdown = True
                 window.hide()

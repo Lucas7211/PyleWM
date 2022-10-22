@@ -1,21 +1,21 @@
-import pylewm.window
+#import pylewm.window
 import pylewm.layout
 import pylewm.focus
-from pylewm.commands import PyleCommand, delay_pyle_command
+from pylewm.commands import PyleCommand
 
-import win32gui
+import traceback
 
 def goto_space(other_space):
     other_space.monitor.switch_to_space(other_space)
 
     if other_space.last_focus:
         focus_window = other_space.last_focus
-        delay_pyle_command(0.05, lambda: pylewm.focus.set_focus(focus_window))
+        pylewm.focus.set_focus(focus_window)
     elif other_space.windows:
         focus_window = other_space.windows[0]
-        delay_pyle_command(0.05, lambda: pylewm.focus.set_focus(focus_window))
+        pylewm.focus.set_focus(focus_window)
     else:
-        delay_pyle_command(0.05, lambda: pylewm.focus.set_focus_monitor(other_space.monitor))
+        pylewm.focus.set_focus_monitor(other_space.monitor)
 
 def get_flipped_space():
     space = pylewm.focus.get_focused_space()
@@ -51,7 +51,7 @@ def move_flip():
         space.add_window(window)
 
     space.monitor.switch_to_space(space)
-    delay_pyle_command(0.05, lambda: pylewm.focus.set_focus(window))
+    pylewm.focus.set_focus(window)
 
 @PyleCommand
 def focus_space(monitor_index, space_index):
@@ -81,7 +81,7 @@ def move_to_space(monitor_index, space_index):
     if not space.visible:
         space.monitor.switch_to_space(space)
 
-    delay_pyle_command(0.05, lambda: pylewm.focus.set_focus(window))
+    pylewm.focus.set_focus(window)
 
 @PyleCommand
 def new_temporary():
@@ -139,7 +139,7 @@ def move_to_new_temporary_space():
     if not pylewm.focus.FocusWindow.space:
         return
     move_window_to_new_temporary_space(pylewm.focus.FocusWindow)
-    delay_pyle_command(0.05, lambda: pylewm.focus.set_focus(pylewm.focus.FocusWindow))
+    pylewm.focus.set_focus(pylewm.focus.FocusWindow)
 
 def move_window_to_new_temporary_space(window):
     temp_space = window.space.monitor.new_temp_space()
@@ -239,7 +239,7 @@ def move_direction(direction):
             current_space.remove_window(focus_window)
             new_monitor.visible_space.add_window(focus_window, direction=escape_direction)
 
-    delay_pyle_command(0.05, lambda: pylewm.focus.set_focus(focus_window))
+    pylewm.focus.set_focus(focus_window)
 
 @PyleCommand
 def next_layout():

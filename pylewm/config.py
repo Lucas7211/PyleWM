@@ -1,5 +1,4 @@
 import pylewm.hotkeys
-import pylewm.filters
 from pylewm.commands import PyleCommand
 
 import os

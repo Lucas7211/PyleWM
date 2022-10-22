@@ -14,7 +14,7 @@ def matches(window, sel):
             if not fnmatch.fnmatch(window.window_title.lower(), sel["title"].lower()):
                 return False
         if "child" in sel:
-            if window.is_child_window != sel["child"]:
+            if window.window_info.is_child != sel["child"]:
                 return False
         return True
     return None

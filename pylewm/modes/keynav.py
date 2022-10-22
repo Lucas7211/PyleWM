@@ -7,7 +7,7 @@ from pylewm.rects import Rect
 class KeyNavMode(pylewm.modes.overlay_mode.OverlayMode):
     def __init__(self, hotkeys):
         self.window = pylewm.focus.FocusWindow
-        self.cover_area = self.window.rect
+        self.cover_area = self.window.real_position
 
         self.rect = Rect((0, 0, self.cover_area.width, self.cover_area.height))
         self.overlay_window(self.window)
@@ -87,24 +87,24 @@ class KeyNavMode(pylewm.modes.overlay_mode.OverlayMode):
         self.update_rect()
 
     def left_click(self):
-        position = win32gui.ScreenToClient(self.window.handle, win32api.GetCursorPos())
+        position = win32gui.ScreenToClient(self.window.proxy._hwnd, win32api.GetCursorPos())
         pylewm.commands.delay_pyle_command(0.1, lambda: win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, position[0], position[1], 0, 0))
         pylewm.commands.delay_pyle_command(0.15, lambda: win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, position[0], position[1], 0, 0))
 
     def double_click(self):
-        position = win32gui.ScreenToClient(self.window.handle, win32api.GetCursorPos())
+        position = win32gui.ScreenToClient(self.window.proxy._hwnd, win32api.GetCursorPos())
         pylewm.commands.delay_pyle_command(0.1, lambda: win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, position[0], position[1], 0, 0))
         pylewm.commands.delay_pyle_command(0.15, lambda: win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, position[0], position[1], 0, 0))
         pylewm.commands.delay_pyle_command(0.2, lambda: win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, position[0], position[1], 0, 0))
         pylewm.commands.delay_pyle_command(0.25, lambda: win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, position[0], position[1], 0, 0))
 
     def right_click(self):
-        position = win32gui.ScreenToClient(self.window.handle, win32api.GetCursorPos())
+        position = win32gui.ScreenToClient(self.window.proxy._hwnd, win32api.GetCursorPos())
         pylewm.commands.delay_pyle_command(0.1, lambda: win32api.mouse_event(win32con.MOUSEEVENTF_RIGHTDOWN, position[0], position[1], 0, 0))
         pylewm.commands.delay_pyle_command(0.15, lambda: win32api.mouse_event(win32con.MOUSEEVENTF_RIGHTUP, position[0], position[1], 0, 0))
 
     def middle_click(self):
-        position = win32gui.ScreenToClient(self.window.handle, win32api.GetCursorPos())
+        position = win32gui.ScreenToClient(self.window.proxy._hwnd, win32api.GetCursorPos())
         pylewm.commands.delay_pyle_command(0.1, lambda: win32api.mouse_event(win32con.MOUSEEVENTF_MIDDLEDOWN, position[0], position[1], 0, 0))
         pylewm.commands.delay_pyle_command(0.15, lambda: win32api.mouse_event(win32con.MOUSEEVENTF_MIDDLEUP, position[0], position[1], 0, 0))
 

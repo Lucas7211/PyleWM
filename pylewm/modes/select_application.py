@@ -3,6 +3,7 @@ import pylewm.modes.list_mode
 import win32gui
 import os
 import pylnk3
+
 from win32com.shell import shell, shellcon
 
 class ApplicationOption(pylewm.modes.list_mode.ListOption):

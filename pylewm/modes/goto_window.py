@@ -1,27 +1,42 @@
 import pylewm
 import pylewm.modes.list_mode
-import win32gui, win32con
+from pylewm.window import WindowsByProxy, WindowState
 
 class WindowOption(pylewm.modes.list_mode.ListOption):
     def __init__(self, window):
         self.window = window
-        self.name = win32gui.GetWindowText(self.window.handle)
+        self.name = self.window.window_title
+
+        if window.window_info.is_minimized():
+            self.detail = "(Minimized)"
 
     def confirm(self):
-        if self.window.minimized:
-            self.window.take_new_rect = True
-            win32gui.ShowWindow(self.window.handle, win32con.SW_RESTORE)
+        if self.window.window_info.is_minimized():
+            self.window.restore()
         pylewm.focus.set_focus(self.window)
 
 @pylewm.commands.PyleCommand
 def start_goto_window(hotkeys = {}):
 
     options = []
-    for hwnd, window in pylewm.windows.Windows.items():
-        if win32gui.IsWindow(hwnd):
-            if window.is_dropdown:
+    for proxy, window in WindowsByProxy.items():
+        if window.closed:
+            continue
+        if window.state == WindowState.IgnorePermanent:
+            continue
+        if window.window_info.cloaked:
+            continue
+        if window.window_title == "":
+            continue
+        if window.real_position.height == 0 or window.real_position.width == 0:
+            continue
+        if not window.space:
+            if not window.window_info.visible and not window.window_info.is_minimized():
                 continue
-            option = WindowOption(window)
-            options.append(option)
+        if window.is_dropdown:
+            continue
+        option = WindowOption(window)
+        options.append(option)
 
-    pylewm.modes.list_mode.ListMode(hotkeys, options)()
+    mode = pylewm.modes.list_mode.ListMode(hotkeys, options)
+    mode()

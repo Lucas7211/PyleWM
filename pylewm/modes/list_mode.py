@@ -1,12 +1,12 @@
 import pylewm
 import pylewm.modes.overlay_mode
-import win32api, win32con, win32gui
 from pylewm.rects import Rect
 from fuzzywuzzy import fuzz
 
 class ListOption():
-    def __init__(self, name):
+    def __init__(self, name, detail=None):
         self.name = name
+        self.detail = detail
 
     def confirm(self):
         pass
@@ -51,6 +51,7 @@ class ListMode(pylewm.modes.overlay_mode.OverlayMode):
 
         self.bg_color = (0, 0, 0)
         self.text_color = (255, 255, 255)
+        self.detail_color = (200, 200, 200)
         self.filter_color = (128, 255, 128)
         self.bg_selected_color = (0, 128, 255)
 
@@ -164,15 +165,33 @@ class ListMode(pylewm.modes.overlay_mode.OverlayMode):
                     box.right, box.top + self.row_height * (position_index + 1) + 5
                 )), self.bg_selected_color)
 
+            option = self.options[option_index]
+            has_detail = hasattr(option, "detail") and option.detail
+            detail_size = 0
+            if has_detail:
+                detail_size = 100
+
             overlay.draw_text(
-                self.options[option_index].name,
+                option.name,
                 self.text_color,
                 Rect.from_pos_size(
                     (box.left + 5, box.top + 5 + self.row_height * position_index),
-                    (box.width - 10, self.row_height)
+                    (box.width - 10 - detail_size, self.row_height)
                 ),
                 (0.0, 0.5),
             )
+
+            if has_detail:
+                overlay.draw_text(
+                    option.detail,
+                    self.detail_color,
+                    Rect.from_pos_size(
+                        (box.left + box.width - detail_size - 10, box.top + 5 + self.row_height * position_index),
+                        (detail_size, self.row_height)
+                    ),
+                    (1.0, 0.5),
+                    overlay.font_small,
+                )
     
         if self.filter_text:
             overlay.draw_text(

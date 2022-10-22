@@ -1,8 +1,9 @@
 import pylewm.commands
 import sys, ctypes
 from ctypes import windll, CFUNCTYPE, POINTER, c_int, c_uint, c_void_p, byref, c_ulong, pointer, addressof, create_string_buffer
-import win32con, win32api, win32gui, atexit
+import win32con, win32gui, atexit
 import ctypes.wintypes as wintypes
+import pylewm.winproxy.winfuncs as winfuncs
 
 import traceback, threading
 import copy
@@ -70,6 +71,15 @@ def escape_mode():
             ModeStack.pop(0)
 
 @pylewm.commands.PyleCommand
+def release_all_modifiers():
+    """ Synthetically release all modifiers currently being held. """
+    ActiveKey.alt.release()
+    ActiveKey.win.release()
+    ActiveKey.ctrl.release()
+    ActiveKey.shift.release()
+    ActiveKey.app.release()
+
+@pylewm.commands.PyleCommand
 def absorb_key():
     """ Absorb whatever key is being pressed. """
     pass
@@ -118,6 +128,12 @@ class ModPair:
             isMod = 2
         self.either = False
         return isMod
+    
+    def release(self):
+        self.left = False
+        self.right = False
+        self.either = False
+        self.any_state = False
 
 class KeySpec:
     def __init__(self, key):
@@ -283,30 +299,36 @@ def VKToChr(vk, sc):
 
 def wait_for_hotkeys():
     def handle_windows(nCode, wParam, lParam):
+            if nCode < 0:
+                return winfuncs.CallNextHookEx(windowsHook, nCode, wParam, lParam)
+
             isKeyDown = False
             isKeyUp = False
             if wParam == win32con.WM_KEYDOWN or wParam == win32con.WM_SYSKEYDOWN:
                 isKeyDown = True
             if wParam == win32con.WM_KEYUP or wParam == win32con.WM_SYSKEYUP:
                 isKeyUp = True
+
+            keyInfo = winfuncs.CastToKbDllHookStruct(lParam)
             
             shouldContinue = True
             if isKeyDown or isKeyUp:
-                shouldContinue = not handle_python(isKeyDown, lParam[0], lParam[1])
+                shouldContinue = not handle_python(isKeyDown, keyInfo.vkCode, keyInfo.scanCode)
             if shouldContinue:
-                return windll.user32.CallNextHookEx(windowsHook, nCode, wParam, lParam)
+                return winfuncs.CallNextHookEx(windowsHook, nCode, wParam, lParam)
             return 1
 
-    HANDLER = CFUNCTYPE(c_uint, c_uint, c_uint, POINTER(c_uint))
-    handlerPtr = HANDLER(handle_windows)
+    handlerPtr = winfuncs.HOOKPROC(handle_windows)
+    modulePtr = winfuncs.GetModuleHandleW(None)
 
-    setWindowsHookExA = windll.user32.SetWindowsHookExA
-    setWindowsHookExA.argtypes = (wintypes.DWORD, HANDLER, wintypes.HINSTANCE, wintypes.DWORD)
+    windowsHook = winfuncs.SetWindowsHookExW(win32con.WH_KEYBOARD_LL, handlerPtr, modulePtr, 0)
+    atexit.register(winfuncs.UnhookWindowsHookEx, windowsHook)
 
-    windowsHook = setWindowsHookExA(win32con.WH_KEYBOARD_LL, handlerPtr, windll.kernel32.GetModuleHandleW(None), 0)
-    atexit.register(windll.user32.UnhookWindowsHookEx, windowsHook)
-
+    message = winfuncs.w.MSG()
     while not pylewm.commands.stopped:
-        msg = win32gui.GetMessage(None, 0, 0)
-        win32gui.TranslateMessage(byref(msg))
-        win32gui.DispatchMessage(byref(msg))
+        result = winfuncs.GetMessageW(byref(message), None, 0, 0)
+        if result == -1 or result == 0:
+            break
+
+        winfuncs.TranslateMessage(byref(message))
+        winfuncs.DispatchMessageW(byref(message))

@@ -2,6 +2,7 @@ from pylewm.rects import Rect
 from pylewm.commands import PyleInit, PyleCommand
 from pylewm.space import Space
 from pylewm.layout import Direction
+import pylewm.winproxy.winfuncs as winfuncs
 
 import ctypes
 import math
@@ -12,9 +13,13 @@ DesktopArea = Rect()
 
 class Monitor:
     def __init__(self, info):
-        self.info = info
-        self.rect = Rect(info['Work'])
-        self.primary = info["Flags"] & 1
+        self.rect = Rect(
+            (
+                info.rcWork.left, info.rcWork.top,
+                info.rcWork.right, info.rcWork.bottom,
+            )
+        )
+        self.primary = info.dwFlags & 1
 
         self.spaces = [Space(self, self.rect), Space(self, self.rect)]
         self.last_used_space = None
@@ -122,8 +127,19 @@ def get_monitor_by_index(index):
 def initMonitors():
     global Monitors
 
-    for mhnd in win32api.EnumDisplayMonitors(None, None):
-        info = win32api.GetMonitorInfo(mhnd[0])
+    monitor_handles = []
+    def enum_monitor(hmonitor, hdc, rect, lparam):
+        monitor_handles.append(hmonitor)
+        return True
+
+    winfuncs.EnumDisplayMonitors(
+        None, None,
+        winfuncs.tEnumDisplayMonitorFunc(enum_monitor), 0
+    )
+
+    for hmonitor in monitor_handles:
+        info = winfuncs.MONITORINFO()
+        winfuncs.GetMonitorInfoW(hmonitor, winfuncs.c.byref(info))
 
         monitor = Monitor(info)
         DesktopArea.extend_to_cover(monitor.rect)
@@ -142,5 +158,5 @@ def initMonitors():
     for i, monitor in enumerate(Monitors):
         monitor.monitor_index = i
 
-    for i, monitor in enumerate(Monitors):
-        print(f"Monitor {i}: {monitor.rect}")
+    #for i, monitor in enumerate(Monitors):
+    #    print(f"Monitor {i}: {monitor.rect}")

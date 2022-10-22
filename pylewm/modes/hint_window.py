@@ -2,13 +2,13 @@ import pylewm.modes.overlay_mode
 import pylewm.modes.hint_helpers
 import pylewm
 from pylewm.rects import Rect
-import win32gui, win32api, win32con
+from pylewm.window import WindowsByProxy, WindowState
 
 class WindowItem:
     pass
 
 class HintWindowMode(pylewm.modes.overlay_mode.OverlayMode):
-    def __init__(self, hintkeys, hotkeys):
+    def __init__(self, hintkeys, hotkeys, floating_only=False):
         super(HintWindowMode, self).__init__(hotkeys)
         self.hintkeys = hintkeys
         self.item_list = []
@@ -28,23 +28,37 @@ class HintWindowMode(pylewm.modes.overlay_mode.OverlayMode):
         self.dirty = True
 
         hidden_windows = {}
-        for hwnd, window in pylewm.windows.Windows.items():
-            if win32gui.IsWindow(hwnd):
-                if window.is_dropdown:
-                    continue
-                if window.minimized:
-                    continue
-                if window.space and not window.space.visible:
-                    if window.space.monitor not in hidden_windows:
-                        hidden_windows[window.space.monitor] = []
-                    hidden_windows[window.space.monitor].append(window)
-                    continue
+        for proxy, window in WindowsByProxy.items():
+            if window.closed:
+                continue
+            if window.state == WindowState.IgnorePermanent:
+                continue
+            if window.is_dropdown:
+                continue
+            if window.window_info.cloaked:
+                continue
+            if window.window_title == "":
+                continue
+            if window.real_position.height == 0 or window.real_position.width == 0:
+                continue
+            if window.window_info.is_minimized():
+                continue
+            if not window.space and not window.window_info.visible:
+                continue
+            if floating_only and not window.is_floating():
+                continue
 
-                item = WindowItem()
-                item.window = window
-                item.rect = window.rect
-                item.is_hidden = False
-                self.item_list.append(item)
+            if window.space and not window.space.visible:
+                if window.space.monitor not in hidden_windows:
+                    hidden_windows[window.space.monitor] = []
+                hidden_windows[window.space.monitor].append(window)
+                continue
+
+            item = WindowItem()
+            item.window = window
+            item.rect = window.real_position
+            item.is_hidden = False
+            self.item_list.append(item)
 
         for monitor, window_list in hidden_windows.items():
             show_count = len(window_list)
@@ -54,7 +68,7 @@ class HintWindowMode(pylewm.modes.overlay_mode.OverlayMode):
 
                 item = WindowItem()
                 item.window = window
-                item.title = win32gui.GetWindowText(window.handle)
+                item.title = window.window_title
                 item.rect = Rect.from_pos_size(
                     (monitor.rect.left + (i%self.max_hidden_row) * item_width,
                         monitor.rect.bottom - 30*(int(i/self.max_hidden_row)+1)),
@@ -63,6 +77,9 @@ class HintWindowMode(pylewm.modes.overlay_mode.OverlayMode):
                 self.item_list.append(item)
 
         pylewm.modes.hint_helpers.create_hints(self.item_list, self.hintkeys)
+
+        if not self.item_list:
+            self.close()
 
     def should_clear(self):
         return True
@@ -139,7 +156,7 @@ class HintWindowMode(pylewm.modes.overlay_mode.OverlayMode):
             else:
                 box_rect = Rect.centered_around(rect.center, self.box_size)
                 overlay.draw_box(box_rect, self.bg_color)
-                if item.window.floating:
+                if item.window.is_floating():
                     overlay.draw_border(box_rect, self.floating_border, 3)
                 overlay.draw_text(
                     item.hint,
@@ -151,3 +168,7 @@ class HintWindowMode(pylewm.modes.overlay_mode.OverlayMode):
 @pylewm.commands.PyleCommand
 def start_hint_window(hotkeys={}, hintkeys="asdfjkl;"):
     HintWindowMode(hintkeys, hotkeys)()
+
+@pylewm.commands.PyleCommand
+def start_hint_floating_window(hotkeys={}, hintkeys="asdfjkl;"):
+    HintWindowMode(hintkeys, hotkeys, floating_only=True)()

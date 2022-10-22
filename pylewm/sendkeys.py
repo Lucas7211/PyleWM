@@ -24,7 +24,7 @@ def sendKeySpec(keySpec):
     if keySpec.key in vkMap:
         vkCode = vkMap[keySpec.key]
     else:
-        vkCode = ctypes.windll.user32.VkKeyScanA(ctypes.wintypes.WCHAR(chr(keySpec.key)))
+        vkCode = ctypes.windll.user32.VkKeyScanA(ctypes.wintypes.WCHAR(keySpec.key))
         
     modifiers = (
         (keySpec.alt, win32con.VK_LMENU, win32con.VK_RMENU),
@@ -46,36 +46,36 @@ def sendKeySpec(keySpec):
         elif mod[0].right:
             ctypes.windll.user32.keybd_event(mod[2], 0, win32con.KEYEVENTF_KEYUP, 0)
 
-@PyleCommand.Threaded
+@PyleCommand
 def release_key(keySpec):
     vkCode = 0
     if keySpec.key in vkMap:
         vkCode = vkMap[keySpec.key]
     else:
-        vkCode = ctypes.windll.user32.VkKeyScanA(ctypes.wintypes.WCHAR(chr(keySpec.key)))
+        vkCode = ctypes.windll.user32.VkKeyScanA(ctypes.wintypes.WCHAR(keySpec.key))
     ctypes.windll.user32.keybd_event(vkCode, 0, win32con.KEYEVENTF_KEYUP, 0)
 
-@PyleCommand.Threaded
+@PyleCommand
 def press_key(keySpec):
     vkCode = 0
     if keySpec.key in vkMap:
         vkCode = vkMap[keySpec.key]
     else:
-        vkCode = ctypes.windll.user32.VkKeyScanA(ctypes.wintypes.WCHAR(chr(keySpec.key)))
+        vkCode = ctypes.windll.user32.VkKeyScanA(ctypes.wintypes.WCHAR(keySpec.key))
     ctypes.windll.user32.keybd_event(vkCode, 0, 0, 0)
 
-@PyleCommand.Threaded
+@PyleCommand
 def sendkey(keys):
     """ Generate a single keypress. """
     sendKeySpec(KeySpec.fromTuple(keys))
 
-@PyleCommand.Threaded
+@PyleCommand
 def sendkeys(keys):
     """ Generate a list of keys to be pressed in sequence. """
     for key in keys:
         sendKeySpec(KeySpec.fromTuple(key))
 
-@PyleCommand.Threaded
+@PyleCommand
 def send_left_click():
     win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN,0,0)
     win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP,0,0)

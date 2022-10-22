@@ -1,6 +1,4 @@
-import pylewm.spaces
 import pylewm.selector
-import pylewm.windows
 from pylewm.commands import PyleInit, run_pyle_command
 
 FunctionsByFilter = []
@@ -42,14 +40,12 @@ class Filter:
 @Filter
 def Floating(window):
     """ Start the window on the floating layer when spawned. """
-    window.floating = True
-    window.can_tile = False
+    pass
 
 @Filter
 def Tiling(window):
     """ Do not start the window as floating when spawned. """
-    window.can_tile = True
-    window.floating = False
+    pass
 
 @Filter
 def Ignore(window):
@@ -74,12 +70,12 @@ def KeepStartMonitor(window):
 @Filter
 def IgnoreBorders(window):
     """ Don't take into account window borders for this window's positioning. """
-    window.force_borders = 0
+    window.layout_margin = 0
 
 @Filter
 def ForceBorders(window, border_size):
     """ Force this window to have borders of a particular size in positioning. """
-    window.force_borders = border_size
+    window.layout_margin = border_size
 
 @Filter.post
 def TemporarySpace(window):
@@ -127,7 +123,7 @@ def get_monitor(window):
     if KeepStartMonitor in FiltersByFunction:
         for filt in FiltersByFunction[KeepStartMonitor]:
             if pylewm.selector.matches(window, filt[0]):
-                return pylewm.monitors.get_covering_monitor(window.rect).monitor_index
+                return pylewm.monitors.get_covering_monitor(window.real_position).monitor_index
     return None
 
 @PyleInit
