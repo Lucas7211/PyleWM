@@ -1,7 +1,9 @@
 from pylewm.commands import PyleCommand
 from pylewm.rects import Rect
 import pylewm.window
+import pylewm.execution
 import pylewm.window_update
+import pylewm.window
 import pylewm.focus
 import win32gui
 
@@ -15,6 +17,9 @@ def set_as_dropdown():
     if window.is_ignored():
         return
 
+    make_window_dropdown(window)
+
+def make_window_dropdown(window):
     window.make_floating()
     window.hide()
 
@@ -29,27 +34,49 @@ def set_as_dropdown():
     window.is_dropdown = True
 
 @PyleCommand
-def toggle_dropdown():
+def toggle_dropdown(command_if_no_dropdown=None):
     global DROPDOWN_WINDOW
     window = DROPDOWN_WINDOW
 
-    if not window:
-        return
+    if window:
+        if window.wm_hidden:
+            pylewm.commands.run_pyle_command(show_dropdown)
+        else:
+            pylewm.commands.run_pyle_command(hide_dropdown)
+    elif command_if_no_dropdown:
+        pylewm.commands.run_pyle_command(pylewm.execution.run(command_if_no_dropdown))
 
-    monitor = pylewm.focus.get_focused_monitor()
+        def make_next_window_dropdown(window):
+            make_window_dropdown(window)
+            pylewm.commands.run_pyle_command(show_dropdown)
 
-    width = monitor.rect.width / 2
-    height = monitor.rect.height / 3
+        pylewm.window.execute_on_next_window(make_next_window_dropdown)
 
-    dropdown_rect = Rect.from_pos_size(
-        (monitor.rect.left + (monitor.rect.width - width) / 2, monitor.rect.top),
-        (width, height),
-    )
+@PyleCommand
+def show_dropdown():
+    global DROPDOWN_WINDOW
+    window = DROPDOWN_WINDOW
 
-    if window.wm_hidden:
+    if window:
+        monitor = pylewm.focus.get_focused_monitor()
+
+        width = monitor.rect.width / 2
+        height = monitor.rect.height / 3
+
+        dropdown_rect = Rect.from_pos_size(
+            (monitor.rect.left + (monitor.rect.width - width) / 2, monitor.rect.top),
+            (width, height),
+        )
+
         window.show_with_rect(dropdown_rect)
         pylewm.focus.set_focus_no_mouse(window)
-    else:
+        
+@PyleCommand
+def hide_dropdown():
+    global DROPDOWN_WINDOW
+    window = DROPDOWN_WINDOW
+
+    if window:
         window.hide()
     
 @pylewm.window_update.PyleWindowUpdate

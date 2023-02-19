@@ -163,6 +163,13 @@ class Window:
         if not self.applied_filters:
             self.apply_filters()
 
+            # Newly created windows might trigger a new window function
+            global NextWindowFunctions
+            WindowFunctions = NextWindowFunctions
+            NextWindowFunctions = []
+            for fun in WindowFunctions:
+                fun(self)
+
         # Don't do any window management if we've hidden the window ourselves
         if self.wm_hidden:
             return
@@ -374,11 +381,15 @@ class Window:
         return f"{{ {self.window_title} | {self.window_class} @{self.proxy._hwnd} }}"
 
 WindowsByProxy : dict[WindowProxy, Window] = dict()
+NextWindowFunctions = []
+
+def execute_on_next_window(fun):
+    global NextWindowFunctions
+    NextWindowFunctions.append(fun)
 
 def on_proxy_added(proxy):
     window = Window(proxy)
     WindowsByProxy[proxy] = window
-
 
 def on_proxy_removed(proxy):
     if proxy not in WindowsByProxy:
