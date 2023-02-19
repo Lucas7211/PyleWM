@@ -74,6 +74,16 @@ class Window:
         if self.window_info.is_maximized():
             self.remove_maximized()
 
+    def ensure_tiled_for_move(self):
+        if self.window_info.is_hung:
+            return
+        if self.is_tiled():
+            return
+        self.make_tiled()
+        self.auto_place_into_space()
+        if self.space and self.space.layout:
+            self.space.layout.update_layout()
+
     def is_ignored(self):
         return self.state == WindowState.IgnorePermanent or self.state == WindowState.IgnoreTemporary
 

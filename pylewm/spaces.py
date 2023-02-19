@@ -42,6 +42,7 @@ def move_flip():
     window = pylewm.focus.FocusWindow
     if not window:
         return
+    window.ensure_tiled_for_move()
     if not window.can_move():
         return
 
@@ -66,7 +67,10 @@ def focus_space(monitor_index, space_index):
 @PyleCommand
 def move_to_space(monitor_index, space_index):
     window = pylewm.focus.FocusWindow
-    if not window or not window.space:
+    if not window:
+        return
+    window.ensure_tiled_for_move()
+    if not window.space:
         return
     if not window.can_move():
         return
@@ -134,6 +138,7 @@ def move_to_new_temporary_space():
     ''' Move the active window to a new temporary space. '''
     if not pylewm.focus.FocusWindow:
         return
+    pylewm.focus.FocusWindow.ensure_tiled_for_move()
     if not pylewm.focus.FocusWindow.can_move():
         return
     if not pylewm.focus.FocusWindow.space:
@@ -226,7 +231,10 @@ def move_insert_right():
 def move_direction(direction):
     current_space = pylewm.focus.get_focused_space()
     focus_window = pylewm.focus.FocusWindow
-    if not focus_window or focus_window.space != current_space:
+    if not focus_window:
+        return
+    focus_window.ensure_tiled_for_move()
+    if focus_window.space != current_space:
         return
     if not focus_window.can_move():
         return

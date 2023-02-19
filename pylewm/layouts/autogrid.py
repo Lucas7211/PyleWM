@@ -62,8 +62,13 @@ class AutoGridLayout(Layout):
         for window in reversed(self.focus_mru):
             if window in candidates:
                 return window
-            
-        return None
+        
+        if candidates:
+            return candidates[0]
+        elif self.columns[column_index]:
+            return self.columns[column_index][0]
+        else:
+            return None
 
     def add_window(self, window, at_slot=None, insert_direction=None):
         self.windows.append(window)

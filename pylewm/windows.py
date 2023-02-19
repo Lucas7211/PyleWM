@@ -50,7 +50,10 @@ def toggle_window_floating():
 @PyleCommand
 def move_to_monitor(monitor_index):
     window = pylewm.focus.FocusWindow
-    if not window or not window.space:
+    if not window:
+        return
+    window.ensure_tiled_for_move()
+    if not window.space:
         return
 
     space = window.space
