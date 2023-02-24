@@ -77,6 +77,8 @@ class Window:
     def ensure_tiled_for_move(self):
         if self.window_info.is_hung:
             return
+        if self.state == WindowState.IgnorePermanent:
+            return
         if self.is_tiled():
             return
         self.make_tiled()
