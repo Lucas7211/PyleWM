@@ -330,25 +330,29 @@ class AutoGridLayout(Layout):
         if fake_window_count != -1:
             window_count = fake_window_count
 
-        if window_count <= 1 and allow_drop_zones:
-            # Allow dropping at the top of an empty screen for auto-tile
-            if (position[1] < self.rect.top + 100
-                or position[1] > self.rect.bottom - 100
-                or position[0] < self.rect.left + 50
-                or position[0] > self.rect.right - 50):
-                return Direction.InsertLeft, True
+        if window_count <= 2:
+            if allow_drop_zones:
+                # Allow dropping at the top of an empty screen for auto-tile
+                if (position[1] < self.rect.top + 100
+                    or position[1] > self.rect.bottom - 100
+                    or position[0] < self.rect.left + 50
+                    or position[0] > self.rect.right - 50):
+                    return Direction.InsertLeft, True
 
-            # Allow dropping around the center of a single column to split
-            if position[0] < self.rect.left + 50:
-                return Direction.InsertLeft, True
-            elif position[0] > self.rect.right - 50:
-                return Direction.InsertRight, True
-            elif position[1] < self.rect.top + 100:
-                return (0, 0), True
-            elif position[1] > self.rect.bottom - 100:
-                return (0, 1), True
+                # Allow dropping around the center of a single column to split
+                if position[0] < self.rect.left + 50:
+                    return Direction.InsertLeft, True
+                elif position[0] > self.rect.right - 50:
+                    return Direction.InsertRight, True
+                elif position[1] < self.rect.top + 100:
+                    return (0, 0), True
+                elif position[1] > self.rect.bottom - 100:
+                    return (0, 1), True
 
-            return None, False
+            if position[0] < self.rect.center[0]:
+                return Direction.InsertLeft, False
+            else:
+                return Direction.InsertRight, False
 
         wanted_columns, wanted_rows = self.get_wanted_grid_dimensions(window_count)
 

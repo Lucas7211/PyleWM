@@ -5,6 +5,7 @@ import pylewm.execution
 import pylewm.windows
 import pylewm.window
 import pylewm.window_classification
+import pylewm.window_drag
 import pylewm.space
 import pylewm.spaces
 import pylewm.yank

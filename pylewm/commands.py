@@ -10,12 +10,17 @@ InitFunctions = []
 stopped = False
 
 class CommandQueue:
+    ResponsiveModeActive = False
+
     def __init__(self):
         self.queuedFunctions = []
         self.delayedFunctions = []
         self.queue_lock = threading.RLock()
         self.queue_event = threading.Event()
         self.stopped = False
+
+    def wake(self):
+        self.queue_event.set()
 
     def queue(self, fun):
         with self.queue_lock:
@@ -68,7 +73,10 @@ class CommandQueue:
             traceback.print_exc()
 
     def suggested_timeout(self):
-        delay = 1.0 / 60.0
+        if CommandQueue.ResponsiveModeActive:
+            delay = 1.0 / 200.0
+        else:
+            delay = 1.0 / 60.0
         now_time = time.monotonic()
 
         with self.queue_lock:
@@ -78,6 +86,9 @@ class CommandQueue:
 
 Commands = CommandQueue()
 AsyncCommandThreadPool = ThreadPoolExecutor(max_workers=64)
+
+def set_responsive_mode(active):
+    CommandQueue.ResponsiveModeActive = active
 
 def delay_pyle_command(delay, fun):
     Commands.delay(delay, fun)

@@ -5,6 +5,8 @@ import os
 import sys
 import shutil
 
+AllowDroppingIntoLayout = True
+
 CONFIG_HOTKEYS = {}
 CONFIG_FILTERS = []
 

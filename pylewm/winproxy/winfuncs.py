@@ -81,6 +81,9 @@ GWL_HWNDPARENT = -8
 def WindowIsChild(hwnd):
     return IsWindow(GetWindowLongPtrW(hwnd, GWL_HWNDPARENT))
 
+def GetWindowParent(hwnd):
+    return GetWindowLongPtrW(hwnd, GWL_HWNDPARENT)
+
 DwmGetWindowAttribute = c.WINFUNCTYPE(
     None,
     w.HWND, w.DWORD, c.c_void_p, w.DWORD,
@@ -128,6 +131,7 @@ SW_HIDE = 0
 SWP_NOACTIVATE = 0x0010
 SWP_NOMOVE = 0x0002
 SWP_NOSIZE = 0x0001
+SWP_SHOWWINDOW = 0x0040
 
 GetForegroundWindow = c.WINFUNCTYPE(
     w.HWND,
@@ -267,3 +271,8 @@ ShellExecuteW = c.WINFUNCTYPE(
     w.HINSTANCE,
     w.HWND, w.LPCWSTR, w.LPCWSTR, w.LPCWSTR, w.LPCWSTR, c.c_int,
 )(("ShellExecuteW", c.windll.shell32))
+
+WindowFromPoint = c.WINFUNCTYPE(
+    w.HWND,
+    w.POINT,
+)(("WindowFromPoint", c.windll.user32))

@@ -1,10 +1,8 @@
 import pylewm.commands
 import pylewm.monitors
-import pythoncom
-import win32gui, win32com.client
-import win32api
-import traceback
-import ctypes
+
+# Note: this import is required here to make focus changing work for unknown reasons
+import win32com.client
 
 import pylewm.window
 from pylewm.winproxy.winfocus import focus_window, focus_shell_window, get_cursor_position

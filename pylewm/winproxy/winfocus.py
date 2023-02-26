@@ -126,6 +126,20 @@ def focus_shell_window(rect : Rect):
 def get_cursor_position():
     return CursorPos
 
+def determine_window_proxy_under_cursor():
+    point = winfuncs.w.POINT()
+    winfuncs.GetCursorPos(winfuncs.c.byref(point))
+
+    hwnd = winfuncs.WindowFromPoint(point)
+
+    while hwnd:
+        proxy = get_proxy(hwnd)
+        if proxy:
+            return proxy
+        hwnd = winfuncs.GetWindowParent(hwnd)
+
+    return None
+
 def get_proxy(hwnd) -> WindowProxy:
     global WindowsByHandle
     if hwnd in WindowsByHandle:

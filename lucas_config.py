@@ -112,7 +112,7 @@ pylewm.config.hotkeys({
     (*MOD, 'shift', 'q')     : pylewm.run.restart,
     (*MOD, 'shift', '\\')    : pylewm.windows.show_window_info,
     (*MOD, 'shift', '=')     : pylewm.spaces.show_spaces_info,
-    ('any_mod', '=app')      : pylewm.hotkeys.absorb_key,
+    ('any_mod', '=app')      : pylewm.window_drag.activate_window_drag_resize,
 
     # List selection modes
     (*MOD, ',')              : pylewm.modes.select_application.run_application,

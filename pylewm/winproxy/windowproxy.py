@@ -76,6 +76,10 @@ class WindowProxy:
         self._proxy_hidden = False
         self._proxy_always_top = False
 
+        self._has_floating_target = False
+        self._floating_target = Rect()
+        self._applied_floating_target = Rect()
+
     def _initialize(self):
         self.initialized = True
 
@@ -219,6 +223,50 @@ class WindowProxy:
         if not set_position_allowed:
             print(f"Failed to set {try_position} on {self}")
 
+    def _update_floating(self):
+        with WindowProxyLock:
+            self._has_floating_target = False
+            self._applied_floating_target.assign(self._floating_target)
+
+        try_position = [
+            self._applied_floating_target.left,
+            self._applied_floating_target.top,
+            self._applied_floating_target.width,
+            self._applied_floating_target.height,
+        ]
+
+        set_position_allowed = True
+        needed_tries = 0
+        for tries in range(0, 10):
+            set_position_allowed = winfuncs.SetWindowPos(
+                self._hwnd,
+                winfuncs.HWND_TOPMOST,
+                try_position[0], try_position[1],
+                try_position[2], try_position[3],
+                0,
+            )
+
+            if not set_position_allowed:
+                break
+
+            has_rect = winfuncs.GetWindowRect(self._hwnd, winfuncs.c.byref(self._position))
+            if not has_rect:
+                break
+
+            if (try_position[0] != self._position.left
+                or try_position[1] != self._position.right
+                or try_position[2] != (self._position.right - self._position.left)
+                or try_position[3] != (self._position.bottom - self._position.top)
+            ):
+                # Keep trying!
+                continue
+            else:
+                needed_tries = tries+1
+                break
+
+        if not set_position_allowed:
+            print(f"Failed to set {try_position} on {self}")
+
     def _transfer_info(self):
         """ Transfer info from winproxy thread to exposed members. """
         with WindowProxyLock:
@@ -252,6 +300,10 @@ class WindowProxy:
         if self._layout_dirty:
             self._update_layout()
 
+        # Reposition floating window if it wants to be moved
+        if self._has_floating_target:
+            self._update_floating()
+
         # Update actual information about this window
         self._update_info()
         if self._dirty:
@@ -268,6 +320,11 @@ class WindowProxy:
         with WindowProxyLock:
             if self._has_layout_position:
                 self._layout_dirty = True
+
+    def move_floating_to(self, new_position):
+        with WindowProxyLock:
+            self._floating_target.assign(new_position)
+            self._has_floating_target = True
 
     def _zorder_top(self):
         zpos = winfuncs.HWND_TOP

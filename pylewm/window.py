@@ -3,6 +3,7 @@ import pylewm.monitors
 import pylewm.focus
 from pylewm.rects import Rect
 
+from pylewm.hotkeys import MouseState
 from pylewm.winproxy.windowproxy import WindowProxy, WindowInfo, WindowProxyLock
 from pylewm.window_classification import WindowState, classify_window
 
@@ -11,7 +12,6 @@ import time
 class Window:
     InInitialPlacement = True
     DraggingWindow = None
-    IsLeftMouseHeld = False
     
     def __init__(self, proxy : WindowProxy):
         self.proxy = proxy
@@ -146,6 +146,9 @@ class Window:
         """ Whether this window can be moved within the layout or between spaces. """
         return self.is_tiled() and not self.window_info.is_hung
 
+    def is_hung(self):
+        return self.window_info.is_hung
+
     def update(self):
         # Classify the window if we haven't classified it yet
         if self.state == WindowState.IgnorePermanent or self.closed:
@@ -195,7 +198,7 @@ class Window:
                     self.auto_place_into_space(initial_space=True)
 
                 # Switch to floating mode if the window has been moved by the user
-                if self.window_info.is_maximized() or (self.dragging and (self.drag_ticks_with_movement > 2 or (Window.IsLeftMouseHeld and Window.DraggingWindow is self))):
+                if self.window_info.is_maximized() or (self.dragging and (self.drag_ticks_with_movement > 2 or (MouseState.LEFT_MOUSE_DOWN and Window.DraggingWindow is self))):
                     self.make_floating()
             else:
                 # Remove from layout if no longer interactable
@@ -225,7 +228,7 @@ class Window:
     def auto_place_into_space(self, initial_space=False):
         space = None
         slot = None
-
+        
         filter_monitor = pylewm.filters.get_monitor(self)
         if filter_monitor is not None and (Window.InInitialPlacement or initial_space):
             filter_monitor = min(filter_monitor, len(pylewm.monitors.Monitors)-1)
@@ -275,7 +278,7 @@ class Window:
             else:
                 self.dragging = True
 
-                if Window.DraggingWindow is None and Window.IsLeftMouseHeld:
+                if Window.DraggingWindow is None and MouseState.LEFT_MOUSE_DOWN:
                     Window.DraggingWindow = self
 
                 self.drag_ticks_since_last_movement = 0
@@ -286,10 +289,10 @@ class Window:
                 self.drag_ticks_since_start += 1
                 self.drag_ticks_since_last_movement += 1
 
-                if Window.DraggingWindow is None and Window.IsLeftMouseHeld:
+                if Window.DraggingWindow is None and MouseState.LEFT_MOUSE_DOWN:
                     Window.DraggingWindow = self
 
-                if not Window.IsLeftMouseHeld or Window.DraggingWindow is not self:
+                if not MouseState.LEFT_MOUSE_DOWN or Window.DraggingWindow is not self:
                     self.dragging = False
                     if Window.DraggingWindow is self:
                         Window.DraggingWindow = None
@@ -303,6 +306,8 @@ class Window:
 
     def update_float_drop(self):
         if not self.can_drop_tiled:
+            return
+        if not pylewm.config.AllowDroppingIntoLayout:
             return
         if self.dragging and self.drag_ticks_with_movement > 5:
             hover_space = pylewm.focus.get_cursor_space()
@@ -371,6 +376,11 @@ class Window:
         self.proxy.restore_layout()
         self.ignore_drag_until = time.time() + 0.2
 
+    def move_floating_to(self, new_rect : Rect):
+        if new_rect.equals(self.real_position):
+            return
+        self.proxy.move_floating_to(new_rect)
+
     @property
     def window_title(self):
         return self.window_info.window_title
@@ -410,3 +420,20 @@ def get_window(proxy):
         return WindowsByProxy[proxy]
     else:
         return None
+
+def get_windows_at_position(position):
+    windows = []
+    for proxy, window in WindowsByProxy.items():
+        if window.closed:
+            continue
+        if window.state == WindowState.IgnorePermanent:
+            continue
+        if window.window_info.cloaked:
+            continue
+        if window.window_title == "":
+            continue
+        if window.real_position.height == 0 or window.real_position.width == 0:
+            continue
+        if window.real_position.contains(position):
+            windows.append(window)
+    return windows

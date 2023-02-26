@@ -8,6 +8,11 @@ import pylewm.winproxy.winfuncs as winfuncs
 import traceback, threading
 import copy
 
+class MouseState:
+    LEFT_MOUSE_DOWN = False
+    RIGHT_MOUSE_DOWN = False
+    MOUSE_HOOKS = []
+
 queue_command = None
 
 class Mode:
@@ -204,7 +209,7 @@ class KeySpec:
     def __repr__(self):
         return repr(self.__dict__)
             
-KeyBindings = []
+KeyBindings = {}
 ModeStack = []
 ModeLock = threading.RLock()
 ActiveKey = KeySpec('')
@@ -216,7 +221,9 @@ def registerSpec(keySpec, command):
     global KeyBindings
     if hasattr(command, "pylewm_callback"):
         command = command.pylewm_callback
-    KeyBindings.append((keySpec, command))
+    if keySpec.key not in KeyBindings:
+        KeyBindings[keySpec.key] = []
+    KeyBindings[keySpec.key].append((keySpec, command))
 
 def handle_python(isKeyDown, keyCode, scanCode):
     absorbKey = False
@@ -242,13 +249,17 @@ def handle_python(isKeyDown, keyCode, scanCode):
                     return handle_type
 
     # Check keybinds
-    for bnd in KeyBindings:
-        if bnd[0].key == ActiveKey.key:
+    if ActiveKey.key in KeyBindings:
+        for bnd in KeyBindings[ActiveKey.key]:
             if bnd[0].equals_combo(ActiveKey):
+                absorbKey = True
                 if ActiveKey.down:
                     queue_command(bnd[1])
-                absorbKey = True
+                elif hasattr(bnd[1], "release_event"):
+                        queue_command(bnd[1].release_event)
 
+    if keyCode == win32con.VK_F15:
+        return True
     return absorbKey
 
 # TODO: Complete this map
@@ -298,31 +309,51 @@ def VKToChr(vk, sc):
     return chr(charValue).lower()
 
 def wait_for_hotkeys():
-    def handle_windows(nCode, wParam, lParam):
-            if nCode < 0:
-                return winfuncs.CallNextHookEx(windowsHook, nCode, wParam, lParam)
+    def handle_keyboard_windows(nCode, wParam, lParam):
+        if nCode < 0:
+            return winfuncs.CallNextHookEx(keyboardHook, nCode, wParam, lParam)
 
-            isKeyDown = False
-            isKeyUp = False
-            if wParam == win32con.WM_KEYDOWN or wParam == win32con.WM_SYSKEYDOWN:
-                isKeyDown = True
-            if wParam == win32con.WM_KEYUP or wParam == win32con.WM_SYSKEYUP:
-                isKeyUp = True
+        isKeyDown = False
+        isKeyUp = False
+        if wParam == win32con.WM_KEYDOWN or wParam == win32con.WM_SYSKEYDOWN:
+            isKeyDown = True
+        elif wParam == win32con.WM_KEYUP or wParam == win32con.WM_SYSKEYUP:
+            isKeyUp = True
 
-            keyInfo = winfuncs.CastToKbDllHookStruct(lParam)
-            
-            shouldContinue = True
-            if isKeyDown or isKeyUp:
-                shouldContinue = not handle_python(isKeyDown, keyInfo.vkCode, keyInfo.scanCode)
-            if shouldContinue:
-                return winfuncs.CallNextHookEx(windowsHook, nCode, wParam, lParam)
-            return 1
+        keyInfo = winfuncs.CastToKbDllHookStruct(lParam)
+        
+        shouldContinue = True
+        if isKeyDown or isKeyUp:
+            shouldContinue = not handle_python(isKeyDown, keyInfo.vkCode, keyInfo.scanCode)
+        if shouldContinue:
+            return winfuncs.CallNextHookEx(keyboardHook, nCode, wParam, lParam)
+        return 1
 
-    handlerPtr = winfuncs.HOOKPROC(handle_windows)
+    def handle_mouse_windows(nCode, wParam, lParam):
+        if wParam == win32con.WM_LBUTTONDOWN:
+            MouseState.LEFT_MOUSE_DOWN = True
+        elif wParam == win32con.WM_LBUTTONUP:
+            MouseState.LEFT_MOUSE_DOWN = False
+        elif wParam == win32con.WM_RBUTTONDOWN:
+            MouseState.RIGHT_MOUSE_DOWN = True
+        elif wParam == win32con.WM_RBUTTONUP:
+            MouseState.RIGHT_MOUSE_DOWN = False
+
+        for proc in MouseState.MOUSE_HOOKS:
+            if proc(wParam):
+                return 1
+
+        return winfuncs.CallNextHookEx(mouseHook, nCode, wParam, lParam)
+
+    keyboardHandlePtr = winfuncs.HOOKPROC(handle_keyboard_windows)
+    mouseHandlePtr = winfuncs.HOOKPROC(handle_mouse_windows)
     modulePtr = winfuncs.GetModuleHandleW(None)
 
-    windowsHook = winfuncs.SetWindowsHookExW(win32con.WH_KEYBOARD_LL, handlerPtr, modulePtr, 0)
-    atexit.register(winfuncs.UnhookWindowsHookEx, windowsHook)
+    keyboardHook = winfuncs.SetWindowsHookExW(win32con.WH_KEYBOARD_LL, keyboardHandlePtr, modulePtr, 0)
+    atexit.register(winfuncs.UnhookWindowsHookEx, keyboardHook)
+
+    mouseHook = winfuncs.SetWindowsHookExW(win32con.WH_MOUSE_LL, mouseHandlePtr, modulePtr, 0)
+    atexit.register(winfuncs.UnhookWindowsHookEx, mouseHook)
 
     message = winfuncs.w.MSG()
     while not pylewm.commands.stopped:
