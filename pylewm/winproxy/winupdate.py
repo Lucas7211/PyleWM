@@ -40,6 +40,7 @@ def detect_new_windows():
 
 def update_tracked_windows():
     """ Perform update logic for all windows that are currently tracked. """
+    WindowProxy.UpdateFrameCounter += 1
 
     invalid_windows = []
     for hwnd, window in WindowsByHandle.items():

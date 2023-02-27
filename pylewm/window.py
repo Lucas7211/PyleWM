@@ -51,7 +51,8 @@ class Window:
         new_state, reason = classify_window(self)
         if new_state != self.state:
             self.state = new_state
-            self.proxy.ignored = (self.state == WindowState.IgnorePermanent)
+            self.proxy.permanent_ignore = (self.state == WindowState.IgnorePermanent)
+            self.proxy.temporary_ignore = (self.state == WindowState.IgnoreTemporary)
 
             if self.state == WindowState.Floating:
                 self.make_floating()
@@ -158,11 +159,13 @@ class Window:
         if self.proxy.changed:
             self.update_info_from_proxy()
 
-        # Try to classify again if temporarily ignored
-        if self.state == WindowState.IgnoreTemporary or self.state == WindowState.Unknown:
-            self.classify()
-            if self.is_ignored():
-                return
+            # Try to classify again if temporarily ignored
+            if self.state == WindowState.IgnoreTemporary or self.state == WindowState.Unknown:
+                self.classify()
+                if self.is_ignored():
+                    return
+        elif self.is_ignored():
+            return
 
         # Make sure we've applied all filters
         if not self.applied_filters:

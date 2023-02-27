@@ -53,14 +53,19 @@ class WindowInfo:
         return (self._winStyle & WS_MAXIMIZE) != 0
 
 class WindowProxy:
+    UpdateFrameCounter = 0
+
     def __init__(self, hwnd):
         self._hwnd = hwnd
         self.initialized = False
-        self.ignored = False
+        self.permanent_ignore = False
+        self.temporary_ignore = False
         self.valid = True
         self.changed = False
         self.window_info = WindowInfo()
         self.always_top = False
+        self.interval_hash = hash(id(self))
+        self.update_interval = 0
 
         self._dirty = False
         self._info = WindowInfo()
@@ -275,13 +280,21 @@ class WindowProxy:
         self._dirty = False
 
     def _update(self):
+        if self.permanent_ignore:
+            # Don't update windows that are permanently ignored
+            return
+
         if not self.valid:
             # Never update if we are no longer valid
             return
 
-        if self.ignored:
-            # Don't update windows that are permanently ignored
-            return
+        # Temporarily ignored windows update at a slower rate to save performance
+        if self.temporary_ignore:
+            self.update_interval = min(self.update_interval + 1, 20)
+            if (WindowProxy.UpdateFrameCounter % self.update_interval) != (self.interval_hash % self.update_interval):
+                return
+        else:
+            self.update_interval = 0
 
         if not winfuncs.IsWindow(self._hwnd):
             # If the window was closed, we become invalid

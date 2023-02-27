@@ -16,7 +16,7 @@ MOD = ('app',)
 
 def GoToSleep():
     pylewm.hotkeys.release_all_modifiers().run()
-    pylewm.execution.run([r'C:\bin\GoToSleep.bat'], cmd_window=True).run(),)
+    pylewm.execution.run([r'C:\bin\GoToSleep.bat'], cmd_window=True).run()
 
 pylewm.config.hotkeys({
     # Focus management
