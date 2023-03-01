@@ -4,6 +4,7 @@ from pylewm.rects import Rect
 
 from threading import Lock
 import functools
+import time
 
 WindowProxyLock = Lock()
 WindowsByHandle : dict[int, 'WindowProxy'] = dict()
@@ -54,6 +55,7 @@ class WindowInfo:
 
 class WindowProxy:
     UpdateFrameCounter = 0
+    UpdateStartTime = 0
 
     def __init__(self, hwnd):
         self._hwnd = hwnd
@@ -87,6 +89,7 @@ class WindowProxy:
 
     def _initialize(self):
         self.initialized = True
+        self.initialized_time = time.time()
 
         self._info.is_child = winfuncs.WindowIsChild(self._hwnd)
 
@@ -193,40 +196,19 @@ class WindowProxy:
             try_position[2] = adjustedRect.right - adjustedRect.left - 6
             try_position[3] = adjustedRect.bottom - try_position[1] - 3
 
-        set_position_allowed = True
-        needed_tries = 0
-        for tries in range(0, 10):
-            zorder = winfuncs.HWND_BOTTOM
-            if self._proxy_always_top:
-                zorder = winfuncs.HWND_TOPMOST
-            set_position_allowed = winfuncs.SetWindowPos(
-                self._hwnd,
-                zorder,
-                try_position[0], try_position[1],
-                try_position[2], try_position[3],
-                winfuncs.SWP_NOACTIVATE
-            )
-
-            if not set_position_allowed:
-                break
-
-            has_rect = winfuncs.GetWindowRect(self._hwnd, winfuncs.c.byref(self._position))
-            if not has_rect:
-                break
-
-            if (try_position[0] != self._position.left
-                or try_position[1] != self._position.right
-                or try_position[2] != (self._position.right - self._position.left)
-                or try_position[3] != (self._position.bottom - self._position.top)
-            ):
-                # Keep trying!
-                continue
-            else:
-                needed_tries = tries+1
-                break
+        zorder = winfuncs.HWND_BOTTOM
+        if self._proxy_always_top:
+            zorder = winfuncs.HWND_TOPMOST
+        set_position_allowed = winfuncs.SetWindowPos(
+            self._hwnd,
+            zorder,
+            try_position[0], try_position[1],
+            try_position[2], try_position[3],
+            winfuncs.SWP_NOACTIVATE | winfuncs.SWP_ASYNCWINDOWPOS
+        )
 
         if not set_position_allowed:
-            print(f"Failed to set {try_position} on {self}")
+            print(f"{time.time()} Failed to set {try_position} on {self}")
 
     def _update_floating(self):
         with WindowProxyLock:
@@ -240,34 +222,13 @@ class WindowProxy:
             self._applied_floating_target.height,
         ]
 
-        set_position_allowed = True
-        needed_tries = 0
-        for tries in range(0, 10):
-            set_position_allowed = winfuncs.SetWindowPos(
-                self._hwnd,
-                winfuncs.HWND_TOPMOST,
-                try_position[0], try_position[1],
-                try_position[2], try_position[3],
-                0,
-            )
-
-            if not set_position_allowed:
-                break
-
-            has_rect = winfuncs.GetWindowRect(self._hwnd, winfuncs.c.byref(self._position))
-            if not has_rect:
-                break
-
-            if (try_position[0] != self._position.left
-                or try_position[1] != self._position.right
-                or try_position[2] != (self._position.right - self._position.left)
-                or try_position[3] != (self._position.bottom - self._position.top)
-            ):
-                # Keep trying!
-                continue
-            else:
-                needed_tries = tries+1
-                break
+        set_position_allowed = winfuncs.SetWindowPos(
+            self._hwnd,
+            winfuncs.HWND_TOPMOST,
+            try_position[0], try_position[1],
+            try_position[2], try_position[3],
+            winfuncs.SWP_ASYNCWINDOWPOS
+        )
 
         if not set_position_allowed:
             print(f"Failed to set {try_position} on {self}")
@@ -289,7 +250,7 @@ class WindowProxy:
             return
 
         # Temporarily ignored windows update at a slower rate to save performance
-        if self.temporary_ignore:
+        if self.temporary_ignore and self.initialized_time < WindowProxy.UpdateStartTime - 1.0:
             self.update_interval = min(self.update_interval + 1, 20)
             if (WindowProxy.UpdateFrameCounter % self.update_interval) != (self.interval_hash % self.update_interval):
                 return
@@ -345,23 +306,23 @@ class WindowProxy:
             zpos = winfuncs.HWND_TOPMOST
 
         winfuncs.SetWindowPos(self._hwnd, zpos, 0, 0, 0, 0,
-                winfuncs.SWP_NOACTIVATE | winfuncs.SWP_NOMOVE | winfuncs.SWP_NOSIZE)
+                winfuncs.SWP_NOACTIVATE | winfuncs.SWP_NOMOVE | winfuncs.SWP_NOSIZE | winfuncs.SWP_ASYNCWINDOWPOS)
 
     def _zorder_bottom(self):
         if self._proxy_always_top:
             return
 
         winfuncs.SetWindowPos(self._hwnd, winfuncs.HWND_BOTTOM, 0, 0, 0, 0,
-                winfuncs.SWP_NOACTIVATE | winfuncs.SWP_NOMOVE | winfuncs.SWP_NOSIZE)
+                winfuncs.SWP_NOACTIVATE | winfuncs.SWP_NOMOVE | winfuncs.SWP_NOSIZE | winfuncs.SWP_ASYNCWINDOWPOS)
 
     def _apply_always_top(self, always_top):
         self._proxy_always_top = always_top
         if always_top:
             winfuncs.SetWindowPos(self._hwnd, winfuncs.HWND_TOPMOST, 0, 0, 0, 0,
-                    winfuncs.SWP_NOACTIVATE | winfuncs.SWP_NOMOVE | winfuncs.SWP_NOSIZE)
+                    winfuncs.SWP_NOACTIVATE | winfuncs.SWP_NOMOVE | winfuncs.SWP_NOSIZE | winfuncs.SWP_ASYNCWINDOWPOS)
         else:
             winfuncs.SetWindowPos(self._hwnd, winfuncs.HWND_NOTOPMOST, 0, 0, 0, 0,
-                    winfuncs.SWP_NOACTIVATE | winfuncs.SWP_NOMOVE | winfuncs.SWP_NOSIZE)
+                    winfuncs.SWP_NOACTIVATE | winfuncs.SWP_NOMOVE | winfuncs.SWP_NOSIZE | winfuncs.SWP_ASYNCWINDOWPOS)
 
     def show(self):
         def proxy_show():
@@ -380,7 +341,7 @@ class WindowProxy:
                 new_rect.left, new_rect.top,
                 new_rect.width, new_rect.height,
                 winfuncs.SWP_NOACTIVATE)
-            winfuncs.ShowWindowAsync(self._hwnd, winfuncs.SW_SHOWNOACTIVATE)
+            winfuncs.ShowWindowAsync(self._hwnd, winfuncs.SW_SHOWNOACTIVATE | winfuncs.SWP_ASYNCWINDOWPOS)
         ProxyCommands.queue(proxy_show_rect)
 
     def hide(self):
@@ -402,11 +363,11 @@ class WindowProxy:
             winfuncs.SetWindowPos(self._hwnd, zorder,
                 self._info.rect.left-2, self._info.rect.top-2,
                 self._info.rect.width+4, self._info.rect.height+4,
-                winfuncs.SWP_NOACTIVATE)
+                winfuncs.SWP_NOACTIVATE | winfuncs.SWP_ASYNCWINDOWPOS)
             winfuncs.SetWindowPos(self._hwnd, zorder,
                 self._info.rect.left, self._info.rect.top,
                 self._info.rect.width, self._info.rect.height,
-                winfuncs.SWP_NOACTIVATE)
+                winfuncs.SWP_NOACTIVATE | winfuncs.SWP_ASYNCWINDOWPOS)
         ProxyCommands.queue(proxy_poke)
 
     def set_always_on_top(self, always_on_top):

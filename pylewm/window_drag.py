@@ -59,7 +59,6 @@ def window_drag_hook(wParam):
                 DragState.DRAG_WINDOW = window
                 DragState.DRAG_WINDOW_POS = DragState.DRAG_WINDOW.real_position.copy()
                 pylewm.winproxy.winfuncs.SetForegroundWindow(window.proxy._hwnd)
-                pylewm.commands.set_responsive_mode(True)
 
                 if wParam == win32con.WM_RBUTTONDOWN:
                     pct_x = float(DragState.DRAG_MOUSE_POS[0] - window.real_position.left) / float(window.real_position.width)
@@ -79,6 +78,7 @@ def window_drag_hook(wParam):
 
                     DragState.DRAG_RESIZE_MODE = (mode_x, mode_y)
                 else:
+                    pylewm.commands.set_responsive_mode(True)
                     DragState.DRAG_RESIZE_MODE = None
 
         return True
