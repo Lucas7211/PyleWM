@@ -340,8 +340,8 @@ class WindowProxy:
             winfuncs.SetWindowPos(self._hwnd, zorder,
                 new_rect.left, new_rect.top,
                 new_rect.width, new_rect.height,
-                winfuncs.SWP_NOACTIVATE)
-            winfuncs.ShowWindowAsync(self._hwnd, winfuncs.SW_SHOWNOACTIVATE | winfuncs.SWP_ASYNCWINDOWPOS)
+                winfuncs.SWP_NOACTIVATE | winfuncs.SWP_ASYNCWINDOWPOS)
+            winfuncs.ShowWindowAsync(self._hwnd, winfuncs.SW_SHOWNOACTIVATE)
         ProxyCommands.queue(proxy_show_rect)
 
     def hide(self):

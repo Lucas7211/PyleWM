@@ -5,9 +5,11 @@ import pylewm.execution
 import pylewm.window_update
 import pylewm.window
 import pylewm.focus
+import time
 import win32gui
 
 DROPDOWN_WINDOW = None
+DROPDOWN_SHOW_TIME = 0.0
 
 @PyleCommand
 def set_as_dropdown():
@@ -55,6 +57,7 @@ def toggle_dropdown(command_if_no_dropdown=None):
 @PyleCommand
 def show_dropdown():
     global DROPDOWN_WINDOW
+    global DROPDOWN_SHOW_TIME
     window = DROPDOWN_WINDOW
 
     if window:
@@ -67,7 +70,8 @@ def show_dropdown():
             (monitor.rect.left + (monitor.rect.width - width) / 2, monitor.rect.top),
             (width, height),
         )
-
+        
+        DROPDOWN_SHOW_TIME = time.time()
         window.show_with_rect(dropdown_rect)
         pylewm.focus.set_focus_no_mouse(window)
         
@@ -82,6 +86,7 @@ def hide_dropdown():
 @pylewm.window_update.PyleWindowUpdate
 def update_dropdown():
     global DROPDOWN_WINDOW
+    global DROPDOWN_SHOW_TIME
     window = DROPDOWN_WINDOW
 
     if window:
@@ -91,6 +96,6 @@ def update_dropdown():
             if not window.is_floating():
                 window.is_dropdown = False
                 DROPDOWN_WINDOW = None
-            elif window != pylewm.focus.FocusWindow and not window.wm_becoming_visible:
+            elif window != pylewm.focus.FocusWindow and not window.wm_becoming_visible and time.time() > DROPDOWN_SHOW_TIME + 1.0:
                 window.is_dropdown = True
                 window.hide()

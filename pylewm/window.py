@@ -22,6 +22,7 @@ class Window:
         self.can_drop_tiled = False
         self.force_always_top = False
         self.is_dropdown = False
+        self.is_zoomed = False
 
         self.wm_hidden = False
         self.wm_becoming_visible = False
@@ -80,12 +81,13 @@ class Window:
             return
         if self.state == WindowState.IgnorePermanent:
             return
-        if self.is_tiled():
-            return
-        self.make_tiled()
-        self.auto_place_into_space()
-        if self.space and self.space.layout:
-            self.space.layout.update_layout()
+        if not self.is_tiled():
+            self.make_tiled()
+            self.auto_place_into_space()
+            if self.space and self.space.layout:
+                self.space.layout.update_layout()
+        if self.is_zoomed:
+            self.is_zoomed = False
 
     def is_ignored(self):
         return self.state == WindowState.IgnorePermanent or self.state == WindowState.IgnoreTemporary
@@ -367,6 +369,8 @@ class Window:
     def set_layout(self, new_position : Rect, apply_margin = True):
         if new_position.equals(self.layout_position):
             return
+        if self.is_zoomed:
+            return
         self.layout_position.assign(new_position)
         self.ignore_drag_until = time.time() + 0.2
 
@@ -378,6 +382,11 @@ class Window:
     def restore_layout(self):
         self.proxy.restore_layout()
         self.ignore_drag_until = time.time() + 0.2
+
+    def refresh_layout(self):
+        self.layout_position = Rect()
+        if self.space:
+            self.space.refresh_layout()
 
     def move_floating_to(self, new_rect : Rect):
         if new_rect.equals(self.real_position):

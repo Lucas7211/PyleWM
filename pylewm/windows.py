@@ -4,6 +4,8 @@ import pylewm.winproxy.winfuncs as winfuncs
 
 import time
 import pylewm.focus
+import pylewm.hotkeys
+import pylewm.window_drag
 
 @PyleCommand
 def close():
@@ -99,4 +101,6 @@ Real Position: {window.real_position}
 Layout Position: {window.layout_position}
 """
 
+    pylewm.hotkeys.release_all_modifiers().run()
+    pylewm.window_drag.stop_window_drag_resize()
     winfuncs.ShowMessageBox("PyleWM: Window Info", state)

@@ -64,6 +64,10 @@ class Space:
                 self.focus_mru.remove(self.focus)
             self.focus_mru.append(self.focus)
 
+    def refresh_layout(self):
+        self.layout.refresh_layout()
+        self.layout.update_layout()
+
     def update_layout(self, focus_window):
         self.update_focus(focus_window)
 

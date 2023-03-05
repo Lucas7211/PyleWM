@@ -315,6 +315,9 @@ class ColumnsLayout(Layout):
         slot_splits.append(self.rect.bottom)
         return slot_splits
 
+    def refresh_layout(self):
+        self.need_reposition = True
+
     def update_layout(self):
         if not self.windows:
             return

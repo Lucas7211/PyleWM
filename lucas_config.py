@@ -16,6 +16,7 @@ MOD = ('app',)
 
 def GoToSleep():
     pylewm.hotkeys.release_all_modifiers().run()
+    pylewm.window_drog.stop_window_drag_resize()
     pylewm.execution.run([r'C:\bin\GoToSleep.bat'], cmd_window=True).run()
 
 pylewm.config.hotkeys({
@@ -59,6 +60,8 @@ pylewm.config.hotkeys({
     (*MOD, 'y')              : pylewm.yank.yank_window,
     (*MOD, 'i')              : pylewm.yank.drop_window,
     (*MOD, 'shift', 'i')     : pylewm.yank.drop_all_windows,
+
+    (*MOD, 'x')              : pylewm.zoom.toggle_zoomed,
 
     # Space management
     (*MOD, ' ')              : pylewm.spaces.flip,

@@ -1,7 +1,9 @@
-#import pylewm.window
 import pylewm.layout
 import pylewm.focus
 from pylewm.commands import PyleCommand
+import pylewm.hotkeys
+import pylewm.window_drag
+import pylewm.winproxy.winfuncs as winfuncs
 
 import traceback
 
@@ -281,5 +283,6 @@ def show_spaces_info():
             text += f"\n"
         text += "\n\n"
 
-    import ctypes
-    ctypes.windll.user32.MessageBoxW(None, text, 'PyleWM: Spaces Info', 0)
+    pylewm.hotkeys.release_all_modifiers().run()
+    pylewm.window_drag.stop_window_drag_resize()
+    winfuncs.ShowMessageBox("PyleWM: Spaces Info", text)
