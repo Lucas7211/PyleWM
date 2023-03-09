@@ -1,4 +1,5 @@
 import win32con
+import time
 
 import pylewm.window
 import pylewm.focus
@@ -14,6 +15,8 @@ class DragState:
     DRAG_MOUSE_POS = None
     DRAG_WINDOW_POS = None
     DRAG_RESIZE_MODE = None
+    DRAG_ACTIVATE_TIME = 0
+    DRAG_START_TIME = 0
 
 @PyleCommand
 def activate_window_drag_resize():
@@ -27,6 +30,7 @@ def activate_window_drag_resize():
         return
 
     DragState.DRAG_ALLOWED = True
+    DragState.DRAG_ACTIVATE_TIME = time.time()
     MouseState.MOUSE_HOOKS.append(window_drag_hook)
     WINDOW_UPDATE_FUNCS.append(drag_update)
 
@@ -58,6 +62,7 @@ def window_drag_hook(wParam):
             if not window.is_hung():
                 DragState.DRAG_WINDOW = window
                 DragState.DRAG_WINDOW_POS = DragState.DRAG_WINDOW.real_position.copy()
+                DragState.DRAG_START_TIME = time.time()
                 pylewm.winproxy.winfuncs.SetForegroundWindow(window.proxy._hwnd)
 
                 if wParam == win32con.WM_RBUTTONDOWN:
@@ -90,8 +95,16 @@ def window_drag_hook(wParam):
     return False
 
 def drag_update():
+    active_time = time.time() - DragState.DRAG_START_TIME
+
     window = DragState.DRAG_WINDOW
     if not window:
+        return
+
+    # Stop dragging if we no longer have focus on this window
+    drag_time = time.time() - DragState.DRAG_START_TIME
+    if drag_time > 1.0 and pylewm.focus.FocusWindow != window:
+        DragState.DRAG_WINDOW = None
         return
 
     mouse_pos = get_cursor_position()
