@@ -91,6 +91,9 @@ def window_drag_hook(wParam):
         if DragState.DRAG_WINDOW:
             DragState.DRAG_WINDOW = None
             return True
+    elif wParam == win32con.WM_MBUTTONDOWN or wParam == win32con.WM_MBUTTONUP:
+        stop_window_drag_resize()
+        return True
 
     return False
 
