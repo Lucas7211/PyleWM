@@ -250,7 +250,7 @@ class WindowProxy:
             return
 
         # Temporarily ignored windows update at a slower rate to save performance
-        if self.temporary_ignore and self.initialized_time < WindowProxy.UpdateStartTime - 1.0:
+        if (self.temporary_ignore or self._proxy_hidden) and self.initialized_time < WindowProxy.UpdateStartTime - 1.0:
             self.update_interval = min(self.update_interval + 1, 20)
             if (WindowProxy.UpdateFrameCounter % self.update_interval) != (self.interval_hash % self.update_interval):
                 return
