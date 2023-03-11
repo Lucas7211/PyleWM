@@ -15,11 +15,12 @@ ALWAYS_IGNORE_CLASSES = {
     "progman",
     "ime",
     "dwm",
+    "Shell_TrayWnd",
 }
 
 ALWAYS_FLOATING_CLASSES = {
     "operationstatuswindow",
-    "#32770"
+    "#32770",
 }
 
 class WindowState:
