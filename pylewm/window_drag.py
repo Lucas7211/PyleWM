@@ -17,6 +17,7 @@ class DragState:
     DRAG_RESIZE_MODE = None
     DRAG_ACTIVATE_TIME = 0
     DRAG_START_TIME = 0
+    WAIT_PROCESS_UNTIL = 0
 
 @PyleCommand
 def activate_window_drag_resize():
@@ -104,6 +105,9 @@ def drag_update():
     if not window:
         return
 
+    if DragState.WAIT_PROCESS_UNTIL > time.time():
+        return
+
     # Stop dragging if we no longer have focus on this window
     drag_time = time.time() - DragState.DRAG_START_TIME
     if drag_time > 1.0 and pylewm.focus.FocusWindow != window:
@@ -135,6 +139,11 @@ def drag_update():
             pos.top += delta[1]
         elif DragState.DRAG_RESIZE_MODE[1] == 1:
             pos.bottom += delta[1]
+
+        # Resize operations incur redraws, so if we spam them too often
+        # it will cause lag in the resized window's process.
+        # Limit resize operations to happen at 30hz at most
+        DragState.WAIT_PROCESS_UNTIL = time.time() + (1.0 / 30.0)
 
     DragState.DRAG_WINDOW_POS = pos
 
