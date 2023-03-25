@@ -1,5 +1,6 @@
 from pylewm.hotkeys import KeySpec
 from pylewm.commands import PyleCommand
+import pylewm.winproxy.winfuncs as winfuncs
 
 import ctypes
 import win32api, win32con
@@ -74,6 +75,32 @@ def sendkeys(keys):
     """ Generate a list of keys to be pressed in sequence. """
     for key in keys:
         sendKeySpec(KeySpec.fromTuple(key))
+
+@PyleCommand
+def sendtext(text):
+    """ Send keyboard events to type a string of text. """
+    for char in text:
+        input = winfuncs.INPUT()
+        input.type = winfuncs.INPUT_KEYBOARD
+        input.DUMMYUNIONNAME.ki = winfuncs.KEYBDINPUT(
+            wVk=0,
+            wScan=ord(char),
+            dwFlags=winfuncs.KEYEVENTF_UNICODE,
+            time=0,
+            dwExtraInfo=0,
+        )
+        winfuncs.SendInput(1, winfuncs.c.byref(input), winfuncs.c.sizeof(winfuncs.INPUT))
+
+        input = winfuncs.INPUT()
+        input.type = winfuncs.INPUT_KEYBOARD
+        input.DUMMYUNIONNAME.ki = winfuncs.KEYBDINPUT(
+            wVk=0,
+            wScan=ord(char),
+            dwFlags=winfuncs.KEYEVENTF_UNICODE | winfuncs.KEYEVENTF_KEYUP,
+            time=0,
+            dwExtraInfo=0,
+        )
+        winfuncs.SendInput(1, winfuncs.c.byref(input), winfuncs.c.sizeof(winfuncs.INPUT))
 
 @PyleCommand
 def send_left_click():

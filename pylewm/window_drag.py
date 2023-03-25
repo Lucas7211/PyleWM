@@ -6,7 +6,7 @@ import pylewm.focus
 from pylewm.winproxy.winfocus import focus_window, focus_shell_window, get_cursor_position, determine_window_proxy_under_cursor
 
 from pylewm.commands import PyleCommand
-from pylewm.hotkeys import MouseState
+from pylewm.hotkeys import MouseState, OnHotkeysClear
 from pylewm.window_update import WINDOW_UPDATE_FUNCS
 
 class DragState:
@@ -158,5 +158,9 @@ def stop_window_drag_resize():
     DragState.DRAG_ALLOWED = False
     DragState.DRAG_WINDOW = None
     pylewm.commands.set_responsive_mode(False)
+
+@OnHotkeysClear
+def window_drag_hotkeys_cleared():
+    stop_window_drag_resize()
 
 activate_window_drag_resize.release_event = stop_window_drag_resize

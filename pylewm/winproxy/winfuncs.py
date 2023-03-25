@@ -280,3 +280,56 @@ WindowFromPoint = c.WINFUNCTYPE(
     w.HWND,
     w.POINT,
 )(("WindowFromPoint", c.windll.user32))
+
+INPUT_MOUSE = 0
+INPUT_KEYBOARD = 1
+INPUT_HARDWARE = 2
+
+KEYEVENTF_EXTENDEDKEY = 1
+KEYEVENTF_KEYUP = 2
+KEYEVENTF_UNICODE = 4
+KEYEVENTF_SCANCODE = 8
+
+class MOUSEINPUT(c.Structure):
+    _fields_ = [
+        ('dx', w.LONG),
+        ('dy', w.LONG),
+        ('mouseData', w.DWORD),
+        ('dwFlags', w.DWORD),
+        ('time', w.DWORD),
+        ('dwExtraInfo', c.c_ulonglong),
+    ]
+
+class KEYBDINPUT(c.Structure):
+    _fields_ = [
+        ('wVk', w.WORD),
+        ('wScan', w.WORD),
+        ('dwFlags', w.DWORD),
+        ('time', w.DWORD),
+        ('dwExtraInfo', c.c_ulonglong),
+    ]
+
+class HARDWAREINPUT(c.Structure):
+    _fields_ = [
+        ('uMsg', w.DWORD),
+        ('wParamL', w.WORD),
+        ('wParamH', w.WORD),
+    ]
+
+class DUMMYUNIONNAME(c.Union):
+    _fields_ = [
+        ('mi', MOUSEINPUT),
+        ('ki', KEYBDINPUT),
+        ('hi', HARDWAREINPUT),
+    ]
+
+class INPUT(c.Structure):
+    _fields_ = [
+        ('type', w.DWORD),
+        ('DUMMYUNIONNAME', DUMMYUNIONNAME),
+    ]
+
+SendInput = c.WINFUNCTYPE(
+    w.UINT,
+    w.UINT, c.POINTER(INPUT), c.c_int,
+)(("SendInput", c.windll.user32))

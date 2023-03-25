@@ -15,8 +15,7 @@ from pylewm.filters import *
 MOD = ('app',)
 
 def GoToSleep():
-    pylewm.hotkeys.release_all_modifiers().run()
-    pylewm.window_drog.stop_window_drag_resize()
+    pylewm.hotkeys.clear()
     pylewm.execution.run([r'C:\bin\GoToSleep.bat'], cmd_window=True).run()
 
 pylewm.config.hotkeys({
@@ -110,6 +109,8 @@ pylewm.config.hotkeys({
 
     (*MOD, '.')              : pylewm.execution.run([r'C:\mpd\toggle.bat']),
     (*MOD, 'shift', '.')     : pylewm.execution.run([r'C:\mpd\mpc.exe', 'next']),
+
+    (*MOD, 'tab')             : pylewm.execution.start_screenclip,
         
     # PyleWM management
     (*MOD, 'shift', 'q')     : pylewm.run.restart,
@@ -126,6 +127,27 @@ pylewm.config.hotkeys({
     # Copy-paste shortcuts
     (*MOD, 'q')              : pylewm.sendkeys.sendkey(('ctrl', 'c')),
     (*MOD, 'j')              : pylewm.sendkeys.sendkey(('ctrl', 'v')),
+    (*MOD, 'u')              : pylewm.sendkeys.sendkey(('ctrl', 'z')),
+    (*MOD, 'shift', 'u')     : pylewm.sendkeys.sendkey(('ctrl', 'y')),
+
+    # Unicode shortcuts
+    (*MOD, '-')              : pylewm.hotkeys.Mode(
+        oneshot=True,
+        hotkeys={
+            "-" : pylewm.sendkeys.sendtext("—"),
+            "." : pylewm.sendkeys.sendtext("…"),
+            "a" : pylewm.sendkeys.sendtext("å"),
+            "e" : pylewm.sendkeys.sendtext("ä"),
+            "o" : pylewm.sendkeys.sendtext("ö"),
+            ('shift', 'a') : pylewm.sendkeys.sendtext("Å"),
+            ('shift', 'e') : pylewm.sendkeys.sendtext("Ä"),
+            ('shift', 'o') : pylewm.sendkeys.sendtext("Ö"),
+            "h" : pylewm.sendkeys.sendtext("←"),
+            "t" : pylewm.sendkeys.sendtext("↓"),
+            "n" : pylewm.sendkeys.sendtext("↑"),
+            "s" : pylewm.sendkeys.sendtext("→"),
+        },
+    ),
 
     # System management
     (*MOD, 'ctrl', '$')     : GoToSleep,

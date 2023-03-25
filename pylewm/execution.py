@@ -98,6 +98,19 @@ def this_pc(cwd=None):
 def open_config(cwd=None):
     file_explorer(pylewm.config.get_config_dir()).run()
 
+@PyleCommand
+def start_screenclip(mode="Rectangle"):
+    pylewm.hotkeys.clear()
+    run(["start", f"ms-screenclip:?clippingMode={mode}"], as_admin=True).run()
+
+@PyleCommand
+def start_snippingtool(mode="Rectangle"):
+    pylewm.hotkeys.clear()
+    subprocess.call(
+        ["SnippingTool", "/clip"], shell=True,
+        creationflags=subprocess.DETACHED_PROCESS|subprocess.CREATE_NEW_PROCESS_GROUP
+    )
+
 class STARTUPINFO(ctypes.Structure):
     _fields_ = (
         ('cb',              wintypes.DWORD),

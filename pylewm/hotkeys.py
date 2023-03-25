@@ -16,9 +16,10 @@ class MouseState:
 queue_command = None
 
 class Mode:
-    def __init__(self, hotkeys={}, captureAll=True):
+    def __init__(self, hotkeys={}, captureAll=True, oneshot=False):
         self.hotkeys = []
         self.captureAll = captureAll
+        self.oneshot = oneshot
         for key, bind in hotkeys.items():
             if hasattr(bind, "pylewm_callback"):
                 bind = bind.pylewm_callback
@@ -31,8 +32,13 @@ class Mode:
             return True
         for bnd in self.hotkeys:
             if bnd[0] == key:
+                if self.oneshot:
+                    queue_command(escape_mode)
                 queue_command(bnd[1])
                 return True
+        if self.oneshot and key.down and not isMod:
+            queue_command(escape_mode)
+            return True
         if not isMod and self.captureAll:
             return True
         else:
@@ -213,9 +219,21 @@ KeyBindings = {}
 ModeStack = []
 ModeLock = threading.RLock()
 ActiveKey = KeySpec('')
+HotkeyClearFunctions = []
 
 def register(key, callback):
     registerSpec(KeySpec.fromTuple(key), callback)
+
+def OnHotkeysClear(func):
+    HotkeyClearFunctions.append(func)
+    return func
+
+def clear():
+    global HotkeyClearFunctions
+
+    release_all_modifiers().run()
+    for func in HotkeyClearFunctions:
+        func()
     
 def registerSpec(keySpec, command):
     global KeyBindings
@@ -265,6 +283,7 @@ def handle_python(isKeyDown, keyCode, scanCode):
 # TODO: Complete this map
 VK_MAP = {
     win32con.VK_ESCAPE: "esc",
+    win32con.VK_TAB: "tab",
     win32con.VK_F1: "f1",
     win32con.VK_F2: "f2",
     win32con.VK_F3: "f3",
