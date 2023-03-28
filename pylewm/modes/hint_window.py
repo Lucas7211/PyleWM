@@ -35,6 +35,8 @@ class HintWindowMode(pylewm.modes.overlay_mode.OverlayMode):
                 continue
             if window.is_dropdown:
                 continue
+            if window.is_taskbar:
+                continue
             if window.window_info.cloaked:
                 continue
             if window.window_title == "":

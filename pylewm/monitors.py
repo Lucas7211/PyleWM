@@ -2,6 +2,7 @@ from pylewm.rects import Rect
 from pylewm.commands import PyleInit, PyleCommand
 from pylewm.space import Space
 from pylewm.layout import Direction
+import pylewm.config
 import pylewm.winproxy.winfuncs as winfuncs
 
 import ctypes
@@ -13,12 +14,21 @@ DesktopArea = Rect()
 
 class Monitor:
     def __init__(self, info):
-        self.rect = Rect(
-            (
-                info.rcWork.left, info.rcWork.top,
-                info.rcWork.right, info.rcWork.bottom,
+        if pylewm.config.HideTaskbar:
+            self.rect = Rect(
+                (
+                    info.rcMonitor.left, info.rcMonitor.top,
+                    info.rcMonitor.right, info.rcMonitor.bottom,
+                )
             )
-        )
+        else:
+            self.rect = Rect(
+                (
+                    info.rcWork.left, info.rcWork.top,
+                    info.rcWork.right, info.rcWork.bottom,
+                )
+            )
+
         self.primary = info.dwFlags & 1
 
         self.spaces = [Space(self, self.rect), Space(self, self.rect)]

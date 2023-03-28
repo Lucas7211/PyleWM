@@ -19,7 +19,7 @@ SpawnAsUserSecurityToken = None
 def start_menu():
     """ Open the start menu. """
     sendKey(('ctrl', 'esc'))
-    
+
 @PyleCommand
 def run(args, cwd=None, as_admin=False, cmd_window=False):
     """ Run an arbitrary command. """
@@ -110,6 +110,19 @@ def start_snippingtool(mode="Rectangle"):
         ["SnippingTool", "/clip"], shell=True,
         creationflags=subprocess.DETACHED_PROCESS|subprocess.CREATE_NEW_PROCESS_GROUP
     )
+
+@PyleCommand
+def toggle_taskbar_visibility():
+    """ Toggle whether the taskbar is visible or not """
+    pylewm.config.HideTaskbar = not pylewm.config.HideTaskbar
+
+@PyleCommand
+def toggle_taskbar_and_open_start_menu():
+    """ Toggle whether the taskbar is visible or not, and open the start menu when becoming visible """
+    if pylewm.config.HideTaskbar:
+        start_menu().run()
+    pylewm.config.HideTaskbar = not pylewm.config.HideTaskbar
+    
 
 class STARTUPINFO(ctypes.Structure):
     _fields_ = (

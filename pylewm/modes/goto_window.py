@@ -24,6 +24,8 @@ def start_goto_window(hotkeys = {}):
             continue
         if window.state == WindowState.IgnorePermanent:
             continue
+        if window.is_taskbar:
+            continue
         if window.window_info.cloaked:
             continue
         if window.window_title == "":

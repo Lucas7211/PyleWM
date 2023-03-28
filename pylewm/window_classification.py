@@ -15,7 +15,6 @@ ALWAYS_IGNORE_CLASSES = {
     "progman",
     "ime",
     "dwm",
-    "Shell_TrayWnd",
 }
 
 ALWAYS_FLOATING_CLASSES = {
@@ -47,6 +46,10 @@ def classify_window(window):
     window_class = window.window_class.lower()
     if window_class in ALWAYS_IGNORE_CLASSES:
         return WindowState.IgnorePermanent, "Ignored Class"
+
+    # Taskbars are flagged ignore temporary, because we still want to update their status
+    if window_class == "shell_traywnd":
+        return WindowState.IgnoreTemporary, "Taskbar"
 
     # NOACTIVATE windows that aren't APPWINDOW are ignored by
     # the taskbar, so we probably should ignore them as well

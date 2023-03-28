@@ -45,6 +45,9 @@ def window_update():
     for update_func in WINDOW_UPDATE_FUNCS:
         update_func()
 
+    # Update taskbar visibility if we have any
+    update_taskbars()
+
 WINDOW_UPDATE_FUNCS = []
 def PyleWindowUpdate(func):
     WINDOW_UPDATE_FUNCS.append(func)
@@ -79,3 +82,20 @@ def window_initial_placement():
 
     for window in windows:
         pylewm.filters.trigger_all_filters(window, post=True)
+
+def update_taskbars():
+    i = len(Window.Taskbars) - 1
+    should_hide = pylewm.config.HideTaskbar
+    
+    while i >= 0:
+        window = Window.Taskbars[i]
+        if window.closed:
+            del Window.Taskbars[i]
+        else:
+            if should_hide:
+                if not window.wm_hidden or not window.window_info.visible:
+                    window.hide()
+            else:
+                if window.wm_hidden:
+                    window.show()
+        i -= 1

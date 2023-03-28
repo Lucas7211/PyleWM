@@ -12,6 +12,7 @@ import time
 class Window:
     InInitialPlacement = True
     DraggingWindow = None
+    Taskbars = []
     
     def __init__(self, proxy : WindowProxy):
         self.proxy = proxy
@@ -23,6 +24,7 @@ class Window:
         self.force_always_top = False
         self.is_dropdown = False
         self.is_zoomed = False
+        self.is_taskbar = False
 
         self.wm_hidden = False
         self.wm_becoming_visible = False
@@ -47,6 +49,10 @@ class Window:
         self.drop_ticks_inside_slot = 0
 
         self.classify()
+
+        if self.window_class.lower() == "shell_traywnd":
+            self.is_taskbar = True
+            Window.Taskbars.append(self)
 
     def classify(self):
         new_state, reason = classify_window(self)
@@ -80,6 +86,8 @@ class Window:
         if self.window_info.is_hung:
             return
         if self.state == WindowState.IgnorePermanent:
+            return
+        if self.is_taskbar:
             return
         if not self.is_tiled():
             self.make_tiled()

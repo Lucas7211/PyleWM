@@ -6,6 +6,7 @@ import sys
 import shutil
 
 AllowDroppingIntoLayout = True
+HideTaskbar = False
 
 CONFIG_HOTKEYS = {}
 CONFIG_FILTERS = []

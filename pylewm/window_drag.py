@@ -47,6 +47,8 @@ def window_drag_hook(wParam):
                 if window:
                     if window.state == pylewm.window.WindowState.IgnorePermanent:
                         window = None
+                    elif window.is_taskbar:
+                        window = None
                     elif window.is_hung() or window.window_info.cloaked or window.closed:
                         window = None
 
