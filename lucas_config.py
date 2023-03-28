@@ -104,7 +104,7 @@ pylewm.config.hotkeys({
     # Application management
     (*MOD, ';')              : pylewm.execution.run([r'wt.exe', '-p', 'Ubuntu-20.04']),
     (*MOD, 'shift', ';')     : pylewm.execution.run([r'wt.exe', '-p', 'Windows PowerShell'], as_admin=True),
-    (*MOD, 'ctrl', ',')      : pylewm.execution.toggle_taskbar_and_open_start_menu,
+    (*MOD, 'ctrl', ',')      : pylewm.execution.toggle_taskbar_visibility,
     (*MOD, 'p')              : pylewm.execution.run(r'C:\Program Files\Mozilla Firefox\firefox.exe'),
     (*MOD, 'k')              : pylewm.execution.run([r'wt.exe', "wsl.exe", "--", "ranger", "/data/spool"]),
     (*MOD, 'u')              : pylewm.execution.this_pc,

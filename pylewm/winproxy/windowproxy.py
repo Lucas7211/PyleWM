@@ -166,11 +166,18 @@ class WindowProxy:
         ]
 
         if self._layout_margin is not None:
-            # Apply a preset margin to the window
-            try_position[0] += self._layout_margin
-            try_position[1] += self._layout_margin
-            try_position[2] -= self._layout_margin*2
-            try_position[3] -= self._layout_margin*2
+            if isinstance(self._layout_margin, int):
+                # Apply a preset margin to the window
+                try_position[0] += self._layout_margin
+                try_position[1] += self._layout_margin
+                try_position[2] -= self._layout_margin*2
+                try_position[3] -= self._layout_margin*2
+            else:
+                # Apply a preset margin to the window
+                try_position[0] += self._layout_margin[0]
+                try_position[1] += self._layout_margin[1]
+                try_position[2] -= self._layout_margin[0]+self._layout_margin[2]
+                try_position[3] -= self._layout_margin[1]+self._layout_margin[3]
         elif not (self._info._winStyle & WS_SYSMENU):
             # Window controls its own border, we have some hardcoded offset that behaves nicely
             try_position[0] += 2
