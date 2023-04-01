@@ -5,8 +5,16 @@ import os
 import sys
 import shutil
 
+# Whether to allow dropping windows into a layout by drag and drop
 AllowDroppingIntoLayout = True
+
+# Whether the taskbar should be hidden completely while PyleWM is active
 HideTaskbar = False
+
+# The margin between windows tiled on the same monitor
+TilingInnerMargin = 0
+# The margin between a window and the edge of the monitor
+TilingOuterMargin = 0
 
 CONFIG_HOTKEYS = {}
 CONFIG_FILTERS = []
@@ -54,7 +62,12 @@ def apply():
         # Fallback to the default config
         apply_default_config()
 
+    # Firefox draws on its window borders so we need to space it out to prevent overlapping
+    DEFAULT_FILTERS = [
+        ({"class": "MozillaWindowClass"}, pylewm.filters.ForceBorders([2, 0, 2, 2])),
+    ]
+
     for key, val in CONFIG_HOTKEYS.items():
         if val:
             pylewm.hotkeys.register(key, val)
-    pylewm.filters.Filters = CONFIG_FILTERS
+    pylewm.filters.Filters = DEFAULT_FILTERS+CONFIG_FILTERS

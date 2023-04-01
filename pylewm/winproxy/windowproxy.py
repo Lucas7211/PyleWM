@@ -18,9 +18,16 @@ WS_MAXIMIZE = 0x01000000
 WS_CAPTION = 0x00C00000
 WS_EX_NOACTIVATE = 0x08000000
 WS_EX_APPWINDOW = 0x00040000
+WS_EX_LAYERED = 0x00080000
+WS_DISABLED = 0x08000000
+WS_DLGFRAME = 0x00400000
+WS_BORDER = 0x00800000
+WS_POPUP = 0x80000000
 WS_SYSMENU = 0x00080000
 
 class WindowInfo:
+    BORDER_STYLES = WS_SYSMENU | WS_DLGFRAME | WS_BORDER | WS_POPUP | WS_CAPTION
+
     def __init__(self):
         self.window_title = ""
         self.window_class = ""
@@ -28,6 +35,8 @@ class WindowInfo:
         self.cloaked = False
         self.is_child = False
         self.is_hung = False
+        self.is_resizable = False
+        self.is_force_visible = False
         self.rect = Rect()
         self._winStyle = 0
         self._exStyle = 0
@@ -39,12 +48,14 @@ class WindowInfo:
         self.cloaked = other.cloaked
         self.is_child = other.is_child
         self.is_hung = other.is_hung
+        self.is_force_visible = other.is_force_visible
+        self.is_resizable = other.is_resizable
         self.rect.assign(other.rect)
         self._winStyle = other._winStyle
         self._exStyle = other._exStyle
 
     def can_resize(self):
-        return (self._winStyle & WS_SIZEBOX) != 0
+        return self.is_resizable
 
     def is_taskbar_ignored(self):
         return (self._exStyle & WS_EX_NOACTIVATE) and not (self._exStyle & WS_EX_APPWINDOW)
@@ -54,6 +65,9 @@ class WindowInfo:
 
     def is_maximized(self):
         return (self._winStyle & WS_MAXIMIZE) != 0
+
+    def get_border_styles(self):
+        return (self._winStyle & WindowInfo.BORDER_STYLES)
 
 class WindowProxy:
     ProgramStartTime = time.time()
@@ -80,12 +94,14 @@ class WindowProxy:
 
         self._layout_dirty = False
         self._layout_position = Rect()
+        self._layout_edges_flush = None
         self._layout_applied = False
         self._has_layout_position = None
         self._applied_position = Rect()
 
         self._proxy_hidden = False
         self._proxy_always_top = False
+        self._proxy_resizable = False
 
         self._has_floating_target = False
         self._floating_target = Rect()
@@ -96,8 +112,10 @@ class WindowProxy:
         self.initialized_time = time.time()
 
         self._info.is_child = winfuncs.WindowIsChild(self._hwnd)
-
         self._update_info()
+        self._info.is_resizable = (self._info._winStyle & WS_SIZEBOX) != 0
+        self._proxy_resizable = self._info.is_resizable
+
         self._transfer_info()
 
     def _cleanup(self):
@@ -105,6 +123,8 @@ class WindowProxy:
             winfuncs.ShowWindowAsync(self._hwnd, winfuncs.SW_SHOWNOACTIVATE)
         if self._proxy_always_top:
             self._apply_always_top(False)
+        if self._proxy_resizable != self.window_info.is_resizable:
+            self._proxy_set_resizable(self.window_info.is_resizable)
 
     def __str__(self):
         return f"{{ PROXY {self._info.window_title} | {self._info.window_class} @{self._hwnd} }}"
@@ -206,30 +226,53 @@ class WindowProxy:
                 try_position[1] += self._layout_margin[1]
                 try_position[2] -= self._layout_margin[0]+self._layout_margin[2]
                 try_position[3] -= self._layout_margin[1]+self._layout_margin[3]
-        elif not (self._info._winStyle & WS_SYSMENU):
-            # Window controls its own border, we have some hardcoded offset that behaves nicely
-            try_position[0] += 2
-            try_position[2] -= 4
-            try_position[3] -= 3
+
+        # Find the margin that this window wants from the OS
+        adjustedRect = winfuncs.w.RECT()
+        adjustedRect.left = try_position[0]
+        adjustedRect.top = try_position[1]
+        adjustedRect.right = try_position[0] + try_position[2]
+        adjustedRect.bottom = try_position[1] + try_position[3]
+
+        winfuncs.AdjustWindowRectEx(
+            winfuncs.c.byref(adjustedRect),
+            self._info._winStyle,
+            False,
+            self._info._exStyle,
+        )
+
+        border_left = adjustedRect.left - try_position[0]
+        border_right = (try_position[0] + try_position[2]) - adjustedRect.right
+        border_bottom = (try_position[1] + try_position[3]) - adjustedRect.bottom
+        border_top = 0
+
+        if not (self._info._winStyle & WS_SYSMENU):
+            border_left += 7
+            border_right += 7
+            border_bottom += 7
+
+        # Apply the inner border for any edges that aren't flush
+        if not self._layout_edges_flush or not self._layout_edges_flush[0]:
+            border_left += math.ceil(pylewm.config.TilingInnerMargin / 2)
         else:
-            # Find the margin that this window wants from the OS
-            adjustedRect = winfuncs.w.RECT()
-            adjustedRect.left = try_position[0]
-            adjustedRect.top = try_position[1]
-            adjustedRect.right = try_position[0] + try_position[2]
-            adjustedRect.bottom = try_position[1] + try_position[3]
+            border_left += pylewm.config.TilingOuterMargin
+        if not self._layout_edges_flush or not self._layout_edges_flush[2]:
+            border_right += math.floor(pylewm.config.TilingInnerMargin / 2)
+        else:
+            border_right += pylewm.config.TilingOuterMargin
+        if not self._layout_edges_flush or not self._layout_edges_flush[1]:
+            border_top += math.ceil(pylewm.config.TilingInnerMargin / 2)
+        else:
+            border_top += pylewm.config.TilingOuterMargin
+        if not self._layout_edges_flush or not self._layout_edges_flush[3]:
+            border_bottom += math.floor(pylewm.config.TilingInnerMargin / 2)
+        else:
+            border_bottom += pylewm.config.TilingOuterMargin
 
-            winfuncs.AdjustWindowRectEx(
-                winfuncs.c.byref(adjustedRect),
-                self._info._winStyle,
-                False,
-                self._info._exStyle,
-            )
-
-            try_position[0] = adjustedRect.left + 3
-            try_position[1] += 2
-            try_position[2] = adjustedRect.right - adjustedRect.left - 6
-            try_position[3] = adjustedRect.bottom - try_position[1] - 3
+        try_position[0] += border_left+1
+        try_position[1] += border_top
+        try_position[2] -= border_left+border_right+2
+        try_position[3] -= border_top+border_bottom+1
 
         zorder = winfuncs.HWND_BOTTOM
         if self._proxy_always_top:
@@ -318,9 +361,10 @@ class WindowProxy:
         if self._dirty:
             self._transfer_info()
 
-    def set_layout(self, new_position, margin=None):
+    def set_layout(self, new_position, margin=None, edges_flush=None):
         with WindowProxyLock:
             self._layout_position.assign(new_position)
+            self._layout_edges_flush = edges_flush
             self._has_layout_position = True
             self._layout_margin = margin
             self._layout_dirty = True
@@ -433,3 +477,18 @@ class WindowProxy:
                 style = style & ~WS_CAPTION
                 winfuncs.WindowSetStyle(self._hwnd, style)
         ProxyCommands.queue(proxy_remove_titlebar)
+
+    def set_resizable(self, resizable:bool):
+        ProxyCommands.queue(lambda: self._proxy_set_resizable(resizable))
+
+    def _proxy_set_resizable(self, resizable:bool):
+        self._proxy_resizable = resizable
+        style = self._info._winStyle
+        if style & WS_SIZEBOX:
+            if not resizable:
+                style = style & ~WS_SIZEBOX
+                winfuncs.WindowSetStyle(self._hwnd, style)
+        else:
+            if resizable:
+                style = style | WS_SIZEBOX
+                winfuncs.WindowSetStyle(self._hwnd, style)

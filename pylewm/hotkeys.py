@@ -7,6 +7,7 @@ import pylewm.winproxy.winfuncs as winfuncs
 
 import traceback, threading
 import copy
+import time
 
 class MouseState:
     LEFT_MOUSE_DOWN = False
@@ -364,13 +365,13 @@ def wait_for_hotkeys():
 
         return winfuncs.CallNextHookEx(mouseHook, nCode, wParam, lParam)
 
-    keyboardHandlePtr = winfuncs.HOOKPROC(handle_keyboard_windows)
-    mouseHandlePtr = winfuncs.HOOKPROC(handle_mouse_windows)
     modulePtr = winfuncs.GetModuleHandleW(None)
 
+    keyboardHandlePtr = winfuncs.HOOKPROC(handle_keyboard_windows)
     keyboardHook = winfuncs.SetWindowsHookExW(win32con.WH_KEYBOARD_LL, keyboardHandlePtr, modulePtr, 0)
     atexit.register(winfuncs.UnhookWindowsHookEx, keyboardHook)
 
+    mouseHandlePtr = winfuncs.HOOKPROC(handle_mouse_windows)
     mouseHook = winfuncs.SetWindowsHookExW(win32con.WH_MOUSE_LL, mouseHandlePtr, modulePtr, 0)
     atexit.register(winfuncs.UnhookWindowsHookEx, mouseHook)
 

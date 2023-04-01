@@ -1,5 +1,6 @@
 from pylewm.layout import Layout
 from pylewm.rects import Rect, Direction
+from pylewm.window import Window
 
 from pylewm.layouts.sidebar import SidebarLayout
 
@@ -8,8 +9,8 @@ import math
 class AutoGridLayout(Layout):
     def __init__(self):
         Layout.__init__(self)
-        self.columns = []
-        self.windows = []
+        self.columns : list[list[Window]] = []
+        self.windows : list[Window] = []
         self.need_reposition = False
     
     def is_portrait_mode(self):
@@ -489,7 +490,15 @@ class AutoGridLayout(Layout):
                         column_splits[column_position+1],
                         slot_splits[slot_position+1],
                     )
-                    window.set_layout(new_rect)
+
+                    edges_flush = (
+                        column_index == 0,
+                        slot_index == 0,
+                        column_index == len(self.columns)-1,
+                        slot_index == len(column)-1
+                    )
+
+                    window.set_layout(new_rect, True, edges_flush)
 
     def set_pending_drop_slot(self, pending_slot):
         self.pending_drop_slot = pending_slot

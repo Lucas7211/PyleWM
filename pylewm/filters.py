@@ -1,4 +1,5 @@
 import pylewm.selector
+import pylewm.config
 from pylewm.commands import PyleInit, run_pyle_command
 
 FunctionsByFilter = []

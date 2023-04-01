@@ -29,6 +29,7 @@ class Window:
         self.wm_hidden = False
         self.wm_becoming_visible = False
         self.wm_visible_since = 0
+        self.trigger_relayout = False
         
         self.applied_filters = False
 
@@ -213,6 +214,12 @@ class Window:
                 # Switch to floating mode if the window has been moved by the user
                 if self.window_info.is_maximized() or (self.dragging and (self.drag_ticks_with_movement > 2 or (MouseState.LEFT_MOUSE_DOWN and Window.DraggingWindow is self))):
                     self.make_floating()
+
+                # Might need to restore layout if some of the styles have changed
+                if self.trigger_relayout:
+                    if not self.dragging:
+                        self.restore_layout()
+                    self.trigger_relayout = False
             else:
                 # Remove from layout if no longer interactable
                 if self.space and self.space.visible and self.wm_visible_duration() > 0.05:
@@ -259,9 +266,15 @@ class Window:
             space.add_window(self, at_slot=slot)
 
     def update_info_from_proxy(self):
+        prev_border_style = self.window_info.get_border_styles()
+        prev_force_visible = self.window_info.is_force_visible
+
         with WindowProxyLock:
             self.window_info.set(self.proxy.window_info)
             self.proxy.changed = False
+
+        if prev_border_style != self.window_info.get_border_styles() or prev_force_visible != self.window_info.is_force_visible:
+            self.trigger_relayout = True
 
     def stop_drag(self):
         if self.dragging:
@@ -374,7 +387,7 @@ class Window:
     def real_position(self):
         return self.window_info.rect
 
-    def set_layout(self, new_position : Rect, apply_margin = True):
+    def set_layout(self, new_position : Rect, apply_margin = True, edges_flush=None):
         if new_position.equals(self.layout_position):
             return
         if self.is_zoomed:
@@ -383,7 +396,7 @@ class Window:
         self.ignore_drag_until = time.time() + 0.2
 
         if apply_margin:
-            self.proxy.set_layout(new_position, self.layout_margin)
+            self.proxy.set_layout(new_position, self.layout_margin, edges_flush)
         else:
             self.proxy.set_layout(new_position)
 
