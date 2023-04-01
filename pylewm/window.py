@@ -34,6 +34,7 @@ class Window:
         self.wm_becoming_visible = False
         self.wm_visible_since = 0
         self.trigger_relayout = False
+        self.removed_titlebar = False
         
         self.applied_filters = False
 
@@ -55,6 +56,13 @@ class Window:
 
         self.classify()
 
+        # Windows we've placed at our magic offscreen position that we didn't end up tiling should be moved into view
+        if self.real_position.left == -19797 and not self.is_tiled():
+            monitor = pylewm.focus.get_focused_monitor()
+            if monitor:
+                self.move_floating_to(Rect.centered_around(monitor.rect.center, self.real_position.size))
+
+        # Keep track of any window that is a taskbar
         if self.window_class.lower() == "shell_traywnd":
             self.is_taskbar = True
             Window.Taskbars.append(self)
@@ -381,6 +389,7 @@ class Window:
         self.drop_slot = None
 
     def remove_titlebar(self):
+        self.removed_titlebar = True
         self.proxy.remove_titlebar()
 
     def on_removed(self):

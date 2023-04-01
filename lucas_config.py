@@ -107,11 +107,11 @@ pylewm.config.hotkeys({
     (*MOD, 'shift', 'a')     : pylewm.dropdown.set_as_dropdown,
 
     # Application management
-    (*MOD, ';')              : pylewm.execution.run([r'wt.exe', '-p', 'Ubuntu-20.04']),
-    (*MOD, 'shift', ';')     : pylewm.execution.run([r'wt.exe', '-p', 'Windows PowerShell'], as_admin=True),
+    (*MOD, ';')              : pylewm.execution.run([r'C:\Program Files\Alacritty\alacritty.exe']),
+    (*MOD, 'shift', ';')     : pylewm.execution.run([r'C:\Program Files\Alacritty\alacritty.exe', '-e', 'powershell'], as_admin=True),
     (*MOD, 'ctrl', ',')      : pylewm.execution.toggle_taskbar_visibility,
     (*MOD, 'p')              : pylewm.execution.run(r'C:\Program Files\Mozilla Firefox\firefox.exe'),
-    (*MOD, 'k')              : pylewm.execution.run([r'wt.exe', "wsl.exe", "--", "ranger", "/data/spool"]),
+    (*MOD, 'k')              : pylewm.execution.run([r'C:\Program Files\Alacritty\alacritty.exe', '-e', 'wsl.exe', "--", "ranger", "/data/spool"]),
     (*MOD, 'u')              : pylewm.execution.this_pc,
     (*MOD, 'shift', 'u')     : pylewm.execution.file_explorer,
 

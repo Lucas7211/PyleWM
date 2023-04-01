@@ -102,6 +102,7 @@ class WindowProxy:
         self._proxy_hidden = False
         self._proxy_always_top = False
         self._proxy_resizable = False
+        self._proxy_removed_titlebar = False
 
         self._has_floating_target = False
         self._floating_target = Rect()
@@ -316,6 +317,12 @@ class WindowProxy:
         if not set_position_allowed:
             print(f"{time.time()} Failed to set {try_position} on {self}")
 
+        if self._proxy_removed_titlebar:
+            style = self._info._winStyle
+            if style & WS_CAPTION:
+                style = style & ~WS_CAPTION
+                winfuncs.WindowSetStyle(self._hwnd, style)
+
     def _update_floating(self):
         with WindowProxyLock:
             self._has_floating_target = False
@@ -335,7 +342,6 @@ class WindowProxy:
             try_position[2], try_position[3],
             winfuncs.SWP_ASYNCWINDOWPOS
         )
-
         if not set_position_allowed:
             print(f"Failed to set {try_position} on {self}")
 
@@ -505,6 +511,7 @@ class WindowProxy:
 
     def remove_titlebar(self):
         def proxy_remove_titlebar():
+            self._proxy_removed_titlebar = True
             style = self._info._winStyle
             if style & WS_CAPTION:
                 style = style & ~WS_CAPTION

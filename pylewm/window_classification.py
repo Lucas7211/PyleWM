@@ -81,8 +81,9 @@ def classify_window(window):
         return WindowState.IgnorePermanent, "Zero Size"
 
     # Don't bother with windows that don't overlap the desktop at all
-    if not window.real_position.overlaps(pylewm.monitors.DesktopArea):
-        return WindowState.IgnoreTemporary, "Off Screen"
+    if window.real_position.left != -19797: # -19797 is the magic number for windows we spawned ourselves
+        if not window.real_position.overlaps(pylewm.monitors.DesktopArea):
+            return WindowState.IgnoreTemporary, "Off Screen"
 
     # Windows that aren't resizable are ignored,
     # we can usually assume these aren't available for tiling.

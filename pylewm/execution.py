@@ -29,12 +29,28 @@ def run(args, cwd=None, as_admin=False, cmd_window=False):
     
     if cwd is None:
         cwd = os.getenv("USERPROFILE")
+
+    escaped_commandline = ""
+    for arg in args:
+        escaped_commandline += '"'
+        escaped_commandline += arg
+        escaped_commandline += '" '
+
+    # Try to lookup where the exe is from PATH
+    executable = args[0]
+    if not os.path.isfile(executable):
+        executable = shutil.which(executable)
+
+    startup_info = STARTUPINFO()
+    startup_info.dwFlags = 0x4 # STARTF_USEPOSITION
+    startup_info.dwX = -19797
+    startup_info.dwY = -19797
+    process_information = PROCESS_INFORMATION()
     
     if as_admin:
-        subprocess.call(
-            args, shell=True, cwd=cwd,
-            creationflags=subprocess.DETACHED_PROCESS|subprocess.CREATE_NEW_PROCESS_GROUP
-        )
+        success = ctypes.windll.kernel32.CreateProcessW(executable, escaped_commandline, 0, 0, False,
+                    win32con.CREATE_NO_WINDOW if not cmd_window else win32con.CREATE_NEW_CONSOLE, None, cwd,
+                    ctypes.pointer(startup_info), ctypes.pointer(process_information))
     else:
         # We have to do all this nonsense to spawn the process
         # as the logged in user, rather than as the administrator
@@ -51,21 +67,8 @@ def run(args, cwd=None, as_admin=False, cmd_window=False):
                         | win32con.TOKEN_ADJUST_DEFAULT | 0x0100,
                         win32security.TokenPrimary, None)
 
-        escaped_commandline = ""
-        for arg in args:
-            escaped_commandline += '"'
-            escaped_commandline += arg
-            escaped_commandline += '" '
-
-        # Try to lookup where the exe is from PATH
-        executable = args[0]
-        if not os.path.isfile(executable):
-            executable = shutil.which(executable)
-
-        startup_info = STARTUPINFO()
-        process_information = PROCESS_INFORMATION()
         success = ctypes.windll.advapi32.CreateProcessWithTokenW(int(SpawnAsUserSecurityToken), 0, executable, escaped_commandline,
-                    win32con.CREATE_NO_WINDOW if not cmd_window else win32con.CREATE_NEW_CONSOLE, None, os.getcwd(),
+                    win32con.CREATE_NO_WINDOW if not cmd_window else win32con.CREATE_NEW_CONSOLE, None, cwd,
                     ctypes.pointer(startup_info), ctypes.pointer(process_information))
 
         if not success:
@@ -74,6 +77,20 @@ def run(args, cwd=None, as_admin=False, cmd_window=False):
                 error, 'CreateProcessWithTokenW',
                 win32api.FormatMessageW(error))
 
+@PyleCommand
+def run_shell(args, cwd=None):
+    """ Run an arbitrary command. """
+    if isinstance(args, str):
+        args = [args]
+    args = list(args)
+    
+    if cwd is None:
+        cwd = os.getenv("USERPROFILE")
+
+    subprocess.call(
+        args, shell=True, cwd=cwd,
+        creationflags=subprocess.DETACHED_PROCESS|subprocess.CREATE_NEW_PROCESS_GROUP
+    )
 
 @PyleCommand
 def command_prompt(cwd=None, as_admin=False):
@@ -87,12 +104,12 @@ def file_explorer(cwd=None):
     cmd = ["explorer.exe"]
     if cwd:
         cmd.append(cwd)
-    run(cmd, as_admin=True).run()
+    run_shell(cmd).run()
 
 @PyleCommand
 def this_pc(cwd=None):
     cmd = ["explorer.exe", "/n,", "/e,", "/select,", "C:\\"]
-    run(cmd, as_admin=True).run()
+    run_shell(cmd).run()
 
 @PyleCommand
 def open_config(cwd=None):
@@ -101,7 +118,7 @@ def open_config(cwd=None):
 @PyleCommand
 def start_screenclip(mode="Rectangle"):
     pylewm.hotkeys.clear()
-    run(["start", f"ms-screenclip:?clippingMode={mode}"], as_admin=True).run()
+    run_shell(["start", f"ms-screenclip:?clippingMode={mode}"]).run()
 
 @PyleCommand
 def start_snippingtool(mode="Rectangle"):
