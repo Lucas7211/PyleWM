@@ -335,10 +335,13 @@ class AutoGridLayout(Layout):
             if allow_drop_zones:
                 # Allow dropping at the top of an empty screen for auto-tile
                 if (position[1] < self.rect.top + 100
-                    or position[1] > self.rect.bottom - 100
-                    or position[0] < self.rect.left + 50
-                    or position[0] > self.rect.right - 50):
-                    return Direction.InsertLeft, True
+                        or position[1] > self.rect.bottom - 100
+                        or position[0] < self.rect.left + 50
+                        or position[0] > self.rect.right - 50):
+                    if position[0] > self.rect.center[0]:
+                        return Direction.InsertRight, True
+                    else:
+                        return Direction.InsertLeft, True
 
                 # Allow dropping around the center of a single column to split
                 if position[0] < self.rect.left + 50:
