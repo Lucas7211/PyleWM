@@ -98,4 +98,5 @@ def update_taskbars():
             else:
                 if window.wm_hidden:
                     window.show()
+                    window.proxy.set_always_on_top(True)
         i -= 1

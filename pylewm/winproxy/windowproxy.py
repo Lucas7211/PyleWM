@@ -253,21 +253,48 @@ class WindowProxy:
 
         # Apply the inner border for any edges that aren't flush
         if not self._layout_edges_flush or not self._layout_edges_flush[0]:
-            border_left += math.ceil(pylewm.config.TilingInnerMargin / 2)
+            if isinstance(pylewm.config.TilingInnerMargin, int):
+                border_left += math.ceil(pylewm.config.TilingInnerMargin / 2)
+            else:
+                border_left += math.ceil(pylewm.config.TilingInnerMargin[0] / 2)
         else:
-            border_left += pylewm.config.TilingOuterMargin
-        if not self._layout_edges_flush or not self._layout_edges_flush[2]:
-            border_right += math.floor(pylewm.config.TilingInnerMargin / 2)
-        else:
-            border_right += pylewm.config.TilingOuterMargin
+            if isinstance(pylewm.config.TilingOuterMargin, int):
+                border_left += pylewm.config.TilingOuterMargin
+            else:
+                border_left += pylewm.config.TilingOuterMargin[0]
+
         if not self._layout_edges_flush or not self._layout_edges_flush[1]:
-            border_top += math.ceil(pylewm.config.TilingInnerMargin / 2)
+            if isinstance(pylewm.config.TilingInnerMargin, int):
+                border_top += math.ceil(pylewm.config.TilingInnerMargin / 2)
+            else:
+                border_top += math.ceil(pylewm.config.TilingInnerMargin[1] / 2)
         else:
-            border_top += pylewm.config.TilingOuterMargin
+            if isinstance(pylewm.config.TilingOuterMargin, int):
+                border_top += pylewm.config.TilingOuterMargin
+            else:
+                border_top += pylewm.config.TilingOuterMargin[1]
+
+        if not self._layout_edges_flush or not self._layout_edges_flush[2]:
+            if isinstance(pylewm.config.TilingInnerMargin, int):
+                border_right += math.ceil(pylewm.config.TilingInnerMargin / 2)
+            else:
+                border_right += math.ceil(pylewm.config.TilingInnerMargin[2] / 2)
+        else:
+            if isinstance(pylewm.config.TilingOuterMargin, int):
+                border_right += pylewm.config.TilingOuterMargin
+            else:
+                border_right += pylewm.config.TilingOuterMargin[2]
+
         if not self._layout_edges_flush or not self._layout_edges_flush[3]:
-            border_bottom += math.floor(pylewm.config.TilingInnerMargin / 2)
+            if isinstance(pylewm.config.TilingInnerMargin, int):
+                border_bottom += math.ceil(pylewm.config.TilingInnerMargin / 2)
+            else:
+                border_bottom += math.ceil(pylewm.config.TilingInnerMargin[3] / 2)
         else:
-            border_bottom += pylewm.config.TilingOuterMargin
+            if isinstance(pylewm.config.TilingOuterMargin, int):
+                border_bottom += pylewm.config.TilingOuterMargin
+            else:
+                border_bottom += pylewm.config.TilingOuterMargin[3]
 
         try_position[0] += border_left+1
         try_position[1] += border_top

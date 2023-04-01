@@ -12,7 +12,7 @@ import time
 class Window:
     InInitialPlacement = True
     DraggingWindow = None
-    Taskbars = []
+    Taskbars : list['Window'] = []
     
     def __init__(self, proxy : WindowProxy):
         self.proxy = proxy

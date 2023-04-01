@@ -14,7 +14,7 @@ HideTaskbar = False
 # The margin between windows tiled on the same monitor
 TilingInnerMargin = 0
 # The margin between a window and the edge of the monitor
-TilingOuterMargin = 0
+TilingOuterMargin = [0, 0, 0, 1]
 
 CONFIG_HOTKEYS = {}
 CONFIG_FILTERS = []

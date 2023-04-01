@@ -146,6 +146,13 @@ class Rect:
             new_parent.top + int(float(rel_y2) * float(new_parent.height)),
         ))
 
+    def make_from_relative_position(self, relative):
+        return Rect((
+            self.left + self.width * relative[0],
+            self.top + self.height * relative[1],
+            self.left + self.width * relative[2],
+            self.top + self.height * relative[3],
+        ))
 
     def shifted(self, pos):
         return Rect((

@@ -9,7 +9,7 @@ import ctypes
 import math
 import win32api, win32con
 
-Monitors = []
+Monitors : list['Monitor'] = []
 DesktopArea = Rect()
 
 class Monitor:
