@@ -5,10 +5,13 @@ import pylewm
 import pylewm.modes
 import pylewm.modes.hint_mouse
 import pylewm.modes.hint_window
+import pylewm.modes.hint_mouse
 import pylewm.modes.keynav
 import pylewm.modes.goto_window
 import pylewm.modes.select_application
+import pylewm.modes.execute_task
 import pylewm.modes.window_switcher
+import pylewm.modes.retrieve_hidden_window
 from pylewm.filters import *
 
 pylewm.config.AllowDroppingIntoLayout = False
@@ -54,6 +57,7 @@ pylewm.config.hotkeys({
 
     # Window management
     (*MOD, '$')              : pylewm.windows.close,
+    (*MOD, '@')              : pylewm.windows.close,
     (*MOD, '\\')             : pylewm.windows.poke,
     (*MOD, "'")              : pylewm.windows.drop_window_into_layout,
     (*MOD, "shift", "'")     : pylewm.windows.make_window_floating,
@@ -115,16 +119,16 @@ pylewm.config.hotkeys({
     (*MOD, 'shift', '.')     : pylewm.execution.run([r'C:\mpd\mpc.exe', 'next']),
 
     (*MOD, 'tab')             : pylewm.execution.start_screenclip,
+    (*MOD, 'shift', 'p')      : pylewm.modes.execute_task.start_execute_task,
         
     # PyleWM management
     (*MOD, 'shift', 'q')     : pylewm.run.restart,
-    (*MOD, 'shift', '\\')    : pylewm.windows.show_window_info,
-    (*MOD, 'shift', '=')     : pylewm.spaces.show_spaces_info,
     ('any_mod', '=app')      : pylewm.window_drag.activate_window_drag_resize,
 
     # List selection modes
     (*MOD, ',')              : pylewm.modes.select_application.run_application,
     (*MOD, 'enter')          : pylewm.modes.goto_window.start_goto_window,
+    (*MOD, 'shift', 'enter') : pylewm.modes.hint_mouse.start_hint_mouse(hintkeys="aoeuhtns"),
     (*MOD, 'e')              : pylewm.modes.window_switcher.start_window_switcher(hintkeys="aoeuhtns"),
     (*MOD, 'f')              : pylewm.modes.hint_window.start_hint_window(hintkeys="aoeuhtns"),
     (*MOD, 'shift', 'f')     : pylewm.modes.hint_window.start_hint_floating_window(hintkeys="aoeuhtns"),

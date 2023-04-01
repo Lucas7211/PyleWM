@@ -48,6 +48,8 @@ class HintControlsMode(pylewm.modes.overlay_mode.OverlayMode):
             )
             if hint.rect.width == 0 or hint.rect.height == 0:
                 return
+            if hint.rect.height < 20:
+                hint.rect.bottom += 20 - hint.rect.height
 
             hint.control = control
             self.controls.append(hint)

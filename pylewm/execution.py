@@ -1,5 +1,5 @@
 from pylewm.sendkeys import sendKey
-from pylewm.commands import PyleCommand
+from pylewm.commands import PyleCommand, PyleTask
 import pylewm.config
 
 import os
@@ -111,6 +111,7 @@ def start_snippingtool(mode="Rectangle"):
         creationflags=subprocess.DETACHED_PROCESS|subprocess.CREATE_NEW_PROCESS_GROUP
     )
 
+@PyleTask(name="Toggle Taskbar Visibility")
 @PyleCommand
 def toggle_taskbar_visibility():
     """ Toggle whether the taskbar is visible or not """

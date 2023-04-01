@@ -78,9 +78,9 @@ class ListMode(pylewm.modes.overlay_mode.OverlayMode):
         self.dirty = True
 
     def confirm_selection(self):
+        self.close()
         if self.selected_index != -1:
             self.options[self.selected_index].confirm()
-        self.close()
 
     def close(self):
         self.closed = True

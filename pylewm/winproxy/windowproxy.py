@@ -457,6 +457,11 @@ class WindowProxy:
             winfuncs.ShowWindowAsync(self._hwnd, winfuncs.SW_HIDE)
         ProxyCommands.queue(proxy_hide)
 
+    def hide_permanent(self):
+        def proxy_hide():
+            winfuncs.ShowWindowAsync(self._hwnd, winfuncs.SW_HIDE)
+        ProxyCommands.queue(proxy_hide)
+
     def close(self):
         def proxy_close():
             winfuncs.PostMessageW(self._hwnd, winfuncs.WM_CLOSE, 0, 0)

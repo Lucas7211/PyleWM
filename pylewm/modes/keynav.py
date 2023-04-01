@@ -7,9 +7,9 @@ from pylewm.rects import Rect
 class KeyNavMode(pylewm.modes.overlay_mode.OverlayMode):
     def __init__(self, hotkeys):
         self.window = pylewm.focus.FocusWindow
-        self.cover_area = self.window.real_position
+        self.cover_area = self.window.real_position.padded(8, 8)
 
-        self.rect = Rect((0, 0, self.cover_area.width, self.cover_area.height))
+        self.rect = Rect((8, 8, self.cover_area.width, self.cover_area.height))
         self.overlay_window(self.window)
 
         self.line_color = (255, 0, 0)

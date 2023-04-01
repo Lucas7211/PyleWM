@@ -11,7 +11,7 @@ from PIL import Image
 import threading
 import atexit
 
-from pylewm.commands import PyleCommand, InitFunctions, CommandQueue, queue_pyle_command, run_pyle_command, Commands
+from pylewm.commands import PyleCommand, InitFunctions, CommandQueue, queue_pyle_command, run_pyle_command, Commands, PyleTask
 
 import pylewm.winproxy.winfuncs as winfuncs
 import pylewm.winproxy.winupdate
@@ -107,6 +107,7 @@ def stop_threads():
     if tray_icon:
         tray_icon.stop()
 
+@PyleTask(name="Restart PyleWM")
 @PyleCommand
 def restart():
     stop_threads()
@@ -115,6 +116,7 @@ def restart():
 
     os.execl(sys.executable, sys.executable, *sys.argv)
     
+@PyleTask(name="Quit PyleWM")
 @PyleCommand
 def quit():
     stop_threads()

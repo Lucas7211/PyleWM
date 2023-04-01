@@ -9,6 +9,9 @@ import time
 InitFunctions = []
 stopped = False
 
+STATIC_TASKS = []
+TASK_GENERATORS = []
+
 class CommandQueue:
     ResponsiveModeActive = False
 
@@ -135,3 +138,22 @@ def run_pyle_command(fun):
 def PyleInit(fun):
     InitFunctions.append(fun)
     return fun
+
+def PyleTask(name=None, detail=None):
+    def decorator(task_function):
+        global STATIC_TASKS
+        if name:
+            task_function.task_name = name
+        else:
+            task_function.task_name = task_function.__name__
+        task_function.task_detail = detail
+        STATIC_TASKS.append(task_function)
+        return task_function
+    return decorator
+
+def PyleTaskGenerator(task_generator):
+    def decorator(generator_function):
+        global TASK_GENERATORS
+        TASK_GENERATORS.append(generator_function)
+        return generator_function
+    return decorator

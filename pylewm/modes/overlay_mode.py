@@ -162,6 +162,7 @@ class OverlayWindow:
 
 class OverlayMode(pylewm.hotkeys.Mode):
     def __init__(self, hotkeys):
+        self.closed = False
         super(OverlayMode, self).__init__(hotkeys)
 
     def should_draw(self):

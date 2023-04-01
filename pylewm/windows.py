@@ -1,4 +1,4 @@
-from pylewm.commands import PyleCommand
+from pylewm.commands import PyleCommand, PyleTask
 from pylewm.window import Window, WindowState
 import pylewm.winproxy.winfuncs as winfuncs
 
@@ -87,6 +87,7 @@ def poke():
     if pylewm.focus.FocusWindow:
         pylewm.focus.FocusWindow.poke()
 
+@PyleTask(name="Show Window Info")
 @PyleCommand.Threaded
 def show_window_info():
     window = pylewm.focus.FocusWindow
