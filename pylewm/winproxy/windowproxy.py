@@ -1,10 +1,12 @@
 import pylewm.winproxy.winfuncs as winfuncs
 from pylewm.commands import CommandQueue, Commands
 from pylewm.rects import Rect
+import pylewm.config
 
 from threading import Lock
 import functools
 import time
+import math
 
 WindowProxyLock = Lock()
 WindowsByHandle : dict[int, 'WindowProxy'] = dict()
@@ -54,6 +56,7 @@ class WindowInfo:
         return (self._winStyle & WS_MAXIMIZE) != 0
 
 class WindowProxy:
+    ProgramStartTime = time.time()
     UpdateFrameCounter = 0
     UpdateStartTime = 0
 
@@ -68,6 +71,7 @@ class WindowProxy:
         self.always_top = False
         self.interval_hash = hash(id(self))
         self.update_interval = 0
+        self.creation_time = time.time()
 
         self._dirty = False
         self._info = WindowInfo()
@@ -123,11 +127,6 @@ class WindowProxy:
             self._info.window_class = cls
             self._dirty = True
 
-        visible = winfuncs.IsWindowVisible(self._hwnd)
-        if visible != self._info.visible:
-            self._info.visible = visible
-            self._dirty = True
-
         cloaked = winfuncs.WindowIsCloaked(self._hwnd)
         if cloaked != self._info.cloaked:
             self._info.cloaked = cloaked
@@ -152,6 +151,35 @@ class WindowProxy:
 
                 self._info.rect.position = (self._position.left, self._position.top, self._position.right, self._position.bottom)
                 self._dirty = True
+
+        visible = winfuncs.IsWindowVisible(self._hwnd)
+
+        # If this is likely to be a relevant window, and we've just created it, pretend it's visible
+        # for the first 0.5s. This increases responsiveness when starting new windows, because it can
+        # often take a short time before the window becomse visible.
+        if (not visible
+                and (WindowProxy.UpdateStartTime - self.creation_time) < 0.5
+                and self.is_likely_interactable()
+                and (WindowProxy.UpdateStartTime - WindowProxy.ProgramStartTime) > 1.0):
+            visible = True
+            self._info.is_force_visible = True
+        else:
+            self._info.is_force_visible = False
+
+        if visible != self._info.visible:
+            self._info.visible = visible
+            self._dirty = True
+
+    def is_likely_interactable(self):
+        if self._info.is_child:
+            return False
+        if (self._info._exStyle & WS_EX_LAYERED) != 0:
+            return False
+        if (self._info._winStyle & WS_DISABLED) != 0:
+            return False
+        if (self._info._winStyle & WS_POPUP) != 0:
+            return False
+        return True
 
     def _update_layout(self):
         with WindowProxyLock:

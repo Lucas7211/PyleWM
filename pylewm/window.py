@@ -422,6 +422,7 @@ def execute_on_next_window(fun):
 def on_proxy_added(proxy):
     window = Window(proxy)
     WindowsByProxy[proxy] = window
+    window.update()
 
 def on_proxy_removed(proxy):
     if proxy not in WindowsByProxy:

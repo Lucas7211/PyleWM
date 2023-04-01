@@ -1,10 +1,12 @@
+import os
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+
 import pygame
 import pylewm.hotkeys
 import threading
 import win32gui
 import win32con
 import win32api
-import os
 import time
 import re
 from pylewm.rects import Rect

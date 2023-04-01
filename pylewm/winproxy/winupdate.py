@@ -28,15 +28,22 @@ def proxy_update():
 
 def detect_new_windows():
     """ Detect any newly created windows that we aren't tracking. """
-
+    new_windows = []
     def enum_window(hwnd, lparam):
         if hwnd in WindowsByHandle:
             return
 
         window = WindowProxy(hwnd)
         WindowsByHandle[hwnd] = window
+        new_windows.append(window)
 
     winfuncs.EnumWindows(winfuncs.tEnumWindowFunc(enum_window), 0)
+
+    for window in new_windows:
+        if not window.initialized:
+            window._initialize()
+            Commands.queue(functools.partial(on_proxy_added, window))
+        window._update()
 
 def update_tracked_windows():
     """ Perform update logic for all windows that are currently tracked. """
