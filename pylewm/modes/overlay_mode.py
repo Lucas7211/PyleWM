@@ -12,7 +12,6 @@ import re
 from pylewm.rects import Rect
 
 OVERLAY_WINDOW = None
-re_unicode = re.compile("[^\x00-\xFFFF]+")
 
 class OverlayWindow:
     def __init__(self):
@@ -31,7 +30,7 @@ class OverlayWindow:
         self.render_area = rect
         self.dirty = True
         if self.initialized:
-            pygame.fastevent.post(pygame.event.Event(pygame.USEREVENT))
+            pygame.event.post(pygame.event.Event(pygame.USEREVENT))
 
     def hide(self):
         self.shown = False
@@ -63,7 +62,6 @@ class OverlayWindow:
         if not font:
             font = self.font
 
-        text = re_unicode.sub("?", text)
         img = font.render(text, True, color)
         blit_dim = [img.get_width(), img.get_height()]
 
@@ -87,9 +85,9 @@ class OverlayWindow:
 
     def window_loop(self):
         pygame.init()
-        pygame.fastevent.init()
 
-        ttf_path = os.path.join(os.path.dirname(__file__), "..", "data", "TerminusTTF-Bold-4.47.0.ttf")
+        # ttf_path = os.path.join(os.path.dirname(__file__), "..", "data", "TerminusTTF-Bold-4.47.0.ttf")
+        ttf_path = os.path.join(os.path.dirname(__file__), "..", "data", "Terminess-Bold.ttf")
         self.font = pygame.font.Font(ttf_path, 24)
         if not self.font:
             self.font = pygame.font.SysFont(None, 24)
@@ -106,14 +104,14 @@ class OverlayWindow:
         win32gui.SetLayeredWindowAttributes(self.hwnd, win32api.RGB(*self.bg_color), 0, win32con.LWA_COLORKEY)
 
         self.display = pygame.display.set_mode(self.overlay_area.size, pygame.NOFRAME | pygame.SHOWN)
-        win32gui.SetWindowPos(self.hwnd, win32con.HWND_TOPMOST, self.overlay_area.left, self.overlay_area.top, self.overlay_area.width, self.overlay_area.height, 0)
+        win32gui.SetWindowPos(self.hwnd, win32con.HWND_TOPMOST, self.overlay_area.left, self.overlay_area.top, self.overlay_area.width, self.overlay_area.height, win32con.SWP_NOACTIVATE)
         self.display.fill(self.bg_color)
 
         self.initialized = True
         while not pylewm.commands.stopped:
             while not self.shown and not pylewm.commands.stopped:
                 pygame.time.set_timer(pygame.USEREVENT, 100)
-                while pygame.fastevent.wait():
+                while pygame.event.wait():
                     pygame.time.set_timer(pygame.USEREVENT, 100)
                     if self.shown or pylewm.commands.stopped:
                         break
@@ -121,12 +119,11 @@ class OverlayWindow:
             if pylewm.commands.stopped:
                 break
 
-            win32gui.SetWindowPos(self.hwnd, win32con.HWND_TOPMOST, self.render_area.left, self.render_area.top, self.render_area.width, self.render_area.height, 0)
-            win32gui.ShowWindow(self.hwnd, win32con.SW_SHOWNORMAL)
+            win32gui.SetWindowPos(self.hwnd, win32con.HWND_TOPMOST, self.render_area.left, self.render_area.top, self.render_area.width, self.render_area.height, win32con.SWP_NOACTIVATE | win32con.SWP_ASYNCWINDOWPOS)
+            win32gui.ShowWindow(self.hwnd, win32con.SW_SHOWNOACTIVATE)
+            active_time = None
 
-            while self.shown and not pylewm.commands.stopped:
-                while pygame.fastevent.get():
-                    pass
+            while self.shown and not pylewm.commands.stopped and self.mode and not self.mode.closed:
                 dirty = False
                 with pylewm.hotkeys.ModeLock:
                     if self.mode and self.mode in pylewm.hotkeys.ModeStack:
@@ -137,6 +134,25 @@ class OverlayWindow:
                             self.mode.draw(self)
                 if dirty:
                     pygame.display.update()
+
+                if active_time is None:
+                    active_time = time.time()
+                event = pygame.event.wait(10)
+                while event:
+                    if (
+                        event.type == pygame.MOUSEBUTTONUP
+                        or (
+                            event.type == pygame.ACTIVEEVENT
+                            and hasattr(event, 'gain')
+                            and hasattr(event, 'state')
+                            and event.gain
+                            and event.state == 1
+                            and time.time() - active_time > 0.1)
+                    ):
+                        pos = pygame.mouse.get_pos()
+                        if self.mode:
+                            self.mode.clicked(pos)
+                    event = pygame.event.wait(10)
 
             self.display.fill(self.bg_color)
             pygame.display.update()
@@ -153,6 +169,9 @@ class OverlayMode(pylewm.hotkeys.Mode):
 
     def should_clear(self):
         return True
+
+    def clicked(self, pos):
+        return False
 
     def overlay_window(self, window):
         global OVERLAY_WINDOW

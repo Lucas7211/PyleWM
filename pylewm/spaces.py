@@ -263,7 +263,7 @@ def previous_layout():
     if current_space:
         current_space.switch_layout(-1)
 
-@PyleCommand
+@PyleCommand.Threaded
 def show_spaces_info():
     text = ""
     for monitor_index, monitor in enumerate(pylewm.monitors.Monitors):
@@ -283,6 +283,4 @@ def show_spaces_info():
             text += f"\n"
         text += "\n\n"
 
-    pylewm.hotkeys.release_all_modifiers().run()
-    pylewm.window_drag.stop_window_drag_resize()
     winfuncs.ShowMessageBox("PyleWM: Spaces Info", text)

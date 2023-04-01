@@ -1,17 +1,20 @@
 from pylewm.layouts.sidebar import SidebarLayout
 from pylewm.layouts.columns import ColumnsLayout
 from pylewm.layouts.autogrid import AutoGridLayout
+from pylewm.window import Window
 import traceback
 import threading
 
 class Space:
+    SpaceCounter = 0
+
     Layouts = [
         lambda: AutoGridLayout(),
         lambda: SidebarLayout(),
     ]
 
     def __init__(self, monitor, rect):
-        self.windows = []
+        self.windows : list[Window] = []
         self.rect = rect.copy()
         self.visible = False
         self.focus = None
@@ -21,6 +24,9 @@ class Space:
         self.pending_drop_slot = None
         self.focus_mru = []
         self.initial_windows = []
+
+        self.serial_counter = Space.SpaceCounter
+        Space.SpaceCounter += 1
 
         self.layout_index = 0
         self.layout = None

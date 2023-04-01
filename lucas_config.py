@@ -8,6 +8,7 @@ import pylewm.modes.hint_window
 import pylewm.modes.keynav
 import pylewm.modes.goto_window
 import pylewm.modes.select_application
+import pylewm.modes.window_switcher
 from pylewm.filters import *
 
 pylewm.config.AllowDroppingIntoLayout = False
@@ -124,8 +125,9 @@ pylewm.config.hotkeys({
     # List selection modes
     (*MOD, ',')              : pylewm.modes.select_application.run_application,
     (*MOD, 'enter')          : pylewm.modes.goto_window.start_goto_window,
-    (*MOD, 'e')              : pylewm.modes.hint_window.start_hint_window(hintkeys="aoeuhtns"),
-    (*MOD, 'f')              : pylewm.modes.hint_window.start_hint_floating_window(hintkeys="aoeuhtns"),
+    (*MOD, 'e')              : pylewm.modes.window_switcher.start_window_switcher(hintkeys="aoeuhtns"),
+    (*MOD, 'f')              : pylewm.modes.hint_window.start_hint_window(hintkeys="aoeuhtns"),
+    (*MOD, 'shift', 'f')     : pylewm.modes.hint_window.start_hint_floating_window(hintkeys="aoeuhtns"),
 
     # Copy-paste shortcuts
     (*MOD, 'q')              : pylewm.sendkeys.sendkey(('ctrl', 'c')),

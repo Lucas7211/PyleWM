@@ -156,6 +156,9 @@ class KeySpec:
         self.app = ModPair()
         self.key = key
         self.down = True
+
+    def any_modifier(self) -> bool:
+        return self.alt.isSet or self.win.isSet or self.ctrl.isSet or self.shift.isSet or self.app.isSet
       
     @staticmethod
     def fromTuple(key):

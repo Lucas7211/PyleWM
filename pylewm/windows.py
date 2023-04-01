@@ -87,7 +87,7 @@ def poke():
     if pylewm.focus.FocusWindow:
         pylewm.focus.FocusWindow.poke()
 
-@PyleCommand
+@PyleCommand.Threaded
 def show_window_info():
     window = pylewm.focus.FocusWindow
     if not window:
@@ -101,6 +101,4 @@ Real Position: {window.real_position}
 Layout Position: {window.layout_position}
 """
 
-    pylewm.hotkeys.release_all_modifiers().run()
-    pylewm.window_drag.stop_window_drag_resize()
     winfuncs.ShowMessageBox("PyleWM: Window Info", state)

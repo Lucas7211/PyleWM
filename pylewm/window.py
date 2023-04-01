@@ -13,6 +13,7 @@ class Window:
     InInitialPlacement = True
     DraggingWindow = None
     Taskbars : list['Window'] = []
+    WindowCounter = 0
     
     def __init__(self, proxy : WindowProxy):
         self.proxy = proxy
@@ -25,6 +26,9 @@ class Window:
         self.is_dropdown = False
         self.is_zoomed = False
         self.is_taskbar = False
+
+        self.serial_counter = Window.WindowCounter
+        Window.WindowCounter += 1
 
         self.wm_hidden = False
         self.wm_becoming_visible = False
