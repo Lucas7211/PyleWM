@@ -402,7 +402,7 @@ class Window:
         if apply_margin:
             self.proxy.set_layout(new_position, self.layout_margin, edges_flush)
         else:
-            self.proxy.set_layout(new_position)
+            self.proxy.set_layout(new_position, False)
 
     def restore_layout(self):
         self.proxy.restore_layout()
