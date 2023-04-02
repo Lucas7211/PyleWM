@@ -81,7 +81,7 @@ def drop_window_into_tab_group():
 
     window = YankStack.pop()
     window.show()
-    focus_window.tab_group.add_window(window)
+    focus_window.tab_group.add_window(window, insert_current=True)
     pylewm.focus.set_focus(window)
 
 @PyleTask(name="Drop All Yanked Windows")

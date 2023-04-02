@@ -96,7 +96,7 @@ class TabGroup:
         self.valid = False
         del TabGroup.TabGroups[self.group_id]
 
-    def add_window(self, window : 'pylewm.window.Window', hide_previous=True):
+    def add_window(self, window : 'pylewm.window.Window', hide_previous=True, insert_current=False):
         if window.tab_group:
             assert window.tab_group != self
 
@@ -105,11 +105,23 @@ class TabGroup:
             window.tab_group.windows = []
             window.tab_group.destroy()
 
+            if self.visible_window and insert_current:
+                index = self.windows.index(self.visible_window)
+                if index == len(self.windows)-1:
+                    self.windows += new_windows
+                else:
+                    self.windows = self.windows[:index+1] + new_windows + self.windows[index+1:]
+            else:
+                self.windows += new_windows
+
             for new_window in new_windows:
-                self.windows.append(new_window)
                 new_window.set_tab_group(self)
         else:
-            self.windows.append(window)
+            if self.visible_window and insert_current:
+                index = self.windows.index(self.visible_window)
+                self.windows.insert(index+1, window)
+            else:
+                self.windows.append(window)
             window.set_tab_group(self)
 
         if window.window_info.visible or window.wm_becoming_visible:
@@ -229,7 +241,7 @@ def add_pending_tabbed_window(window):
     pylewm.tabs.PendingTabGroup = None
 
     previous_window = tab_group.visible_window
-    tab_group.add_window(window)
+    tab_group.add_window(window, insert_current=True)
 
 @PyleCommand
 def make_next_window_tabbed(toggle=True):
