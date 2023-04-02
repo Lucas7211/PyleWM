@@ -57,8 +57,8 @@ def sendKeySpec(keySpec):
 @PyleCommand
 def release_key(keySpec):
     vkCode = 0
-    if keySpec.key in vkMap:
-        vkCode = vkMap[keySpec.key]
+    if keySpec.key in KEY_MAP:
+        vkCode = KEY_MAP[keySpec.key]
     else:
         vkCode = ctypes.windll.user32.VkKeyScanA(ctypes.wintypes.WCHAR(keySpec.key))
     ctypes.windll.user32.keybd_event(vkCode, 0, win32con.KEYEVENTF_KEYUP, 0)
@@ -66,8 +66,8 @@ def release_key(keySpec):
 @PyleCommand
 def press_key(keySpec):
     vkCode = 0
-    if keySpec.key in vkMap:
-        vkCode = vkMap[keySpec.key]
+    if keySpec.key in KEY_MAP:
+        vkCode = KEY_MAP[keySpec.key]
     else:
         vkCode = ctypes.windll.user32.VkKeyScanA(ctypes.wintypes.WCHAR(keySpec.key))
     ctypes.windll.user32.keybd_event(vkCode, 0, 0, 0)
