@@ -61,7 +61,7 @@ pylewm.config.hotkeys({
     (*MOD, '\\')             : pylewm.windows.poke,
     (*MOD, "'")              : pylewm.windows.drop_window_into_layout,
 
-    (*MOD, 'shift', 'm')     : pylewm.windows.minimize,
+    (*MOD, 'shift', 'b')     : pylewm.windows.minimize,
 
     (*MOD, 'y')              : pylewm.yank.yank_window,
     (*MOD, 'shift', 'y')     : pylewm.yank.yank_window(detach_from_tab_group=True),

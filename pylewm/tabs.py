@@ -400,6 +400,5 @@ def duplicate_window_into_tab():
     hwnd = window.proxy._hwnd
     def duplicate_window():
         executable = pylewm.winproxy.winfuncs.GetExecutableOfWindow(hwnd)
-        if executable:
-            pylewm.execution.run(executable).run()
+        pylewm.commands.queue_pyle_command(pylewm.execution.run(executable))
     pylewm.commands.AsyncCommandThreadPool.submit(duplicate_window)
