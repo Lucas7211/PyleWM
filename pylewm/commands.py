@@ -82,9 +82,10 @@ class CommandQueue:
             delay = 1.0 / 60.0
         now_time = time.monotonic()
 
-        with self.queue_lock:
-            for delayed in self.delayedFunctions:
-                delay = min(delay, delayed[0] - now_time)
+        if self.delayedFunctions:
+            with self.queue_lock:
+                for delayed in self.delayedFunctions:
+                    delay = min(delay, delayed[0] - now_time)
         return max(delay, 0.0)
 
 Commands = CommandQueue()

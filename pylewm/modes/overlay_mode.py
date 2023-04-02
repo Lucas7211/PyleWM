@@ -151,7 +151,8 @@ class OverlayWindow:
                     ):
                         pos = pygame.mouse.get_pos()
                         if self.mode:
-                            self.mode.clicked(pos)
+                            with pylewm.hotkeys.ModeLock:
+                                self.mode.clicked(pos)
                     event = pygame.event.wait(10)
 
             self.display.fill(self.bg_color)

@@ -240,10 +240,11 @@ class WindowSwitcherMode(pylewm.modes.overlay_mode.OverlayMode):
         if not window_class:
             return None
 
-        step = 1111
-        hue = (self.get_string_hash(window_class) % step) / step
-        saturation = 1.0
-        value = 1.0
+        hashed = self.get_string_hash(window_class)
+
+        hue = ((hashed >> 16) % 255) / 255
+        saturation = 0.1 + (((hashed >> 8) % 255) / 255) * 0.9
+        value = 0.5 + (((hashed) % 255) / 255) * 0.5
         return [hue, saturation, value]
 
     def color_hsv_to_rgb(self, color):

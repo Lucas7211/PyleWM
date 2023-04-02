@@ -1,2 +1,4 @@
 import pylewm
-pylewm.start()
+
+if __name__ == "__main__":
+	pylewm.start()
