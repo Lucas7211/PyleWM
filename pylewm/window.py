@@ -254,7 +254,7 @@ class Window:
                         prev_space = self.space
                         self.space.remove_window(self)
                         if pylewm.focus.was_just_focused(self):
-                            pylewm.focus.set_focus_space(prev_space)
+                            pylewm.focus.set_focus_space_no_mouse(prev_space)
 
         elif self.state == WindowState.Floating:
             # Drop into a tiling layout if we can

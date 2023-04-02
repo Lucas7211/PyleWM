@@ -52,6 +52,12 @@ def set_focus_space(space):
     else:
         set_focus_monitor(space.monitor)
 
+def set_focus_space_no_mouse(space):
+    if space.last_focus:
+        set_focus_no_mouse(space.last_focus)
+    elif space.windows:
+        set_focus_no_mouse(space.windows[0])
+
 def was_just_focused(window):
     if FocusWindow == window:
         return True
