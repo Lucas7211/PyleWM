@@ -2,6 +2,8 @@ import pylewm.focus
 import pylewm.execution
 import pylewm.window
 import pylewm.headers
+import pylewm.sendkeys
+import pylewm.hotkeys
 import pylewm.colors
 import pylewm.commands
 from pylewm.commands import PyleCommand, PyleTask
@@ -292,6 +294,7 @@ def make_next_window_tabbed(toggle=True):
 
 @PyleCommand
 def next_tab():
+    """ Switch to the next tab in the window's tab group """
     window = pylewm.focus.FocusWindow
     if not window:
         return
@@ -309,7 +312,24 @@ def next_tab():
         pylewm.focus.set_focus(window)
 
 @PyleCommand
+def next_tab_or_emit_ctrltab():
+    """
+        If the window has a tab group, switch to the next tab in it.
+        If it does not, emit a Ctrl+Tab press event to control the tabs inside the window.
+    """
+    window = pylewm.focus.FocusWindow
+    if not window:
+        return
+
+    tab_group = window.tab_group
+    if tab_group:
+        next_tab().run()
+    else:
+        pylewm.sendkeys.sendkey(["ctrl", "tab"]).run()
+
+@PyleCommand
 def previous_tab():
+    """ Switch to the previous tab in the window's tab group """
     window = pylewm.focus.FocusWindow
     if not window:
         return
@@ -325,6 +345,38 @@ def previous_tab():
         window = tab_group.windows[new_index]
         tab_group.switch_to_tab(window)
         pylewm.focus.set_focus(window)
+
+@PyleCommand
+def previous_tab_or_emit_shiftctrltab():
+    """
+        If the window has a tab group, switch to the previous tab in it.
+        If it does not, emit a Ctrl+Shift+Tab press event to control the tabs inside the window.
+    """
+    window = pylewm.focus.FocusWindow
+    if not window:
+        return
+
+    tab_group = window.tab_group
+    if tab_group:
+        previous_tab().run()
+    else:
+        pylewm.sendkeys.sendkey(["ctrl", "shift", "tab"]).run()
+
+@PyleCommand
+def close_tab_or_emit_ctrlw():
+    """
+        If the window has a tab group, close the current tab in it.
+        If it does not, emit a Ctrl+W press event to close the tab inside the window.
+    """
+    window = pylewm.focus.FocusWindow
+    if not window:
+        return
+
+    tab_group = window.tab_group
+    if tab_group and len(tab_group.windows) >= 2:
+        window.close()
+    else:
+        pylewm.sendkeys.sendkey(["ctrl", "w"]).run()
 
 @PyleTask(name="Detach Window from Tab Group", condition=has_focused_tab_group)
 @PyleCommand

@@ -147,6 +147,14 @@ class ModPair:
         self.either = False
         self.any_state = False
 
+    def copy(self):
+        other = ModPair()
+        other.left = self.left
+        other.right = self.right
+        other.either = self.either
+        other.any_state = self.any_state
+        return other
+
 class KeySpec:
     def __init__(self, key):
         self.alt = ModPair()
@@ -209,7 +217,17 @@ class KeySpec:
         return self.alt == other.alt and self.win == other.win \
             and self.ctrl == other.ctrl and self.shift == other.shift \
             and self.key == other.key and self.app == other.app
-    
+
+    def copy(self):
+        other = KeySpec(self.key)
+        other.alt = self.alt.copy()
+        other.win = self.win.copy()
+        other.ctrl = self.ctrl.copy()
+        other.shift = self.shift.copy()
+        other.app = self.app.copy()
+        other.down = self.down
+        return other
+
     def __eq__(self, other):
         return self.equals_combo(other) and self.down == other.down
             
@@ -314,6 +332,8 @@ VK_MAP = {
     win32con.VK_UP: "up",
     win32con.VK_DOWN: "down",
 }
+
+KEY_MAP = { key:vk for vk,key in VK_MAP.items() }
 
 KBState = (ctypes.c_byte * 256)()
 def VKToChr(vk, sc):

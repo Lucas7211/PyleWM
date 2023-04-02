@@ -105,10 +105,11 @@ pylewm.config.hotkeys({
 
     # Tab management
     (*MOD, 'm')              : pylewm.tabs.make_next_window_tabbed,
-    (*MOD, 'right')          : pylewm.tabs.next_tab,
+    (*MOD, 'right')          : pylewm.tabs.next_tab_or_emit_ctrltab,
     (*MOD, 'shift', 'right') : pylewm.tabs.move_tab_next,
-    (*MOD, 'left')           : pylewm.tabs.previous_tab,
+    (*MOD, 'left')           : pylewm.tabs.previous_tab_or_emit_shiftctrltab,
     (*MOD, 'shift', 'left')  : pylewm.tabs.move_tab_previous,
+    (*MOD, 'ctrl', 'w')      : pylewm.tabs.close_tab_or_emit_ctrlw,
     (*MOD, 'ctrl', 't')      : pylewm.tabs.duplicate_window_into_tab,
     (*MOD, "shift", "'")     : pylewm.tabs.detach_window_from_tab_group,
 

@@ -1,51 +1,58 @@
-from pylewm.hotkeys import KeySpec
+from pylewm.hotkeys import KeySpec, KEY_MAP, ActiveKey
 from pylewm.commands import PyleCommand
 import pylewm.winproxy.winfuncs as winfuncs
 
 import ctypes
 import win32api, win32con
 
-# TODO: Complete this map
-vkMap = {
-    'esc': win32con.VK_ESCAPE,
-    'lctrl': win32con.VK_LCONTROL,
-    'rctrl': win32con.VK_RCONTROL,
-    'lshift': win32con.VK_LSHIFT,
-    'rshift': win32con.VK_RSHIFT,
-    'lalt': win32con.VK_LMENU,
-    'ralt': win32con.VK_RMENU,
-    'app': win32con.VK_APPS,
-}
-
 def sendKey(key):
     sendKeySpec(KeySpec.fromTuple(key))
 
-def sendKeySpec(keySpec):
-    vkCode = 0
-    if keySpec.key in vkMap:
-        vkCode = vkMap[keySpec.key]
-    else:
-        vkCode = ctypes.windll.user32.VkKeyScanA(ctypes.wintypes.WCHAR(keySpec.key))
-        
+def pressModifiers(keySpec):
     modifiers = (
         (keySpec.alt, win32con.VK_LMENU, win32con.VK_RMENU),
         (keySpec.shift, win32con.VK_LSHIFT, win32con.VK_RSHIFT),
         (keySpec.ctrl, win32con.VK_LCONTROL, win32con.VK_RCONTROL),
         (keySpec.win, win32con.VK_LWIN, win32con.VK_RWIN),
+        (keySpec.app, win32con.VK_APPS, 0),
     )
-    
+
     for mod in modifiers:
         if mod[0].left or mod[0].either:
             ctypes.windll.user32.keybd_event(mod[1], 0, 0, 0)
         elif mod[0].right:
             ctypes.windll.user32.keybd_event(mod[2], 0, 0, 0)
-    ctypes.windll.user32.keybd_event(vkCode, 0, 0, 0)
-    ctypes.windll.user32.keybd_event(vkCode, 0, win32con.KEYEVENTF_KEYUP, 0)
+
+def releaseModifiers(keySpec):
+    modifiers = (
+        (keySpec.alt, win32con.VK_LMENU, win32con.VK_RMENU),
+        (keySpec.shift, win32con.VK_LSHIFT, win32con.VK_RSHIFT),
+        (keySpec.ctrl, win32con.VK_LCONTROL, win32con.VK_RCONTROL),
+        (keySpec.win, win32con.VK_LWIN, win32con.VK_RWIN),
+        (keySpec.app, win32con.VK_APPS, 0),
+    )
+
     for mod in reversed(modifiers):
         if mod[0].left or mod[0].either:
             ctypes.windll.user32.keybd_event(mod[1], 0, win32con.KEYEVENTF_KEYUP, 0)
         elif mod[0].right:
             ctypes.windll.user32.keybd_event(mod[2], 0, win32con.KEYEVENTF_KEYUP, 0)
+
+def sendKeySpec(keySpec):
+    vkCode = 0
+    if keySpec.key in KEY_MAP:
+        vkCode = KEY_MAP[keySpec.key]
+    else:
+        vkCode = ctypes.windll.user32.VkKeyScanA(ctypes.wintypes.WCHAR(keySpec.key))
+
+    prev_modifiers = ActiveKey.copy()
+    
+    releaseModifiers(prev_modifiers)
+    pressModifiers(keySpec)
+    ctypes.windll.user32.keybd_event(vkCode, 0, 0, 0)
+    ctypes.windll.user32.keybd_event(vkCode, 0, win32con.KEYEVENTF_KEYUP, 0)
+    releaseModifiers(keySpec)
+    pressModifiers(prev_modifiers)
 
 @PyleCommand
 def release_key(keySpec):
