@@ -73,8 +73,25 @@ class TabGroup:
             elif button == 2:
                 if entry_index < len(self.windows):
                     window = self.windows[entry_index]
-                    self.remove_window(window, change_focus=False)
+                    self.detach_window(window)
                     window.show()
+
+    def detach_window(self, window):
+        tabs_floating = self.visible_window.is_floating()
+        tabs_position = self.visible_window.real_position
+
+        self.remove_window(window, change_focus=False)
+
+        if tabs_floating:
+            if not window.is_floating():
+                window.make_floating()
+            window.move_floating_to(tabs_position.shifted((50, 50)))
+            window.proxy.delayed_show()
+        else:
+            if window.is_floating():
+                window.make_tiled()
+
+        pylewm.focus.set_focus_no_mouse(window)
 
     def destroy(self):
         if not self.valid:
@@ -165,8 +182,9 @@ class TabGroup:
                 if not window.is_tiled():
                     window.make_tiled()
                 self.visible_window.space.replace_window(self.visible_window, window)
-            elif window.is_tiled():
-                window.make_floating()
+            else:
+                if window.is_tiled():
+                    window.make_floating()
                 window.move_floating_to(self.visible_window.real_position)
         self.visible_window = window
         self.update_header()
@@ -261,6 +279,8 @@ def make_next_window_tabbed(toggle=True):
     window = pylewm.focus.FocusWindow
     if not window:
         return
+    if not window.is_interactable():
+        return
 
     if not window.tab_group:
         tab_group = TabGroup()
@@ -317,7 +337,7 @@ def detach_window_from_tab_group():
     if not tab_group:
         return
 
-    tab_group.remove_window(window, change_focus=False)
+    tab_group.detach_window(window)
 
 @PyleTask(name="Split Entire Tab Group", condition=has_focused_tab_group)
 @PyleCommand

@@ -129,6 +129,8 @@ class Window:
             return False
         if self.window_info.is_minimized():
             return False
+        if self.state == WindowState.IgnorePermanent:
+            return False
         return True
 
     def show(self):

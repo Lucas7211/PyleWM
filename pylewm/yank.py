@@ -72,7 +72,8 @@ def drop_window_into_tab_group():
         return
 
     focus_window = pylewm.focus.FocusWindow
-    if not focus_window:
+    if not focus_window or not focus_window.is_interactable():
+        drop_window().run()
         return
 
     if not focus_window.tab_group:
@@ -120,8 +121,11 @@ def drop_all_windows():
             window.show()
 
     YankStack = []
-    pylewm.tabs.PendingTabGroup.update_header()
-    pylewm.tabs.PendingTabGroup = None
+
+    tab_group = pylewm.tabs.PendingTabGroup
+    if tab_group:
+        pylewm.tabs.PendingTabGroup = None
+        tab_group.update_header()
 
     if focus_window:
         pylewm.focus.set_focus(focus_window)

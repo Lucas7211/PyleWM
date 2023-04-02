@@ -332,7 +332,7 @@ class WindowProxy:
             winfuncs.HWND_TOPMOST,
             try_position[0], try_position[1],
             try_position[2], try_position[3],
-            winfuncs.SWP_ASYNCWINDOWPOS
+            winfuncs.SWP_ASYNCWINDOWPOS | winfuncs.SWP_NOOWNERZORDER
         )
         if not set_position_allowed:
             print(f"Failed to set {try_position} on {self}")
@@ -436,6 +436,16 @@ class WindowProxy:
             self._zorder_top()
         ProxyCommands.queue(proxy_show)
 
+    def delayed_show(self, delay=0.05):
+        def proxy_show():
+            self._proxy_hidden = False
+        ProxyCommands.queue(proxy_show)
+        def delay_show():
+            if not self._proxy_hidden:
+                winfuncs.ShowWindowAsync(self._hwnd, winfuncs.SW_SHOWNOACTIVATE)
+                self._zorder_top()
+        ProxyCommands.delay(delay, delay_show)
+
     def show_with_rect(self, new_rect):
         def proxy_show_rect():
             self._proxy_hidden = False
@@ -455,12 +465,14 @@ class WindowProxy:
             winfuncs.ShowWindowAsync(self._hwnd, winfuncs.SW_HIDE)
         ProxyCommands.queue(proxy_hide)
 
-    def delayed_hide(self, delay):
-        self._proxy_hidden = True
+    def delayed_hide(self, delay=0.05):
         def proxy_hide():
+            self._proxy_hidden = True
+        ProxyCommands.queue(proxy_hide)
+        def delay_hide():
             if self._proxy_hidden:
                 winfuncs.ShowWindowAsync(self._hwnd, winfuncs.SW_HIDE)
-        ProxyCommands.delay(delay, proxy_hide)
+        ProxyCommands.delay(delay, delay_hide)
 
     def hide_permanent(self):
         def proxy_hide():

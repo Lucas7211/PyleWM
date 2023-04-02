@@ -57,11 +57,11 @@ class RenderHeaderWindow:
         self.repaint = True
         self.last_paint = 0
         self.set_timestamp = 0
+        self.create_timestamp = time.time() 
         self.hwnd_change_timestamp = 0
         self.closed = False
         self.visible = True
         self.applied_position = []
-        self.known_hwnd = set()
 
         module_handle = winfuncs.GetModuleHandleW(None)
 
@@ -88,9 +88,7 @@ class RenderHeaderWindow:
     def set(self, target_hwnd, entries, state):
         if target_hwnd != self.target_hwnd:
             self.target_hwnd = target_hwnd
-            if target_hwnd not in self.known_hwnd:
-                self.hwnd_change_timestamp = time.time()
-                self.known_hwnd.add(target_hwnd)
+            self.hwnd_change_timestamp = time.time()
         self.entries = entries
         self.state = state
         self.set_timestamp = time.time()
@@ -193,8 +191,11 @@ class RenderHeaderWindow:
                 self.visible = False
                 winfuncs.ShowWindowAsync(self.hwnd, winfuncs.SW_HIDE)
 
+    def force_reposition(self):
+        self.hwnd_change_timestamp = 0.0
+
     def update_position(self):
-        if self.applied_position and time.time() - self.hwnd_change_timestamp < 0.3:
+        if self.applied_position and time.time() - self.hwnd_change_timestamp < 0.3 and time.time() - self.create_timestamp > 0.3:
             return
         if not winfuncs.IsWindow(self.target_hwnd):
             return
