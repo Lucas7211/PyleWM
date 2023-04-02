@@ -51,6 +51,9 @@ def toggle_zoomed():
                 monitor = pylewm.monitors.get_monitor_by_index(0)
 
         ZOOM_FULL_POSITION = monitor.rect.padded(10, 10)
+        if window.tab_group:
+            ZOOM_FULL_POSITION.top += 30
+
         if window.is_tiled():
             window.proxy.set_layout(ZOOM_FULL_POSITION, False)
         else:
@@ -62,18 +65,39 @@ def toggle_zoomed():
 def update_zoomed():
     global ZOOMED_WINDOW
     global ZOOM_FULL_POSITION
+    global ZOOM_PREVIOUS_POSITION
     window = ZOOMED_WINDOW
 
     if window:
         if window.closed:
             ZOOMED_WINDOW = None
-        if not window.is_zoomed or window.wm_hidden or (not window.real_position.equals(ZOOM_FULL_POSITION) and not window.real_position.equals(ZOOM_PREVIOUS_POSITION)):
+        if window != pylewm.focus.FocusWindow and not window.wm_becoming_visible:
+            if (pylewm.focus.FocusWindow
+                and window.tab_group
+                and pylewm.focus.FocusWindow.tab_group == window.tab_group
+                ):
+
+                window.is_zoomed = False
+                if window.is_tiled():
+                    window.proxy.set_always_on_top(False)
+                window.refresh_layout()
+
+                ZOOMED_WINDOW = pylewm.focus.FocusWindow
+                ZOOMED_WINDOW.is_zoomed = True
+                ZOOM_PREVIOUS_POSITION = ZOOMED_WINDOW.real_position.copy()
+
+                ZOOMED_WINDOW.proxy.set_always_on_top(True)
+                if ZOOMED_WINDOW.is_tiled():
+                    ZOOMED_WINDOW.proxy.set_layout(ZOOM_FULL_POSITION, False)
+                else:
+                    ZOOMED_WINDOW.move_floating_to(ZOOM_FULL_POSITION)
+            else:
+                window.is_zoomed = False
+                if window.is_tiled():
+                    window.proxy.set_always_on_top(False)
+                window.refresh_layout()
+                ZOOMED_WINDOW = None
+        elif not window.is_zoomed or window.wm_hidden or (not window.real_position.equals(ZOOM_FULL_POSITION) and not window.real_position.equals(ZOOM_PREVIOUS_POSITION)):
             window.is_zoomed = False
-            window.refresh_layout()
-            ZOOMED_WINDOW = None
-        elif window != pylewm.focus.FocusWindow and not window.wm_becoming_visible:
-            window.is_zoomed = False
-            if window.is_tiled():
-                window.proxy.set_always_on_top(False)
             window.refresh_layout()
             ZOOMED_WINDOW = None

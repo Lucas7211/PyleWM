@@ -60,7 +60,6 @@ pylewm.config.hotkeys({
     (*MOD, '@')              : pylewm.windows.close,
     (*MOD, '\\')             : pylewm.windows.poke,
     (*MOD, "'")              : pylewm.windows.drop_window_into_layout,
-    (*MOD, "shift", "'")     : pylewm.windows.make_window_floating,
 
     (*MOD, 'shift', 'm')     : pylewm.windows.minimize,
 
@@ -110,6 +109,8 @@ pylewm.config.hotkeys({
     (*MOD, 'shift', 'z')     : pylewm.tabs.move_tab_next,
     (*MOD, 'b')              : pylewm.tabs.previous_tab,
     (*MOD, 'shift', 'b')     : pylewm.tabs.move_tab_previous,
+    (*MOD, 'ctrl', 't')      : pylewm.tabs.duplicate_window_into_tab,
+    (*MOD, "shift", "'")     : pylewm.tabs.detach_window_from_tab_group,
 
     # Application management
     (*MOD, ';')              : pylewm.execution.run([r'C:\Program Files\Alacritty\alacritty.exe']),
@@ -123,8 +124,8 @@ pylewm.config.hotkeys({
     (*MOD, '.')              : pylewm.execution.run([r'C:\mpd\toggle.bat']),
     (*MOD, 'shift', '.')     : pylewm.execution.run([r'C:\mpd\mpc.exe', 'next']),
 
-    (*MOD, 'tab')             : pylewm.execution.start_screenclip,
-    (*MOD, 'shift', 'p')      : pylewm.modes.execute_task.start_execute_task,
+    (*MOD, 'tab')            : pylewm.execution.start_screenclip,
+    (*MOD, 'shift', 'p')     : pylewm.modes.execute_task.start_execute_task,
         
     # PyleWM management
     (*MOD, 'shift', 'q')     : pylewm.run.restart,

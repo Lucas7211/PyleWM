@@ -410,6 +410,16 @@ UpdateWindow = c.WINFUNCTYPE(
     w.HWND,
 )(("UpdateWindow", c.windll.user32))
 
+RedrawWindow = c.WINFUNCTYPE(
+    w.BOOL,
+    w.HWND, c.POINTER(w.RECT), w.HRGN, c.c_uint,
+)(("RedrawWindow", c.windll.user32))
+
+InvalidateRect = c.WINFUNCTYPE(
+    w.BOOL,
+    w.HWND, c.POINTER(w.RECT), w.BOOL,
+)(("InvalidateRect", c.windll.user32))
+
 DefWindowProcW = c.WINFUNCTYPE(
     c.c_int,
     w.HWND, c.c_uint, w.WPARAM, w.LPARAM,

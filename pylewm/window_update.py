@@ -30,6 +30,8 @@ def window_update():
     global HiddenFocusSpaceSince
     if pylewm.focus.FocusWindow:
         space = pylewm.focus.FocusWindow.space
+        if not space and pylewm.focus.FocusWindow.tab_group:
+            space = pylewm.focus.FocusWindow.tab_group.visible_window.space
         if space and not space.visible:
             if space == HiddenFocusSpace:
                 if (time.time() - HiddenFocusSpaceSince) > 0.05:
@@ -97,7 +99,7 @@ def update_taskbars():
             del Window.Taskbars[i]
         else:
             if should_hide:
-                if not window.wm_hidden or not window.window_info.visible:
+                if not window.wm_hidden or window.window_info.visible:
                     window.hide()
             else:
                 if window.wm_hidden:

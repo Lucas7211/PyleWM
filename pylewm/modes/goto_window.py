@@ -32,7 +32,7 @@ def start_goto_window(hotkeys = {}):
         if window.real_position.height == 0 or window.real_position.width == 0:
             continue
         if not window.space:
-            if not window.window_info.visible and not window.window_info.is_minimized():
+            if not window.window_info.visible and not window.window_info.is_minimized() and not window.tab_group:
                 continue
         if window.is_dropdown:
             continue

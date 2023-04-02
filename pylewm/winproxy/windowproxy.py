@@ -70,6 +70,7 @@ class WindowProxy:
         self.changed = False
         self.window_info = WindowInfo()
         self.always_top = False
+        self.has_tab_group = False
         self.interval_hash = hash(id(self))
         self.update_interval = 0
         self.creation_time = time.time()
@@ -84,6 +85,7 @@ class WindowProxy:
         self._layout_edges_flush = None
         self._layout_applied = False
         self._has_layout_position = None
+        self._proxy_has_tab_group = False
         self._applied_position = Rect()
 
         self._proxy_hidden = False
@@ -234,6 +236,9 @@ class WindowProxy:
             border_right = (try_position[0] + try_position[2]) - adjustedRect.right
             border_bottom = (try_position[1] + try_position[3]) - adjustedRect.bottom
             border_top = 0
+
+            if self.has_tab_group:
+                border_top += 30
 
             if not (self._info._winStyle & winfuncs.WS_SYSMENU):
                 border_left += 7
@@ -449,6 +454,13 @@ class WindowProxy:
             self._proxy_hidden = True
             winfuncs.ShowWindowAsync(self._hwnd, winfuncs.SW_HIDE)
         ProxyCommands.queue(proxy_hide)
+
+    def delayed_hide(self, delay):
+        self._proxy_hidden = True
+        def proxy_hide():
+            if self._proxy_hidden:
+                winfuncs.ShowWindowAsync(self._hwnd, winfuncs.SW_HIDE)
+        ProxyCommands.delay(delay, proxy_hide)
 
     def hide_permanent(self):
         def proxy_hide():

@@ -1,6 +1,7 @@
 import math
 import pylewm.modes.overlay_mode
 import pylewm.modes.hint_helpers
+import pylewm.colors
 import pylewm
 import pylewm.space
 import pylewm.focus
@@ -223,47 +224,6 @@ class WindowSwitcherMode(pylewm.modes.overlay_mode.OverlayMode):
                         monitor.temp_spaces[(spaces_per_row*i):min(spaces_per_row*(i+1), len(monitor.temp_spaces))]
                     )
 
-    def get_string_hash(self, string):
-        # We do our own terrible hash because python's hash() is nondeterministic across application restarts
-        strhash = 0
-        for char in string:
-            num = ord(char)
-            strhash += num
-            strhash += (strhash << 10)
-            strhash ^= (strhash >> 6)
-        strhash += (strhash << 3)
-        strhash ^= (strhash >> 11)
-        strhash += (strhash << 15)
-        return strhash
-    
-    def get_window_class_color_hsv(self, window_class):
-        if not window_class:
-            return None
-
-        hashed = self.get_string_hash(window_class)
-
-        hue = ((hashed >> 16) % 255) / 255
-        saturation = 0.1 + (((hashed >> 8) % 255) / 255) * 0.9
-        value = 0.5 + (((hashed) % 255) / 255) * 0.5
-        return [hue, saturation, value]
-
-    def color_hsv_to_rgb(self, color):
-        hue, saturation, value = color
-        def f(n):
-            k = (n + hue*6) % 6
-            return value - value * saturation * max(0, min(k, 4-k, 1))
-        return (f(5) * 255, f(3) * 255, f(1) * 255)
-
-    def get_rgb_luminance(self, color):
-        p_colors = []
-        for n in color:
-            n = n/255.0
-            if n <= 0.04045:
-                p_colors.append(n/12.92)
-            else:
-                p_colors.append(((n+0.055)/1.055)**2.4)
-        return 0.2126 * p_colors[0] + 0.7152 * p_colors[1] + 0.0722 * p_colors[2]
-    
     def draw_spaces(self, overlay : OverlayWindow, rect : Rect, spaces : list[pylewm.space.Space]):
         space_count = len(spaces)
         if space_count == 0:
@@ -343,14 +303,10 @@ class WindowSwitcherMode(pylewm.modes.overlay_mode.OverlayMode):
                     (window_box.width, 35),
                 )
 
-                window_class_color = self.get_window_class_color_hsv(window.window_class)
+                window_class_color = pylewm.colors.get_random_color_for_str_hsv(window.window_class)
                 if window_class_color:
-                    color_rgb = self.color_hsv_to_rgb(window_class_color)
-                    luminance = self.get_rgb_luminance(color_rgb)
-                    if luminance > 0.3:
-                        title_color = (0, 0, 0)
-                    else:
-                        title_color = (255, 255, 255)
+                    color_rgb = pylewm.colors.hsv_to_rgb(window_class_color)
+                    title_color = pylewm.colors.get_text_color_for_background(color_rgb)
                     overlay.draw_box(title_box, color_rgb)
 
                 overlay.draw_border(window_box, window_color, self.window_border_width)
@@ -374,6 +330,23 @@ class WindowSwitcherMode(pylewm.modes.overlay_mode.OverlayMode):
                             hint_rect,
                             (0.5, 0.5),
                         )
+                
+                if window.tab_group and len(window.tab_group.windows) >= 2:
+                    tab_count = len(window.tab_group.windows)
+                    btn_width = int(min(100, 0.8 * title_box.width / max(tab_count, 4)))
+                    btn_height = int(min(btn_width * (window_box.height / window_box.width),
+                                    window_box.bottom - title_box.bottom - self.window_border_width))
+                    btn_spacing = int(min(btn_width * 0.1, 10))
+
+                    pos = title_box.center[0] - (btn_width*tab_count)/2
+                    for i, tab in enumerate(window.tab_group.windows):
+                        tab_box = Rect.from_pos_size((pos+btn_spacing/2+btn_width*i, window_box.bottom-btn_height-self.window_border_width), (btn_width-btn_spacing, btn_height))
+                        color_hsv = pylewm.colors.get_random_color_for_str_hsv(tab.window_class)
+                        if tab != window:
+                            color_hsv[1] *= 0.4
+                            color_hsv[2] *= 0.4
+                        color_rgb = pylewm.colors.hsv_to_rgb(color_hsv)
+                        overlay.draw_box(tab_box, color_rgb)
 
 
 @pylewm.commands.PyleCommand

@@ -52,6 +52,13 @@ class SidebarLayout(Layout):
         else:
             self.sidebar.remove(window)
 
+    def replace_window(self, old_window, new_window):
+        if old_window == self.main_window:
+            self.main_window = new_window
+        else:
+            index = self.sidebar.index(old_window)
+            self.sidebar[index] = new_window
+
     def get_horizontal_positions(self):
         horiz_split = int(float(self.rect.width) * self.split)
         if self.flipped:

@@ -1,5 +1,4 @@
 from pylewm.layouts.sidebar import SidebarLayout
-from pylewm.layouts.columns import ColumnsLayout
 from pylewm.layouts.autogrid import AutoGridLayout
 from pylewm.window import Window
 import traceback
@@ -10,6 +9,7 @@ class Space:
 
     Layouts = [
         lambda: AutoGridLayout(),
+        lambda: SidebarLayout(),
     ]
 
     def __init__(self, monitor, rect):

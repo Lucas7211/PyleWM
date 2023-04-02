@@ -43,8 +43,7 @@ def drop_window():
     window = YankStack.pop()
     if pylewm.tabs.PendingTabGroup:
         window.show()
-        pylewm.tabs.PendingTabGroup.add_window(window)
-        pylewm.tabs.PendingTabGroup = None
+        pylewm.tabs.add_pending_tabbed_window(window)
     elif window.is_tiled():
         if pylewm.focus.FocusWindow:
             drop_slot, force_drop = space.get_drop_slot(
@@ -121,6 +120,7 @@ def drop_all_windows():
             window.show()
 
     YankStack = []
+    pylewm.tabs.PendingTabGroup.update_header()
     pylewm.tabs.PendingTabGroup = None
 
     if focus_window:

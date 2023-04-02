@@ -1,5 +1,6 @@
 import pylewm.commands
 import pylewm.monitors
+import time
 
 # Note: this import is required here to make focus changing work for unknown reasons
 import win32com.client
@@ -9,7 +10,8 @@ from pylewm.winproxy.winfocus import focus_window, focus_shell_window, get_curso
 from pylewm.commands import PyleCommand
 
 FocusWindow = None
-LastFocusWindow = None
+PreviousFocusWindow = None
+FocusChangeTime = 0.0
 
 @PyleCommand
 def focus_monitor(monitor_index):
@@ -18,20 +20,28 @@ def focus_monitor(monitor_index):
 
 def set_focus(window):
     global FocusWindow
-    global LastFocusWindow
+    global PreviousFocusWindow
+    global FocusChangeTime
 
     assert isinstance(window, pylewm.window.Window)
 
+    prev_focus = FocusWindow
     FocusWindow = window
-    LastFocusWindow = window
+    if FocusWindow != prev_focus:
+        PreviousFocusWindow = prev_focus
+        FocusChangeTime = time.time()
     focus_window(window.proxy, move_mouse=True)
 
 def set_focus_no_mouse(window):
     global FocusWindow
-    global LastFocusWindow
+    global PreviousFocusWindow
+    global FocusChangeTime
 
+    prev_focus = FocusWindow
     FocusWindow = window
-    LastFocusWindow = window
+    if FocusWindow != prev_focus:
+        PreviousFocusWindow = prev_focus
+        FocusChangeTime = time.time()
     focus_window(window.proxy, move_mouse=False)
 
 def set_focus_space(space):
@@ -41,6 +51,14 @@ def set_focus_space(space):
         set_focus(space.windows[0])
     else:
         set_focus_monitor(space.monitor)
+
+def was_just_focused(window):
+    if FocusWindow == window:
+        return True
+    if PreviousFocusWindow == window:
+        if time.time() - FocusChangeTime < 0.2:
+            return True
+    return False
 
 def set_focus_monitor(monitor):
     rect = monitor.rect.copy()
@@ -69,11 +87,15 @@ def get_focused_monitor():
 def on_focus_changed(proxy):
     """ Message sent from the windows proxy thread that a new window proxy has received focus. """
     global FocusWindow
-    global LastFocusWindow
+    global PreviousFocusWindow
+    global FocusChangeTime
 
+    prev_focus = FocusWindow
     FocusWindow = pylewm.window.get_window(proxy)
-    if FocusWindow and not FocusWindow.is_ignored():
-        LastFocusWindow = FocusWindow
+
+    if FocusWindow != prev_focus:
+        PreviousFocusWindow = prev_focus
+        FocusChangeTime = time.time()
 
 import pylewm.winproxy.winfocus
 pylewm.winproxy.winfocus.OnFocusChanged = on_focus_changed

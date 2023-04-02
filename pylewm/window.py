@@ -148,6 +148,12 @@ class Window:
         self.proxy.hide()
         self.stop_drag()
 
+    def delayed_hide(self, delay=0.05):
+        self.wm_hidden = True
+        self.wm_becoming_visible = False
+        self.proxy.delayed_hide(delay)
+        self.stop_drag()
+
     def close(self):
         self.closed = True
         if self.tab_group:
@@ -245,7 +251,7 @@ class Window:
                     if self.space:
                         prev_space = self.space
                         self.space.remove_window(self)
-                        if pylewm.focus.FocusWindow == self:
+                        if pylewm.focus.was_just_focused(self):
                             pylewm.focus.set_focus_space(prev_space)
 
         elif self.state == WindowState.Floating:
@@ -253,6 +259,13 @@ class Window:
             if self.dragging or self.drop_space:
                 self.update_float_drop()
 
+    def is_pending_placement(self):
+        if self.state == WindowState.Unknown:
+            return True
+        if self.state == WindowState.Tiled:
+            if not self.space:
+                return True
+        return False
 
     def apply_filters(self):
         self.applied_filters = True
@@ -267,8 +280,7 @@ class Window:
 
     def auto_place_into_space(self, initial_space=False):
         if pylewm.tabs.PendingTabGroup:
-            pylewm.tabs.PendingTabGroup.add_window(self)
-            pylewm.tabs.PendingTabGroup = None
+            pylewm.tabs.add_pending_tabbed_window(self)
         else:
             space = None
             slot = None
@@ -292,11 +304,19 @@ class Window:
     def update_info_from_proxy(self):
         prev_border_style = self.window_info.get_border_styles()
         prev_force_visible = self.window_info.is_force_visible
+        prev_title = None
+
+        if self.tab_group:
+            prev_title = self.window_title
 
         with WindowProxyLock:
             self.window_info.set(self.proxy.window_info)
             self.proxy.changed = False
 
+        if self.tab_group:
+            if prev_title != self.window_title:
+                self.tab_group.update_header()
+        
         if prev_border_style != self.window_info.get_border_styles() or prev_force_visible != self.window_info.is_force_visible:
             self.trigger_relayout = True
 
@@ -407,6 +427,17 @@ class Window:
     def on_removed(self):
         self.remove_drop_space()
         self.stop_drag()
+
+    def set_tab_group(self, tab_group):
+        self.tab_group = tab_group
+        if tab_group:
+            if not self.proxy.has_tab_group:
+                self.proxy.has_tab_group = True
+                self.trigger_relayout = True
+        else:
+            if self.proxy.has_tab_group:
+                self.proxy.has_tab_group = False
+                self.trigger_relayout = True
 
     @property
     def real_position(self):
