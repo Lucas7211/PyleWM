@@ -17,6 +17,9 @@ def start_execute_task(hotkeys = {}):
     options = []
 
     for task_function in pylewm.commands.STATIC_TASKS:
+        if task_function.task_condition:
+            if not task_function.task_condition():
+                continue
         options.append(TaskOption(task_function.task_name, task_function.task_detail, task_function))
 
     for task_generator in pylewm.commands.TASK_GENERATORS:

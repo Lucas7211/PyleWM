@@ -10,7 +10,6 @@ class Space:
 
     Layouts = [
         lambda: AutoGridLayout(),
-        lambda: SidebarLayout(),
     ]
 
     def __init__(self, monitor, rect):
@@ -94,7 +93,6 @@ class Space:
     def remove_window(self, window):
         assert window.space == self
 
-        lost_index = self.windows.index(window)
         self.windows.remove(window)
         self.focus_mru.remove(window)
         window.space = None
@@ -106,6 +104,27 @@ class Space:
             self.last_focus = self.layout.get_focus_window_after_removing(window)
 
         self.layout.remove_window(window)
+
+    def replace_window(self, old_window, new_window):
+        assert old_window.space == self
+        assert not new_window.space
+
+        index = self.windows.index(old_window)
+        self.windows[index] = new_window
+
+        if old_window in self.focus_mru:
+            mru_index = self.focus_mru.index(old_window)
+            self.focus_mru[mru_index] = new_window
+
+        old_window.space = None
+        new_window.space = self
+
+        if self.focus is old_window:
+            self.focus = new_window
+        if self.last_focus is old_window:
+            self.last_focus = new_window
+
+        self.layout.replace_window(old_window, new_window)
 
     def set_pending_drop_slot(self, slot):
         self.pending_drop_slot = slot

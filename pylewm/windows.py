@@ -13,10 +13,9 @@ def close():
     window = pylewm.focus.FocusWindow
     if window:
         space = window.space
-        if space:
-            space.remove_window(window)
-            pylewm.focus.set_focus_space(space)
         window.close()
+        if space:
+            pylewm.focus.set_focus_space(space)
 
 @PyleCommand
 def drop_window_into_layout():

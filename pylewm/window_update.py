@@ -1,6 +1,7 @@
 import pylewm.monitors
 import pylewm.focus
 import pylewm.filters
+import pylewm.tabs
 import time
 
 from pylewm.window import Window, WindowsByProxy
@@ -47,6 +48,9 @@ def window_update():
 
     # Update taskbar visibility if we have any
     update_taskbars()
+
+    # Update any tab groups that need it
+    pylewm.tabs.update_tabgroups()
 
 WINDOW_UPDATE_FUNCS = []
 def PyleWindowUpdate(func):

@@ -23,6 +23,9 @@ class Layout:
     def remove_window(self, window):
         pass
 
+    def replace_window(self, old_window, new_window):
+        pass
+
     def get_window_in_direction(self, from_window, direction):
         return None, direction
 

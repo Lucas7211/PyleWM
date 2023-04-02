@@ -15,6 +15,7 @@ from pylewm.commands import PyleCommand, InitFunctions, CommandQueue, queue_pyle
 
 import pylewm.winproxy.winfuncs as winfuncs
 import pylewm.winproxy.winupdate
+import pylewm.headers
 import pylewm.hotkeys
 import pylewm.commands
 import pylewm.window_update
@@ -113,6 +114,7 @@ def restart():
     stop_threads()
     time.sleep(0.1)
     pylewm.winproxy.winupdate.proxy_cleanup()
+    pylewm.headers.kill_header_process()
 
     os.execl(sys.executable, sys.executable, *sys.argv)
     

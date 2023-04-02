@@ -1,6 +1,7 @@
 import pylewm.filters
 import pylewm.monitors
 import pylewm.focus
+import pylewm.tabs
 from pylewm.rects import Rect
 
 from pylewm.hotkeys import MouseState
@@ -26,12 +27,14 @@ class Window:
         self.is_dropdown = False
         self.is_zoomed = False
         self.is_taskbar = False
+        self.tab_group : pylewm.tabs.TabGroup = None
 
         self.serial_counter = Window.WindowCounter
         Window.WindowCounter += 1
 
         self.wm_hidden = False
         self.wm_becoming_visible = False
+
         self.wm_visible_since = 0
         self.trigger_relayout = False
         self.removed_titlebar = False
@@ -147,6 +150,8 @@ class Window:
 
     def close(self):
         self.closed = True
+        if self.tab_group:
+            self.tab_group.remove_window(self)
         if self.space:
             self.space.remove_window(self)
         self.proxy.close()
@@ -235,10 +240,13 @@ class Window:
             else:
                 # Remove from layout if no longer interactable
                 if self.space and self.space.visible and self.wm_visible_duration() > 0.05:
-                    prev_space = self.space
-                    self.space.remove_window(self)
-                    if pylewm.focus.FocusWindow == self:
-                        pylewm.focus.set_focus_space(prev_space)
+                    if self.tab_group:
+                        self.tab_group.remove_window(self)
+                    if self.space:
+                        prev_space = self.space
+                        self.space.remove_window(self)
+                        if pylewm.focus.FocusWindow == self:
+                            pylewm.focus.set_focus_space(prev_space)
 
         elif self.state == WindowState.Floating:
             # Drop into a tiling layout if we can
@@ -258,24 +266,28 @@ class Window:
             pylewm.filters.trigger_all_filters(self, post=True)
 
     def auto_place_into_space(self, initial_space=False):
-        space = None
-        slot = None
-        
-        filter_monitor = pylewm.filters.get_monitor(self)
-        if filter_monitor is not None and (Window.InInitialPlacement or initial_space):
-            filter_monitor = min(filter_monitor, len(pylewm.monitors.Monitors)-1)
-            space = pylewm.monitors.Monitors[filter_monitor].visible_space
-        elif Window.InInitialPlacement or not initial_space:
-            monitor = pylewm.monitors.get_covering_monitor(self.real_position)
-            space = monitor.visible_space
-            slot, force_drop = space.get_drop_slot(self.real_position.center, self.real_position)
+        if pylewm.tabs.PendingTabGroup:
+            pylewm.tabs.PendingTabGroup.add_window(self)
+            pylewm.tabs.PendingTabGroup = None
         else:
-            space = pylewm.focus.get_cursor_space()
+            space = None
+            slot = None
+            
+            filter_monitor = pylewm.filters.get_monitor(self)
+            if filter_monitor is not None and (Window.InInitialPlacement or initial_space):
+                filter_monitor = min(filter_monitor, len(pylewm.monitors.Monitors)-1)
+                space = pylewm.monitors.Monitors[filter_monitor].visible_space
+            elif Window.InInitialPlacement or not initial_space:
+                monitor = pylewm.monitors.get_covering_monitor(self.real_position)
+                space = monitor.visible_space
+                slot, force_drop = space.get_drop_slot(self.real_position.center, self.real_position)
+            else:
+                space = pylewm.focus.get_cursor_space()
 
-        if Window.InInitialPlacement:
-            space.initial_windows.append(self)
-        else:
-            space.add_window(self, at_slot=slot)
+            if Window.InInitialPlacement:
+                space.initial_windows.append(self)
+            else:
+                space.add_window(self, at_slot=slot)
 
     def update_info_from_proxy(self):
         prev_border_style = self.window_info.get_border_styles()
@@ -456,6 +468,8 @@ def on_proxy_removed(proxy):
 
     window = WindowsByProxy[proxy]
     window.closed = True
+    if window.tab_group:
+        window.tab_group.remove_window(window)
     if window.space:
         window.space.remove_window(window)
     window.on_removed()

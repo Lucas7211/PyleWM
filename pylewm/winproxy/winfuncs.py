@@ -1,6 +1,22 @@
 import ctypes as c
 import ctypes.wintypes as w
 
+WS_SIZEBOX = 0x00040000
+WS_MINIMIZE = 0x20000000
+WS_MAXIMIZE = 0x01000000
+WS_CAPTION = 0x00C00000
+WS_EX_NOACTIVATE = 0x08000000
+WS_EX_APPWINDOW = 0x00040000
+WS_EX_LAYERED = 0x00080000
+WS_DISABLED = 0x08000000
+WS_DLGFRAME = 0x00400000
+WS_BORDER = 0x00800000
+WS_POPUP = 0x80000000
+WS_SYSMENU = 0x00080000
+WS_MINIMIZEBOX = 0x00200000
+WS_MAXIMIZEBOX = 0x00010000
+WS_OVERLAPPEDWINDOW = WS_CAPTION | WS_SYSMENU | WS_SIZEBOX | WS_MINIMIZEBOX | WS_MAXIMIZEBOX
+
 tEnumWindowFunc = c.CFUNCTYPE(None, w.HWND, w.LPARAM)
 
 EnumWindows = c.WINFUNCTYPE(
@@ -170,6 +186,11 @@ ShowWindowAsync = c.WINFUNCTYPE(
     w.HWND, c.c_int,
 )(("ShowWindowAsync", c.windll.user32))
 
+ShowWindow = c.WINFUNCTYPE(
+    w.BOOL,
+    w.HWND, c.c_int,
+)(("ShowWindow", c.windll.user32))
+
 WM_CLOSE = 0x0010
 
 PostMessageW = c.WINFUNCTYPE(
@@ -261,6 +282,14 @@ GetMessageW = c.WINFUNCTYPE(
     w.LPMSG, w.HWND, w.UINT, w.UINT,
 )(("GetMessageW", c.windll.user32))
 
+PM_NOREMOVE = 0x0
+PM_REMOVE = 0x1
+PM_NOYIELD = 0x2
+PeekMessageW = c.WINFUNCTYPE(
+    w.BOOL,
+    w.LPMSG, w.HWND, w.UINT, w.UINT, w.UINT,
+)(("PeekMessageW", c.windll.user32))
+
 TranslateMessage = c.WINFUNCTYPE(
     w.BOOL,
     w.LPMSG,
@@ -333,3 +362,83 @@ SendInput = c.WINFUNCTYPE(
     w.UINT,
     w.UINT, c.POINTER(INPUT), c.c_int,
 )(("SendInput", c.windll.user32))
+
+WNDPROC = c.WINFUNCTYPE(
+    c.c_int,
+    w.HWND, w.UINT, w.WPARAM, w.LPARAM
+)
+
+class WNDCLASSEX(c.Structure):
+    _fields_ = [
+        ("cbSize", c.c_uint),
+        ("style", c.c_uint),
+        ("lpfnWndProc", WNDPROC),
+        ("cbClsExtra", c.c_int),
+        ("cbWndExtra", c.c_int),
+        ("hInstance", w.HANDLE),
+        ("hIcon", w.HANDLE),
+        ("hCursor", w.HANDLE),
+        ("hBrush", w.HANDLE),
+        ("lpszMenuName", w.LPCWSTR),
+        ("lpszClassName", w.LPCWSTR),
+        ("hIconSm", w.HANDLE),
+    ]
+
+CS_HREDRAW = 2
+CS_VREDRAW = 1
+
+CloseWindow = c.WINFUNCTYPE(
+    w.BOOL,
+    w.HWND,
+)(("CloseWindow", c.windll.user32))
+
+DestroyWindow = c.WINFUNCTYPE(
+    w.BOOL,
+    w.HWND,
+)(("DestroyWindow", c.windll.user32))
+
+CreateWindowExW = c.WINFUNCTYPE(
+    w.HWND,
+    w.DWORD, w.LPCWSTR, w.LPCWSTR, w.DWORD,
+    c.c_int, c.c_int,
+    c.c_int, c.c_int,
+    w.HWND, w.HMENU, w.HINSTANCE, w.LPVOID
+)(("CreateWindowExW", c.windll.user32))
+
+UpdateWindow = c.WINFUNCTYPE(
+    w.BOOL,
+    w.HWND,
+)(("UpdateWindow", c.windll.user32))
+
+DefWindowProcW = c.WINFUNCTYPE(
+    c.c_int,
+    w.HWND, c.c_uint, w.WPARAM, w.LPARAM,
+)(("DefWindowProcW", c.windll.user32))
+
+class PAINTSTRUCT(c.Structure):
+    _fields_ = [
+        ("hdc", w.HDC),
+        ("fErase", w.BOOL),
+        ("rcPaint", w.RECT),
+        ("fRestore", w.BOOL),
+        ("fIncUpdate", w.BOOL),
+        ("rgbReserved", w.BYTE*32),
+    ]
+
+PROCESS_QUERY_INFORMATION = 0x0400
+PROCESS_VM_READ = 0x0010
+
+def GetExecutableOfWindow(hwnd):
+    try:
+        dwProcId = w.DWORD()
+        c.windll.user32.GetWindowThreadProcessId(hwnd, c.pointer(dwProcId))
+        procHandle = c.windll.kernel32.OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, False, dwProcId)
+
+        buffer = c.create_unicode_buffer(1024)
+        length = w.DWORD(1024)
+
+        c.windll.kernel32.QueryFullProcessImageNameW(procHandle, 0, buffer, c.pointer(length))
+        c.windll.kernel32.CloseHandle(procHandle)
+        return buffer.value
+    except:
+        return ""

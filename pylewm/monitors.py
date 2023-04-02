@@ -31,10 +31,10 @@ class Monitor:
 
         self.primary = info.dwFlags & 1
 
-        self.spaces = [Space(self, self.rect), Space(self, self.rect)]
+        self.spaces : list[Space] = [Space(self, self.rect), Space(self, self.rect)]
         self.last_used_space = None
 
-        self.temp_spaces = []
+        self.temp_spaces : list[Space] = []
         self.last_used_temp_space = None
 
         self.visible_space = self.spaces[0]

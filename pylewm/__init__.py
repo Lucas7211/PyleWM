@@ -17,5 +17,6 @@ import pylewm.alt_mode
 import pylewm.dropdown
 import pylewm.zoom
 import pylewm.run
+import pylewm.tabs
 
 from pylewm.run import start, restart, quit

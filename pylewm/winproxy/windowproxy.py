@@ -12,21 +12,8 @@ WindowProxyLock = Lock()
 WindowsByHandle : dict[int, 'WindowProxy'] = dict()
 ProxyCommands = CommandQueue()
 
-WS_SIZEBOX = 0x00040000
-WS_MINIMIZE = 0x20000000
-WS_MAXIMIZE = 0x01000000
-WS_CAPTION = 0x00C00000
-WS_EX_NOACTIVATE = 0x08000000
-WS_EX_APPWINDOW = 0x00040000
-WS_EX_LAYERED = 0x00080000
-WS_DISABLED = 0x08000000
-WS_DLGFRAME = 0x00400000
-WS_BORDER = 0x00800000
-WS_POPUP = 0x80000000
-WS_SYSMENU = 0x00080000
-
 class WindowInfo:
-    BORDER_STYLES = WS_SYSMENU | WS_DLGFRAME | WS_BORDER | WS_POPUP | WS_CAPTION
+    BORDER_STYLES = winfuncs.WS_SYSMENU | winfuncs.WS_DLGFRAME | winfuncs.WS_BORDER | winfuncs.WS_POPUP | winfuncs.WS_CAPTION
 
     def __init__(self):
         self.window_title = ""
@@ -58,13 +45,13 @@ class WindowInfo:
         return self.is_resizable
 
     def is_taskbar_ignored(self):
-        return (self._exStyle & WS_EX_NOACTIVATE) and not (self._exStyle & WS_EX_APPWINDOW)
+        return (self._exStyle & winfuncs.WS_EX_NOACTIVATE) and not (self._exStyle & winfuncs.WS_EX_APPWINDOW)
 
     def is_minimized(self):
-        return (self._winStyle & WS_MINIMIZE) != 0
+        return (self._winStyle & winfuncs.WS_MINIMIZE) != 0
 
     def is_maximized(self):
-        return (self._winStyle & WS_MAXIMIZE) != 0
+        return (self._winStyle & winfuncs.WS_MAXIMIZE) != 0
 
     def get_border_styles(self):
         return (self._winStyle & WindowInfo.BORDER_STYLES)
@@ -114,7 +101,7 @@ class WindowProxy:
 
         self._info.is_child = winfuncs.WindowIsChild(self._hwnd)
         self._update_info()
-        self._info.is_resizable = (self._info._winStyle & WS_SIZEBOX) != 0
+        self._info.is_resizable = (self._info._winStyle & winfuncs.WS_SIZEBOX) != 0
         self._proxy_resizable = self._info.is_resizable
 
         self._transfer_info()
@@ -194,11 +181,11 @@ class WindowProxy:
     def is_likely_interactable(self):
         if self._info.is_child:
             return False
-        if (self._info._exStyle & WS_EX_LAYERED) != 0:
+        if (self._info._exStyle & winfuncs.WS_EX_LAYERED) != 0:
             return False
-        if (self._info._winStyle & WS_DISABLED) != 0:
+        if (self._info._winStyle & winfuncs.WS_DISABLED) != 0:
             return False
-        if (self._info._winStyle & WS_POPUP) != 0:
+        if (self._info._winStyle & winfuncs.WS_POPUP) != 0:
             return False
         return True
 
@@ -248,7 +235,7 @@ class WindowProxy:
             border_bottom = (try_position[1] + try_position[3]) - adjustedRect.bottom
             border_top = 0
 
-            if not (self._info._winStyle & WS_SYSMENU):
+            if not (self._info._winStyle & winfuncs.WS_SYSMENU):
                 border_left += 7
                 border_right += 7
                 border_bottom += 7
@@ -319,8 +306,8 @@ class WindowProxy:
 
         if self._proxy_removed_titlebar:
             style = self._info._winStyle
-            if style & WS_CAPTION:
-                style = style & ~WS_CAPTION
+            if style & winfuncs.WS_CAPTION:
+                style = style & ~winfuncs.WS_CAPTION
                 winfuncs.WindowSetStyle(self._hwnd, style)
 
     def _update_floating(self):
@@ -419,23 +406,23 @@ class WindowProxy:
             zpos = winfuncs.HWND_TOPMOST
 
         winfuncs.SetWindowPos(self._hwnd, zpos, 0, 0, 0, 0,
-                winfuncs.SWP_NOACTIVATE | winfuncs.SWP_NOMOVE | winfuncs.SWP_NOSIZE | winfuncs.SWP_ASYNCWINDOWPOS)
+                winfuncs.SWP_NOACTIVATE | winfuncs.SWP_NOMOVE | winfuncs.SWP_NOSIZE | winfuncs.SWP_ASYNCWINDOWPOS | winfuncs.SWP_NOREDRAW)
 
     def _zorder_bottom(self):
         if self._proxy_always_top:
             return
 
         winfuncs.SetWindowPos(self._hwnd, winfuncs.HWND_BOTTOM, 0, 0, 0, 0,
-                winfuncs.SWP_NOACTIVATE | winfuncs.SWP_NOMOVE | winfuncs.SWP_NOSIZE | winfuncs.SWP_ASYNCWINDOWPOS)
+                winfuncs.SWP_NOACTIVATE | winfuncs.SWP_NOMOVE | winfuncs.SWP_NOSIZE | winfuncs.SWP_ASYNCWINDOWPOS | winfuncs.SWP_NOREDRAW)
 
     def _apply_always_top(self, always_top):
         self._proxy_always_top = always_top
         if always_top:
             winfuncs.SetWindowPos(self._hwnd, winfuncs.HWND_TOPMOST, 0, 0, 0, 0,
-                    winfuncs.SWP_NOACTIVATE | winfuncs.SWP_NOMOVE | winfuncs.SWP_NOSIZE | winfuncs.SWP_ASYNCWINDOWPOS)
+                    winfuncs.SWP_NOACTIVATE | winfuncs.SWP_NOMOVE | winfuncs.SWP_NOSIZE | winfuncs.SWP_ASYNCWINDOWPOS | winfuncs.SWP_NOREDRAW)
         else:
             winfuncs.SetWindowPos(self._hwnd, winfuncs.HWND_NOTOPMOST, 0, 0, 0, 0,
-                    winfuncs.SWP_NOACTIVATE | winfuncs.SWP_NOMOVE | winfuncs.SWP_NOSIZE | winfuncs.SWP_ASYNCWINDOWPOS)
+                    winfuncs.SWP_NOACTIVATE | winfuncs.SWP_NOMOVE | winfuncs.SWP_NOSIZE | winfuncs.SWP_ASYNCWINDOWPOS | winfuncs.SWP_NOREDRAW)
 
     def show(self):
         def proxy_show():
@@ -453,7 +440,7 @@ class WindowProxy:
             winfuncs.SetWindowPos(self._hwnd, zorder,
                 new_rect.left, new_rect.top,
                 new_rect.width, new_rect.height,
-                winfuncs.SWP_NOACTIVATE | winfuncs.SWP_ASYNCWINDOWPOS)
+                winfuncs.SWP_NOACTIVATE | winfuncs.SWP_ASYNCWINDOWPOS | winfuncs.SWP_NOREDRAW)
             winfuncs.ShowWindowAsync(self._hwnd, winfuncs.SW_SHOWNOACTIVATE)
         ProxyCommands.queue(proxy_show_rect)
 
@@ -481,11 +468,11 @@ class WindowProxy:
             winfuncs.SetWindowPos(self._hwnd, zorder,
                 self._info.rect.left-2, self._info.rect.top-2,
                 self._info.rect.width+4, self._info.rect.height+4,
-                winfuncs.SWP_NOACTIVATE | winfuncs.SWP_ASYNCWINDOWPOS)
+                winfuncs.SWP_NOACTIVATE | winfuncs.SWP_ASYNCWINDOWPOS | winfuncs.SWP_NOREDRAW)
             winfuncs.SetWindowPos(self._hwnd, zorder,
                 self._info.rect.left, self._info.rect.top,
                 self._info.rect.width, self._info.rect.height,
-                winfuncs.SWP_NOACTIVATE | winfuncs.SWP_ASYNCWINDOWPOS)
+                winfuncs.SWP_NOACTIVATE | winfuncs.SWP_ASYNCWINDOWPOS | winfuncs.SWP_NOREDRAW)
         ProxyCommands.queue(proxy_poke)
 
     def set_always_on_top(self, always_on_top):
@@ -513,8 +500,8 @@ class WindowProxy:
         def proxy_remove_titlebar():
             self._proxy_removed_titlebar = True
             style = self._info._winStyle
-            if style & WS_CAPTION:
-                style = style & ~WS_CAPTION
+            if style & winfuncs.WS_CAPTION:
+                style = style & ~winfuncs.WS_CAPTION
                 winfuncs.WindowSetStyle(self._hwnd, style)
         ProxyCommands.queue(proxy_remove_titlebar)
 
@@ -524,11 +511,11 @@ class WindowProxy:
     def _proxy_set_resizable(self, resizable:bool):
         self._proxy_resizable = resizable
         style = self._info._winStyle
-        if style & WS_SIZEBOX:
+        if style & winfuncs.WS_SIZEBOX:
             if not resizable:
-                style = style & ~WS_SIZEBOX
+                style = style & ~winfuncs.WS_SIZEBOX
                 winfuncs.WindowSetStyle(self._hwnd, style)
         else:
             if resizable:
-                style = style | WS_SIZEBOX
+                style = style | winfuncs.WS_SIZEBOX
                 winfuncs.WindowSetStyle(self._hwnd, style)

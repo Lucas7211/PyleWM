@@ -65,8 +65,9 @@ pylewm.config.hotkeys({
     (*MOD, 'shift', 'm')     : pylewm.windows.minimize,
 
     (*MOD, 'y')              : pylewm.yank.yank_window,
+    (*MOD, 'shift', 'y')     : pylewm.yank.yank_window(detach_from_tab_group=True),
     (*MOD, 'i')              : pylewm.yank.drop_window,
-    (*MOD, 'shift', 'i')     : pylewm.yank.drop_all_windows,
+    (*MOD, 'shift', 'i')     : pylewm.yank.drop_window_into_tab_group,
 
     (*MOD, 'x')              : pylewm.zoom.toggle_zoomed,
 
@@ -100,11 +101,15 @@ pylewm.config.hotkeys({
     (*MOD, 'shift', '+')     : pylewm.spaces.move_to_space(1, 1),
     (*MOD, 'shift', ']')     : pylewm.spaces.move_to_space(2, 1),
 
-    (*MOD, '!')              : pylewm.spaces.next_layout,
-    (*MOD, 'shift', '!')     : pylewm.spaces.previous_layout,
-
     (*MOD, 'a')              : pylewm.dropdown.toggle_dropdown,
     (*MOD, 'shift', 'a')     : pylewm.dropdown.set_as_dropdown,
+
+    # Tab management
+    (*MOD, 'm')              : pylewm.tabs.make_next_window_tabbed,
+    (*MOD, 'z')              : pylewm.tabs.next_tab,
+    (*MOD, 'shift', 'z')     : pylewm.tabs.move_tab_next,
+    (*MOD, 'b')              : pylewm.tabs.previous_tab,
+    (*MOD, 'shift', 'b')     : pylewm.tabs.move_tab_previous,
 
     # Application management
     (*MOD, ';')              : pylewm.execution.run([r'C:\Program Files\Alacritty\alacritty.exe']),

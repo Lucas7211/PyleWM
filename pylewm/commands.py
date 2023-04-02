@@ -140,7 +140,7 @@ def PyleInit(fun):
     InitFunctions.append(fun)
     return fun
 
-def PyleTask(name=None, detail=None):
+def PyleTask(name=None, detail=None, condition=None):
     def decorator(task_function):
         global STATIC_TASKS
         if name:
@@ -148,6 +148,7 @@ def PyleTask(name=None, detail=None):
         else:
             task_function.task_name = task_function.__name__
         task_function.task_detail = detail
+        task_function.task_condition = condition
         STATIC_TASKS.append(task_function)
         return task_function
     return decorator

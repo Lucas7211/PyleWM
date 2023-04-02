@@ -1,13 +1,14 @@
 from pylewm.commands import PyleCommand, PyleTask
 import pylewm.monitors
 import pylewm.window
+import pylewm.tabs
 import pylewm.focus
 from pylewm.rects import Direction
 
 YankStack : list[pylewm.window.Window] = []
 
 @PyleCommand
-def yank_window():
+def yank_window(detach_from_tab_group=False):
     window = pylewm.focus.FocusWindow
     if not window:
         return
@@ -15,6 +16,8 @@ def yank_window():
         return
 
     prev_space = None
+    if detach_from_tab_group and window.tab_group:
+        window.tab_group.remove_window(window)
     if window.space:
         prev_space = window.space
         window.space.remove_window(window)
@@ -28,16 +31,21 @@ def yank_window():
 
     YankStack.append(window)
 
-def drop_one_window():
+@PyleCommand
+def drop_window():
     if not YankStack:
-        return None
+        return
 
     space = pylewm.focus.get_focused_space()
     if not space:
-        return None
+        return
 
     window = YankStack.pop()
-    if window.is_tiled():
+    if pylewm.tabs.PendingTabGroup:
+        window.show()
+        pylewm.tabs.PendingTabGroup.add_window(window)
+        pylewm.tabs.PendingTabGroup = None
+    elif window.is_tiled():
         if pylewm.focus.FocusWindow:
             drop_slot, force_drop = space.get_drop_slot(
                 pylewm.focus.FocusWindow.real_position.center,
@@ -45,6 +53,7 @@ def drop_one_window():
             space.add_window(window, at_slot=drop_slot)
         else:
             space.add_window(window)
+        window.show()
     else:
         prev_rect = window.real_position
         prev_monitor = pylewm.monitors.get_covering_monitor(prev_rect)
@@ -53,15 +62,28 @@ def drop_one_window():
         if prev_monitor != new_monitor:
             new_rect = prev_rect.for_relative_parent(prev_monitor.rect, new_monitor.rect)
             window.set_layout(new_rect, apply_margin=False)
+        window.show()
 
-    window.show()
-    return window
-
-@PyleCommand
-def drop_window():
-    window = drop_one_window()
     if window:
         pylewm.focus.set_focus(window)
+
+@PyleCommand
+def drop_window_into_tab_group():
+    if not YankStack:
+        return
+
+    focus_window = pylewm.focus.FocusWindow
+    if not focus_window:
+        return
+
+    if not focus_window.tab_group:
+        group = pylewm.tabs.TabGroup()
+        group.add_window(focus_window)
+
+    window = YankStack.pop()
+    window.show()
+    focus_window.tab_group.add_window(window)
+    pylewm.focus.set_focus(window)
 
 @PyleTask(name="Drop All Yanked Windows")
 @PyleCommand
@@ -74,7 +96,10 @@ def drop_all_windows():
 
     focus_window = None
     for window in YankStack:
-        if window.is_tiled():
+        if pylewm.tabs.PendingTabGroup:
+            window.show()
+            pylewm.tabs.PendingTabGroup.add_window(window)
+        elif window.is_tiled():
             prev_monitor = pylewm.monitors.get_covering_monitor(window.real_position)
             relative_position = window.real_position.for_relative_parent(prev_monitor.rect, space.monitor.rect)
 
@@ -93,8 +118,10 @@ def drop_all_windows():
             if prev_monitor != new_monitor:
                 new_rect = prev_rect.for_relative_parent(prev_monitor.rect, new_monitor.rect)
                 window.set_layout(new_rect, apply_margin=False)
+            window.show()
 
     YankStack = []
+    pylewm.tabs.PendingTabGroup = None
 
     if focus_window:
         pylewm.focus.set_focus(focus_window)

@@ -72,6 +72,7 @@ class AutoGridLayout(Layout):
             return None
 
     def add_window(self, window, at_slot=None, insert_direction=None):
+        print(f"layout add {window}")
         self.windows.append(window)
         self.need_reposition = True
 
@@ -161,6 +162,7 @@ class AutoGridLayout(Layout):
                 self.columns[insert_column].append(window)
 
     def remove_window(self, window):
+        print(f"layout remove {window}")
         self.windows.remove(window)
 
         for column in self.columns:
@@ -168,6 +170,18 @@ class AutoGridLayout(Layout):
                 column.remove(window)
                 if len(column) == 0:
                     self.columns.remove(column)
+
+        self.need_reposition = True
+
+    def replace_window(self, old_window, new_window):
+        print(f"layout replace {old_window} -> {new_window}")
+        index = self.windows.index(old_window)
+        self.windows[index] = new_window
+
+        for column in self.columns:
+            if old_window in column:
+                index = column.index(old_window)
+                column[index] = new_window
 
         self.need_reposition = True
 
