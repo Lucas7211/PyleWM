@@ -29,7 +29,6 @@ pylewm.config.hotkeys({
     # Focus management
     (*MOD, 'h')              : pylewm.spaces.focus_left,
     (*MOD, 's')              : pylewm.spaces.focus_right,
-    (*MOD, '/')              : pylewm.spaces.focus_right,
     (*MOD, 't')              : pylewm.spaces.focus_down,
     (*MOD, 'n')              : pylewm.spaces.focus_up,
 
@@ -41,7 +40,6 @@ pylewm.config.hotkeys({
     # Move window slots
     (*MOD, 'shift', 'h')     : pylewm.spaces.move_left,
     (*MOD, 'shift', 's')     : pylewm.spaces.move_right,
-    (*MOD, 'shift', '/')     : pylewm.spaces.move_right,
     (*MOD, 'shift', 't')     : pylewm.spaces.move_down,
     (*MOD, 'shift', 'n')     : pylewm.spaces.move_up,
 
@@ -100,7 +98,7 @@ pylewm.config.hotkeys({
     (*MOD, 'shift', '+')     : pylewm.spaces.move_to_space(1, 1),
     (*MOD, 'shift', ']')     : pylewm.spaces.move_to_space(2, 1),
 
-    (*MOD, 'a')              : pylewm.dropdown.toggle_dropdown,
+    (*MOD, 'a')              : pylewm.dropdown.toggle_dropdown([r'wt.exe', '-p', 'Arch']),
     (*MOD, 'shift', 'a')     : pylewm.dropdown.set_as_dropdown,
 
     # Tab management
@@ -114,13 +112,12 @@ pylewm.config.hotkeys({
     (*MOD, "shift", "'")     : pylewm.tabs.detach_window_from_tab_group,
 
     # Application management
-    (*MOD, ';')              : pylewm.execution.run([r'C:\Program Files\Alacritty\alacritty.exe']),
-    (*MOD, 'shift', ';')     : pylewm.execution.run([r'C:\Program Files\Alacritty\alacritty.exe', '-e', 'powershell'], as_admin=True),
+    (*MOD, ';')              : pylewm.execution.run([r'wt.exe', '-p', 'Arch']),
+    (*MOD, 'shift', ';')     : pylewm.execution.run([r'wt.exe', '-p', 'Windows PowerShell'], as_admin=True),
     (*MOD, 'ctrl', ',')      : pylewm.execution.toggle_taskbar_visibility,
     (*MOD, 'p')              : pylewm.execution.run(r'C:\Program Files\Mozilla Firefox\firefox.exe'),
     (*MOD, 'k')              : pylewm.execution.run([r'C:\Program Files\Alacritty\alacritty.exe', '-e', 'wsl.exe', "--", "ranger", "/data/spool"]),
-    (*MOD, 'u')              : pylewm.execution.this_pc,
-    (*MOD, 'shift', 'u')     : pylewm.execution.file_explorer,
+    (*MOD, 'shift', 'k')     : pylewm.execution.this_pc,
 
     (*MOD, '.')              : pylewm.execution.run([r'C:\mpd\toggle.bat']),
     (*MOD, 'shift', '.')     : pylewm.execution.run([r'C:\mpd\mpc.exe', 'next']),

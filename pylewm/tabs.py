@@ -373,8 +373,11 @@ def close_tab_or_emit_ctrlw():
         return
 
     tab_group = window.tab_group
-    if tab_group and len(tab_group.windows) >= 2:
-        window.close()
+    if tab_group:
+        if len(tab_group.windows) == 1:
+            tab_group.destroy()
+        else:
+            window.close()
     else:
         pylewm.sendkeys.sendkey(["ctrl", "w"]).run()
 

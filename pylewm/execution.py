@@ -140,6 +140,12 @@ def toggle_taskbar_and_open_start_menu():
     if pylewm.config.HideTaskbar:
         start_menu().run()
     pylewm.config.HideTaskbar = not pylewm.config.HideTaskbar
+
+@PyleTask(name="Lock the Screen")
+@PyleCommand
+def toggle_taskbar_visibility():
+    """ Lock the computer and show the windows lock screen """
+    ctypes.windll.user32.LockWorkStation()
     
 
 class STARTUPINFO(ctypes.Structure):
