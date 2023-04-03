@@ -42,7 +42,7 @@ class WindowInfo:
         self._exStyle = other._exStyle
 
     def can_resize(self):
-        return self.is_resizable
+        return (self._winStyle & winfuncs.WS_SIZEBOX) != 0
 
     def is_taskbar_ignored(self):
         return (self._exStyle & winfuncs.WS_EX_NOACTIVATE) and not (self._exStyle & winfuncs.WS_EX_APPWINDOW)
