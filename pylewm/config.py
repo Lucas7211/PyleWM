@@ -16,6 +16,14 @@ TilingInnerMargin = 0
 # The margin between a window and the edge of the monitor
 TilingOuterMargin = [0, 0, 0, 1]
 
+# Whitelisted window classes that can use "responsive placement mode", to tile them
+# before they become visible to improve the responsiveness of window management
+WHITELIST_INTERACTIBLE_CLASSES = [
+    "CASCADIA_HOSTING_WINDOW_CLASS",
+    "MozillaWindowClass",
+    "CabinetWClass",
+]
+
 CONFIG_HOTKEYS = {}
 CONFIG_FILTERS = []
 

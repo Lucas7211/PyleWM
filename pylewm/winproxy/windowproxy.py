@@ -167,14 +167,14 @@ class WindowProxy:
         # If this is likely to be a relevant window, and we've just created it, pretend it's visible
         # for the first 0.5s. This increases responsiveness when starting new windows, because it can
         # often take a short time before the window becomse visible.
-        # if (not visible
-        #         and (WindowProxy.UpdateStartTime - self.creation_time) < 0.5
-        #         and self.is_likely_interactable()
-        #         and (WindowProxy.UpdateStartTime - WindowProxy.ProgramStartTime) > 1.0):
-        #     visible = True
-        #     self._info.is_force_visible = True
-        # else:
-        #     self._info.is_force_visible = False
+        if (not visible
+                and (WindowProxy.UpdateStartTime - self.creation_time) < 0.5
+                and self.is_likely_interactable()
+                and (WindowProxy.UpdateStartTime - WindowProxy.ProgramStartTime) > 1.0):
+            visible = True
+            self._info.is_force_visible = True
+        else:
+            self._info.is_force_visible = False
 
         if visible != self._info.visible:
             self._info.visible = visible
@@ -188,6 +188,8 @@ class WindowProxy:
         if (self._info._winStyle & winfuncs.WS_DISABLED) != 0:
             return False
         if (self._info._winStyle & winfuncs.WS_POPUP) != 0:
+            return False
+        if self._info.window_class not in pylewm.config.WHITELIST_INTERACTIBLE_CLASSES:
             return False
         return True
 
