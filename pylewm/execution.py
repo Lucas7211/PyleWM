@@ -143,7 +143,7 @@ def toggle_taskbar_and_open_start_menu():
 
 @PyleTask(name="Lock the Screen")
 @PyleCommand
-def toggle_taskbar_visibility():
+def lock_screen():
     """ Lock the computer and show the windows lock screen """
     ctypes.windll.user32.LockWorkStation()
     
