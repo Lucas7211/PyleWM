@@ -101,15 +101,15 @@ def command_prompt(cwd=None, as_admin=False):
 
 @PyleCommand
 def file_explorer(cwd=None):
-    cmd = ["explorer.exe"]
     if cwd:
-        cmd.append(cwd)
-    run_shell(cmd).run()
+        os.system(f"explorer.exe \"{cwd}\"")
+    else:
+        os.system("explorer.exe")
 
 @PyleCommand
 def this_pc(cwd=None):
     cmd = ["explorer.exe", "/n,", "/e,", "/select,", "C:\\"]
-    run_shell(cmd).run()
+    os.system(" ".join(cmd))
 
 @PyleCommand
 def open_config(cwd=None):
