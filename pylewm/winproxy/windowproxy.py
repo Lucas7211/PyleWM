@@ -66,6 +66,7 @@ class WindowProxy:
         self.initialized = False
         self.permanent_ignore = False
         self.temporary_ignore = False
+        self.want_removed_titlebar = False
         self.valid = True
         self.changed = False
         self.window_info = WindowInfo()
@@ -311,12 +312,6 @@ class WindowProxy:
         if not set_position_allowed:
             print(f"{time.time()} Failed to set {try_position} on {self}")
 
-        if self._proxy_removed_titlebar:
-            style = self._info._winStyle
-            if style & winfuncs.WS_CAPTION:
-                style = style & ~winfuncs.WS_CAPTION
-                winfuncs.WindowSetStyle(self._hwnd, style)
-
     def _update_floating(self):
         with WindowProxyLock:
             self._has_floating_target = False
@@ -383,6 +378,9 @@ class WindowProxy:
         # Reposition floating window if it wants to be moved
         if self._has_floating_target:
             self._update_floating()
+
+        if self.want_removed_titlebar:
+            self._proxy_update_remove_titlebar()
 
         # Update actual information about this window
         self._update_info()
@@ -523,13 +521,15 @@ class WindowProxy:
         ProxyCommands.queue(proxy_unmaximize)
 
     def remove_titlebar(self):
-        def proxy_remove_titlebar():
+        self.want_removed_titlebar = True
+
+    def _proxy_update_remove_titlebar(self):
+        if self.want_removed_titlebar and not self._proxy_removed_titlebar and not self._info.is_force_visible:
             self._proxy_removed_titlebar = True
             style = self._info._winStyle
             if style & winfuncs.WS_CAPTION:
                 style = style & ~winfuncs.WS_CAPTION
                 winfuncs.WindowSetStyle(self._hwnd, style)
-        ProxyCommands.queue(proxy_remove_titlebar)
 
     def set_resizable(self, resizable:bool):
         ProxyCommands.queue(lambda: self._proxy_set_resizable(resizable))

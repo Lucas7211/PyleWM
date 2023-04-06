@@ -453,3 +453,7 @@ def GetExecutableOfWindow(hwnd):
         return buffer.value
     except:
         return ""
+
+GetLastError = c.WINFUNCTYPE(
+    w.DWORD,
+)(("GetLastError", c.windll.kernel32))

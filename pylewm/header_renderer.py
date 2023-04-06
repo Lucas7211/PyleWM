@@ -23,7 +23,7 @@ def window_proc(hwnd, message, wParam, lParam):
     for id, header in RenderState.Headers.items():
         if header.hwnd == hwnd:
             return header.handle_message(message, wParam, lParam)
-    return 0
+    return winfuncs.DefWindowProcW(hwnd, message, wParam, lParam)
 
 def create_class():
     if RenderState.ClassPtr:
