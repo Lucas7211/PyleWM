@@ -1,5 +1,6 @@
 from pylewm.sendkeys import sendKey
 from pylewm.commands import PyleCommand, PyleTask
+import pylewm.winproxy.winfuncs as winfuncs
 import pylewm.config
 
 import os
@@ -146,6 +147,18 @@ def toggle_taskbar_and_open_start_menu():
 def lock_screen():
     """ Lock the computer and show the windows lock screen """
     ctypes.windll.user32.LockWorkStation()
+
+@PyleTask(name="Reboot Computer")
+@PyleCommand
+def reboot_computer():
+    """ Reboot the computer. """
+    os.system("shutdown /r /f /t 1")
+
+@PyleTask(name="Shutdown Computer")
+@PyleCommand
+def shutdown_computer():
+    """ Shutdown the computer. """
+    os.system("shutdown /s /f /t 1")
     
 
 class STARTUPINFO(ctypes.Structure):

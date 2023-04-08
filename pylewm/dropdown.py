@@ -51,6 +51,7 @@ def toggle_dropdown(command_if_no_dropdown=None):
         def make_next_window_dropdown(window):
             make_window_dropdown(window)
             pylewm.commands.run_pyle_command(show_dropdown)
+            pylewm.commands.delay_pyle_command(0.2, lambda: window.poke())
 
         pylewm.window.execute_on_next_window(make_next_window_dropdown)
 
