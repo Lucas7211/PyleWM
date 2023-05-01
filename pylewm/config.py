@@ -72,7 +72,7 @@ def apply():
 
     # Firefox draws on its window borders so we need to space it out to prevent overlapping
     DEFAULT_FILTERS = [
-        ({"class": "MozillaWindowClass"}, pylewm.filters.ForceBorders([2, 0, 2, 2])),
+        ({"class": "MozillaWindowClass"}, pylewm.filters.AddedBorders([2, 0, 2, 2])),
     ]
 
     for key, val in CONFIG_HOTKEYS.items():
