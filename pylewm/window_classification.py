@@ -85,6 +85,10 @@ def classify_window(window):
         if not window.real_position.overlaps(pylewm.monitors.DesktopArea):
             return WindowState.IgnoreTemporary, "Off Screen"
 
+    # If a filter specifies tiling, set it to tiling
+    if pylewm.filters.is_tiling(window):
+        return WindowState.Tiled, "Tiled by Filter"
+
     # Windows that aren't resizable are ignored,
     # we can usually assume these aren't available for tiling.
     if not window.window_info.can_resize():

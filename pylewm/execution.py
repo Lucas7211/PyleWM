@@ -94,6 +94,14 @@ def run_shell(args, cwd=None):
     )
 
 @PyleCommand
+def run_system(args):
+    """ Run an arbitrary system command. """
+    if isinstance(args, str):
+        args = [args]
+    args = list(args)
+    os.system(" ".join(args))
+
+@PyleCommand
 def command_prompt(cwd=None, as_admin=False):
     if as_admin:
         run(["start", "cmd.exe"], cwd=cwd, as_admin=True).run()

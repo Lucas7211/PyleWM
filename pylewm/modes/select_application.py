@@ -31,7 +31,7 @@ def get_startmenu_items():
     for folder in folders:
         for root, dirs, files in os.walk(folder):
             for name in files:
-                if name.endswith(".lnk"):
+                if name.endswith(".lnk") or name.endswith(".bat") or name.endswith(".exe"):
                     option = ApplicationOption(os.path.join(root, name))
                     if option.name not in existing_items:
                         STARTMENU_ITEMS.append(option)

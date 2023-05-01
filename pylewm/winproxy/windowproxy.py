@@ -206,22 +206,26 @@ class WindowProxy:
             self._applied_position.height,
         ]
 
+        apply_os_borders = True
         if self._layout_margin:
-            if isinstance(self._layout_margin, int):
-                # Apply a preset margin to the window
-                try_position[0] += self._layout_margin
-                try_position[1] += self._layout_margin
-                try_position[2] -= self._layout_margin*2
-                try_position[3] -= self._layout_margin*2
-            else:
-                # Apply a preset margin to the window
-                try_position[0] += self._layout_margin[0]
-                try_position[1] += self._layout_margin[1]
-                try_position[2] -= self._layout_margin[0]+self._layout_margin[2]
-                try_position[3] -= self._layout_margin[1]+self._layout_margin[3]
+            margin_size = self._layout_margin[1]
+            apply_os_borders = self._layout_margin[0]
 
-        # Find the margin that this window wants from the OS
-        if self._layout_margin is not False:
+            if isinstance(margin_size, int):
+                # Apply a preset margin to the window
+                try_position[0] += margin_size
+                try_position[1] += margin_size
+                try_position[2] -= margin_size
+                try_position[3] -= margin_size
+            elif margin_size:
+                # Apply a preset margin to the window
+                try_position[0] += margin_size[0]
+                try_position[1] += margin_size[1]
+                try_position[2] -= margin_size[0]+margin_size[2]
+                try_position[3] -= margin_size[1]+margin_size[3]
+
+        if apply_os_borders:
+            # Find the margin that this window wants from the OS
             adjustedRect = winfuncs.w.RECT()
             adjustedRect.left = try_position[0]
             adjustedRect.top = try_position[1]

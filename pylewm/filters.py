@@ -71,12 +71,17 @@ def KeepStartMonitor(window):
 @Filter
 def IgnoreBorders(window):
     """ Don't take into account window borders for this window's positioning. """
-    window.layout_margin = 0
+    window.layout_margin = (False, 0)
 
 @Filter
 def ForceBorders(window, border_size):
     """ Force this window to have borders of a particular size in positioning. """
-    window.layout_margin = border_size
+    window.layout_margin = (False, border_size)
+
+@Filter
+def AddedBorders(window, border_size):
+    """ Force this window to have borders of a particular size in positioning. """
+    window.layout_margin = (True, border_size)
 
 @Filter.post
 def TemporarySpace(window):
