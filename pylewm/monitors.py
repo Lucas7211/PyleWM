@@ -40,6 +40,12 @@ class Monitor:
         self.visible_space = self.spaces[0]
         self.visible_space.visible = True
 
+    def __str__(self):
+        return f"Monitor at {self.rect}"
+
+    def __repr__(self):
+        return f"Monitor at {self.rect}"
+
     def switch_to_space(self, new_space):
         if new_space == self.visible_space:
             return
@@ -156,7 +162,7 @@ def initMonitors():
         Monitors.append(monitor)
 
     # Sort monitors by position so their order stays the same
-    Monitors.sort(key=lambda x: math.floor(x.rect.top/900.0) * -10000 + x.rect.left)
+    Monitors.sort(key=lambda x: math.floor(abs(x.rect.top)/900.0)*(-1 if x.rect.top < 0 else 1) * -10000 + x.rect.left)
 
     # Rotate monitors so the default monitor is at index 0
     for i, monitor in enumerate(Monitors):
