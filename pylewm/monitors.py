@@ -57,7 +57,10 @@ class Monitor:
             self.rect = self.rect_workarea
 
         for space in self.spaces:
-            space.rect = self.rect
+            space.rect.assign(self.rect)
+            space.refresh_layout()
+        for space in self.temp_spaces:
+            space.rect.assign(self.rect)
             space.refresh_layout()
 
     def switch_to_space(self, new_space):
