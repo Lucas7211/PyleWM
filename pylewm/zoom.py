@@ -55,7 +55,7 @@ def toggle_zoomed():
             ZOOM_FULL_POSITION.top += 30
 
         if window.is_tiled():
-            window.proxy.set_layout(ZOOM_FULL_POSITION, False)
+            window.proxy.set_layout(ZOOM_FULL_POSITION, (False, 0))
         else:
             window.move_floating_to(ZOOM_FULL_POSITION)
 
@@ -88,7 +88,7 @@ def update_zoomed():
 
                 ZOOMED_WINDOW.proxy.set_always_on_top(True)
                 if ZOOMED_WINDOW.is_tiled():
-                    ZOOMED_WINDOW.proxy.set_layout(ZOOM_FULL_POSITION, False)
+                    ZOOMED_WINDOW.proxy.set_layout(ZOOM_FULL_POSITION, (False, 0))
                 else:
                     ZOOMED_WINDOW.move_floating_to(ZOOM_FULL_POSITION)
             else:
