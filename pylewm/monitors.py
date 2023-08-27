@@ -14,20 +14,24 @@ DesktopArea = Rect()
 
 class Monitor:
     def __init__(self, info):
+        self.rect_full = Rect(
+            (
+                info.rcMonitor.left, info.rcMonitor.top,
+                info.rcMonitor.right, info.rcMonitor.bottom,
+            )
+        )
+
+        self.rect_workarea = Rect(
+            (
+                info.rcWork.left, info.rcWork.top,
+                info.rcWork.right, info.rcWork.bottom,
+            )
+        )
+
         if pylewm.config.HideTaskbar:
-            self.rect = Rect(
-                (
-                    info.rcMonitor.left, info.rcMonitor.top,
-                    info.rcMonitor.right, info.rcMonitor.bottom,
-                )
-            )
+            self.rect = self.rect_full
         else:
-            self.rect = Rect(
-                (
-                    info.rcWork.left, info.rcWork.top,
-                    info.rcWork.right, info.rcWork.bottom,
-                )
-            )
+            self.rect = self.rect_workarea
 
         self.primary = info.dwFlags & 1
 
@@ -45,6 +49,16 @@ class Monitor:
 
     def __repr__(self):
         return f"Monitor at {self.rect}"
+
+    def update_workarea(self):
+        if pylewm.config.HideTaskbar:
+            self.rect = self.rect_full
+        else:
+            self.rect = self.rect_workarea
+
+        for space in self.spaces:
+            space.rect = self.rect
+            space.refresh_layout()
 
     def switch_to_space(self, new_space):
         if new_space == self.visible_space:

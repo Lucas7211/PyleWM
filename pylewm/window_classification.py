@@ -48,7 +48,7 @@ def classify_window(window):
         return WindowState.IgnorePermanent, "Ignored Class"
 
     # Taskbars are flagged ignore temporary, because we still want to update their status
-    if window_class == "shell_traywnd":
+    if window_class == "shell_traywnd" or window_class == "shell_secondarytraywnd":
         return WindowState.IgnoreTemporary, "Taskbar"
 
     # NOACTIVATE windows that aren't APPWINDOW are ignored by

@@ -70,6 +70,7 @@ class Space:
             self.focus_mru.append(self.focus)
 
     def refresh_layout(self):
+        self.layout.rect.assign(self.rect)
         self.layout.refresh_layout()
         self.layout.update_layout()
 

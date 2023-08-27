@@ -1,5 +1,6 @@
 from pylewm.sendkeys import sendKey
 from pylewm.commands import PyleCommand, PyleTask
+import pylewm.monitors
 import pylewm.winproxy.winfuncs as winfuncs
 import pylewm.config
 
@@ -142,6 +143,8 @@ def start_snippingtool(mode="Rectangle"):
 def toggle_taskbar_visibility():
     """ Toggle whether the taskbar is visible or not """
     pylewm.config.HideTaskbar = not pylewm.config.HideTaskbar
+    for monitor in pylewm.monitors.Monitors:
+        monitor.update_workarea()
 
 @PyleCommand
 def toggle_taskbar_and_open_start_menu():
@@ -149,6 +152,8 @@ def toggle_taskbar_and_open_start_menu():
     if pylewm.config.HideTaskbar:
         start_menu().run()
     pylewm.config.HideTaskbar = not pylewm.config.HideTaskbar
+    for monitor in pylewm.monitors.Monitors:
+        monitor.update_workarea()
 
 @PyleTask(name="Lock the Screen")
 @PyleCommand

@@ -66,7 +66,7 @@ class Window:
                 self.move_floating_to(Rect.centered_around(monitor.rect.center, self.real_position.size))
 
         # Keep track of any window that is a taskbar
-        if self.window_class.lower() == "shell_traywnd":
+        if self.window_class.lower() == "shell_traywnd" or self.window_class.lower() == "shell_secondarytraywnd":
             self.is_taskbar = True
             Window.Taskbars.append(self)
 
