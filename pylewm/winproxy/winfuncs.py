@@ -457,3 +457,30 @@ def GetExecutableOfWindow(hwnd):
 GetLastError = c.WINFUNCTYPE(
     w.DWORD,
 )(("GetLastError", c.windll.kernel32))
+
+ToUnicode = c.WINFUNCTYPE(
+    c.c_int,
+    w.UINT, w.UINT, c.POINTER(w.BYTE), w.LPWSTR, c.c_int, w.UINT,
+)(("ToUnicode", c.windll.user32))
+
+GetKeyboardState = c.WINFUNCTYPE(
+    w.BOOL,
+    c.POINTER(w.BYTE),
+)(("GetKeyboardState", c.windll.user32))
+
+GetKeyState = c.WINFUNCTYPE(
+    w.SHORT,
+    c.c_int,
+)(("GetKeyState", c.windll.user32))
+
+def KeyToUnicode(keyCode, scanCode, shifted):
+    buffer = c.create_unicode_buffer(32)
+    length = c.c_int(32)
+
+    keyState = (w.BYTE * 256)(0)
+    if shifted:
+        keyState[0xA0] = 0xff
+        keyState[0x10] = 0xff
+
+    ToUnicode(keyCode, scanCode, keyState, buffer, length, w.UINT(0))
+    return buffer.value

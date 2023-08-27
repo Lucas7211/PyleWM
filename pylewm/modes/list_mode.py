@@ -1,4 +1,5 @@
 import pylewm
+import pylewm.hotkeys
 import pylewm.modes.overlay_mode
 from pylewm.rects import Rect
 from fuzzywuzzy import fuzz
@@ -95,10 +96,7 @@ class ListMode(pylewm.modes.overlay_mode.OverlayMode):
     def handle_key(self, key, isMod):
         if not isMod and key.down and not self.closed:
             if len(key.key) == 1:
-                if key.shift.isSet:
-                    self.filter_text += key.key.upper()
-                else:
-                    self.filter_text += key.key
+                self.filter_text += pylewm.hotkeys.get_char_from_key(key)
                 self.update_filter()
                 return True
             elif key.key == 'backspace' and len(self.filter_text) >= 1:

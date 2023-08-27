@@ -265,6 +265,15 @@ def registerSpec(keySpec, command):
         KeyBindings[keySpec.key] = []
     KeyBindings[keySpec.key].append((keySpec, command))
 
+def get_char_from_key(key):
+    if hasattr(key, "scanCode"):
+        return winfuncs.KeyToUnicode(key.keyCode, key.scanCode, key.shift.isSet)
+    else:
+        if key.shift.isSet:
+            return key.key.upper()
+        else:
+            return key.key
+
 def handle_python(isKeyDown, keyCode, scanCode):
     absorbKey = False
         
@@ -278,6 +287,8 @@ def handle_python(isKeyDown, keyCode, scanCode):
 
     # Update active key
     ActiveKey.key = VKToChr(keyCode, scanCode)
+    ActiveKey.scanCode = scanCode
+    ActiveKey.keyCode = keyCode
     ActiveKey.down = isKeyDown
 
     # Check modes
