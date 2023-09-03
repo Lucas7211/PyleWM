@@ -126,6 +126,21 @@ class Monitor:
                     return self.new_temp_space()
 
         return self.temp_spaces[new_index]
+
+    def get_adjacent_cycle_space(self, space, direction):
+        count = len(self.spaces) + len(self.temp_spaces)
+        old_index = 0
+
+        if space in self.spaces:
+            old_index = self.spaces.index(space)
+        elif space in self.temp_spaces:
+            old_index = self.temp_spaces.index(space) + len(self.spaces)
+
+        new_index = (old_index + direction + count) % count
+        if new_index < len(self.spaces):
+            return self.spaces[new_index]
+        else:
+            return self.temp_spaces[new_index - len(self.spaces)]
     
 def get_default_monitor():
     return Monitors[0]

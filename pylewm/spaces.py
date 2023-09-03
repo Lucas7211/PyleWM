@@ -136,6 +136,18 @@ def previous_temporary():
     goto_space(monitor.get_adjacent_temp_space(space, -1))
 
 @PyleCommand
+def next_space_cycle():
+    space = pylewm.focus.get_focused_space()
+    monitor = space.monitor
+    goto_space(monitor.get_adjacent_cycle_space(space, +1))
+
+@PyleCommand
+def previous_space_cycle():
+    space = pylewm.focus.get_focused_space()
+    monitor = space.monitor
+    goto_space(monitor.get_adjacent_cycle_space(space, -1))
+
+@PyleCommand
 def move_to_new_temporary_space():
     ''' Move the active window to a new temporary space. '''
     if not pylewm.focus.FocusWindow:
