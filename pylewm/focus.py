@@ -13,15 +13,90 @@ FocusWindow = None
 PreviousFocusWindow = None
 FocusChangeTime = 0.0
 
+FocusHistory = []
+FocusFuture = []
+
 @PyleCommand
 def focus_monitor(monitor_index):
     monitor = pylewm.monitors.get_monitor_by_index(monitor_index)
     set_focus_space(monitor.visible_space)
 
+@PyleCommand
+def focus_history_previous():
+    global FocusWindow
+    global FocusHistory
+    global FocusFuture
+
+    for i in range(len(FocusHistory) - 1, -1, -1):
+        if FocusHistory[i] == FocusWindow:
+            continue
+        if not FocusHistory[i]:
+            continue
+        if FocusHistory[i].closed:
+            continue
+
+        target_window = FocusHistory[i]
+
+        FocusFuture = FocusHistory[i+1:] + FocusFuture
+        FocusHistory = FocusHistory[:i+1]
+
+        if len(FocusFuture) > 50:
+            FocusFuture = FocusFuture[-50:]
+
+        set_focus(target_window)
+        break
+
+@PyleCommand
+def focus_history_next():
+    global FocusWindow
+    global FocusHistory
+    global FocusFuture
+
+    for i in range(0, len(FocusFuture) - 1):
+        if FocusFuture[i] == FocusWindow:
+            continue
+        if not FocusFuture[i]:
+            continue
+        if FocusFuture[i].closed:
+            continue
+
+        target_window = FocusFuture[i]
+
+        FocusHistory = FocusHistory + FocusFuture[:i+1]
+        FocusFuture = FocusFuture[i+1:]
+
+        if len(FocusHistory) > 50:
+            FocusHistory = FocusHistory[-50:]
+
+        set_focus(target_window)
+        break
+
+@PyleCommand
+def focus_history_flip():
+    global FocusWindow
+    global FocusHistory
+
+    for i in range(len(FocusHistory) - 1, -1, -1):
+        if FocusHistory[i] == FocusWindow:
+            continue
+        if not FocusHistory[i]:
+            continue
+        if FocusHistory[i].closed:
+            continue
+
+        flip_window = FocusHistory[i]
+        FocusHistory[i] = FocusWindow
+
+        FocusHistory[-1] = flip_window
+        set_focus(flip_window)
+
+        break
+
 def set_focus(window):
     global FocusWindow
     global PreviousFocusWindow
     global FocusChangeTime
+    global FocusHistory
 
     assert isinstance(window, pylewm.window.Window)
 
@@ -30,6 +105,12 @@ def set_focus(window):
     if FocusWindow != prev_focus:
         PreviousFocusWindow = prev_focus
         FocusChangeTime = time.time()
+
+        if not FocusHistory or FocusHistory[-1] != FocusWindow:
+            FocusHistory.append(FocusWindow)
+            if len(FocusHistory) > 50:
+                FocusHistory = FocusHistory[-50:]
+
     focus_window(window.proxy, move_mouse=True)
 
 def set_focus_no_mouse(window):
@@ -95,6 +176,7 @@ def on_focus_changed(proxy):
     global FocusWindow
     global PreviousFocusWindow
     global FocusChangeTime
+    global FocusHistory
 
     prev_focus = FocusWindow
     FocusWindow = pylewm.window.get_window(proxy)
@@ -102,6 +184,11 @@ def on_focus_changed(proxy):
     if FocusWindow != prev_focus:
         PreviousFocusWindow = prev_focus
         FocusChangeTime = time.time()
+
+        if not FocusHistory or FocusHistory[-1] != FocusWindow:
+            FocusHistory.append(FocusWindow)
+            if len(FocusHistory) > 50:
+                FocusHistory = FocusHistory[-50:]
 
 import pylewm.winproxy.winfocus
 pylewm.winproxy.winfocus.OnFocusChanged = on_focus_changed
