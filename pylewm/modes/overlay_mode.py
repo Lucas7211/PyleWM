@@ -175,6 +175,13 @@ class OverlayMode(pylewm.hotkeys.Mode):
     def clicked(self, pos):
         return False
 
+    def overlay_static(self, rect):
+        global OVERLAY_WINDOW
+        if not OVERLAY_WINDOW:
+            OVERLAY_WINDOW = OverlayWindow()
+        self.overlay_rect = rect.copy()
+        OVERLAY_WINDOW.show(self, self.overlay_rect)
+
     def overlay_window(self, window):
         global OVERLAY_WINDOW
         if not OVERLAY_WINDOW:
