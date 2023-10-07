@@ -267,7 +267,7 @@ def registerSpec(keySpec, command):
 
 def get_char_from_key(key):
     if hasattr(key, "scanCode"):
-        return winfuncs.KeyToUnicode(key.keyCode, key.scanCode, key.shift.isSet)
+        return winfuncs.KeyToUnicode(key.keyCode, key.scanCode, key.shift.isSet)[0]
     else:
         if key.shift.isSet:
             return key.key.upper()
@@ -364,15 +364,11 @@ def VKToChr(vk, sc):
         return VK_MAP[vk]
 
     MAPVK_VK_TO_CHAR = 2
-    charValue = windll.user32.MapVirtualKeyA(vk, MAPVK_VK_TO_CHAR)
-    if charValue < 0:
-        # if less then 0 then it was a deadkey
-        return ""
-    if charValue == 0:
-        # Could not be translated
+    value, isDeadKey = winfuncs.KeyToUnicode(vk, sc, False)
+    if isDeadKey:
         return ""
 
-    return chr(charValue).lower()
+    return value.lower()
 
 def wait_for_hotkeys():
     def handle_keyboard_windows(nCode, wParam, lParam):

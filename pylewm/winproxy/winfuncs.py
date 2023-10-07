@@ -482,5 +482,6 @@ def KeyToUnicode(keyCode, scanCode, shifted):
         keyState[0xA0] = 0xff
         keyState[0x10] = 0xff
 
-    ToUnicode(keyCode, scanCode, keyState, buffer, length, w.UINT(0))
-    return buffer.value
+    result = ToUnicode(keyCode, scanCode, keyState, buffer, length, w.UINT(0))
+    isDeadKey = result < 0
+    return (buffer.value, isDeadKey)
