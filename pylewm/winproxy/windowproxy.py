@@ -346,12 +346,17 @@ class WindowProxy:
         self._dirty = False
 
     def _update(self):
-        if self.permanent_ignore:
-            # Don't update windows that are permanently ignored
+        if not winfuncs.IsWindow(self._hwnd):
+            # If the window was closed, we become invalid
+            self.valid = False
             return
 
         if not self.valid:
             # Never update if we are no longer valid
+            return
+
+        if self.permanent_ignore:
+            # Don't update windows that are permanently ignored
             return
 
         # Temporarily ignored windows update at a slower rate to save performance
@@ -361,11 +366,6 @@ class WindowProxy:
                 return
         else:
             self.update_interval = 0
-
-        if not winfuncs.IsWindow(self._hwnd):
-            # If the window was closed, we become invalid
-            self.valid = False
-            return
 
         # Update whether this is a hung window
         self._update_hung()
