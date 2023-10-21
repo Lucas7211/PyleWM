@@ -4,12 +4,21 @@ import pylewm.filters
 import pylewm.tabs
 import time
 
-from pylewm.window import Window, WindowsByProxy
+from pylewm.window import Window, WindowsByProxy, InteractiveWindows, BackgroundWindows_Active, BackgroundWindows_Queued
 
 HiddenFocusSpace = None
 HiddenFocusSpaceSince = None
 
+LastInteractiveUpdateDuration = 0
+LastBackgroundUpdateDuration = 0
+LastTotalUpdateDuration = 0
+
 def window_update():
+    global LastInteractiveUpdateDuration
+    global LastBackgroundUpdateDuration
+    global LastTotalUpdateDuration
+    start_time = time.perf_counter()
+
     # Update spaces on all monitors
     for monitor in pylewm.monitors.Monitors:
         for space in monitor.spaces:
@@ -17,9 +26,55 @@ def window_update():
         for space in monitor.temp_spaces:
             space.update_layout(pylewm.focus.FocusWindow)
 
+    reclassify_windows = []
+
     # Update all windows
-    for proxy, window in WindowsByProxy.items():
+    for window in InteractiveWindows:
         window.update()
+        if window.is_background_update():
+            window.proxy.background_update = True
+            reclassify_windows.append(window)
+
+    interactive_end_time = time.perf_counter()
+    LastInteractiveUpdateDuration = interactive_end_time - start_time
+
+    # Update some background windows
+    global BackgroundWindows_Active
+    global BackgroundWindows_Queued
+
+    background_count = len(BackgroundWindows_Active) + len(BackgroundWindows_Queued)
+    update_count = min(max(background_count // 60, 10), background_count)
+    update_index = 0
+
+    while update_index < update_count:
+        if len(BackgroundWindows_Active) == 0:
+            active_list = BackgroundWindows_Active
+            BackgroundWindows_Active = BackgroundWindows_Queued
+            BackgroundWindows_Queued = active_list
+
+            if len(BackgroundWindows_Active) == 0:
+                break
+
+        window = BackgroundWindows_Active.popleft()
+        if not window.closed:
+            window.update()
+            if window.is_background_update():
+                BackgroundWindows_Queued.append(window)
+            else:
+                window.proxy.background_update = False
+                print(f"Interactive Window: {window}")
+                InteractiveWindows.add(window)
+
+        update_index += 1
+
+    # Reclassify windows from interactive to background
+    for window in reclassify_windows:
+        if window in InteractiveWindows:
+            InteractiveWindows.remove(window)
+        print(f"Background Window: {window}")
+        BackgroundWindows_Queued.append(window)
+
+    LastBackgroundUpdateDuration = time.perf_counter() - interactive_end_time
 
     # If the currently focused window is on a hidden space,
     # switch that monitor to the space the window is in.
@@ -53,6 +108,8 @@ def window_update():
 
     # Update any tab groups that need it
     pylewm.tabs.update_tabgroups()
+
+    LastTotalUpdateDuration = time.perf_counter() - start_time
 
 WINDOW_UPDATE_FUNCS = []
 def PyleWindowUpdate(func):

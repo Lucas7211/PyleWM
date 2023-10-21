@@ -15,6 +15,7 @@ class MouseState:
     MOUSE_HOOKS = []
 
 queue_command = None
+window_creation_function = None
 
 class Mode:
     def __init__(self, hotkeys={}, captureAll=True, oneshot=False):
@@ -407,6 +408,17 @@ def wait_for_hotkeys():
 
         return winfuncs.CallNextHookEx(mouseHook, nCode, wParam, lParam)
 
+    def handle_window_creation(handle, event, hwnd, idObject, idChild, idEventThread, dwmsEventTime):
+        if event != 0x8000:
+            return
+        if idObject != 0:
+            return
+        if not winfuncs.IsWindow(hwnd):
+            return
+        if window_creation_function:
+            window_creation_function(hwnd)
+
+    ctypes.windll.ole32.CoInitialize(0)
     modulePtr = winfuncs.GetModuleHandleW(None)
 
     keyboardHandlePtr = winfuncs.HOOKPROC(handle_keyboard_windows)
@@ -416,6 +428,18 @@ def wait_for_hotkeys():
     mouseHandlePtr = winfuncs.HOOKPROC(handle_mouse_windows)
     mouseHook = winfuncs.SetWindowsHookExW(win32con.WH_MOUSE_LL, mouseHandlePtr, modulePtr, 0)
     atexit.register(winfuncs.UnhookWindowsHookEx, mouseHook)
+
+    windowCreationHandlePtr = winfuncs.WINEVENTPROC(handle_window_creation)
+    windowCreationHook = winfuncs.SetWinEventHook(
+        0x8000, 0x8000,
+        0,
+        windowCreationHandlePtr,
+        0,
+        0,
+        2,
+    )
+    atexit.register(ctypes.windll.user32.UnhookWinEvent, windowCreationHook)
+    atexit.register(ctypes.windll.ole32.CoUninitialize)
 
     message = winfuncs.w.MSG()
     while not pylewm.commands.stopped:

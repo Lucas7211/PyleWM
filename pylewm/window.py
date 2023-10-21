@@ -2,6 +2,7 @@ import pylewm.filters
 import pylewm.monitors
 import pylewm.focus
 import pylewm.tabs
+import collections
 from pylewm.rects import Rect
 
 from pylewm.hotkeys import MouseState
@@ -28,6 +29,9 @@ class Window:
         self.is_zoomed = False
         self.is_taskbar = False
         self.tab_group : pylewm.tabs.TabGroup = None
+
+        self.ignore_until = None
+        self.interactive_until = time.time() + 5.0
 
         self.serial_counter = Window.WindowCounter
         Window.WindowCounter += 1
@@ -81,6 +85,8 @@ class Window:
                 self.make_floating()
             elif self.state == WindowState.Tiled:
                 self.make_tiled()
+                if not Window.InInitialPlacement:
+                    pylewm.focus.set_focus(self)
 
     def make_floating(self):
         self.state = WindowState.Floating
@@ -133,11 +139,50 @@ class Window:
             return False
         return True
 
+    def is_background_update(self):
+        """ Whether this window can be updated less frequently in the background. """
+        if self.wm_becoming_visible:
+            return False
+        if self.interactive_until is not None:
+            if time.time() > self.interactive_until:
+                self.interactive_until = None
+            else:
+                return False
+        if self.state == WindowState.IgnorePermanent or self.closed:
+            return True
+        if self.state == WindowState.Tiled:
+            if not self.space:
+                if not self.window_info.visible:
+                    return True
+                if self.window_info.cloaked:
+                    return True
+        else:
+            if not self.window_info.visible:
+                return True
+            if self.window_info.cloaked:
+                return True
+        if self.state == WindowState.IgnoreTemporary:
+            return True
+        if self.state == WindowState.IgnorePermanent:
+            return True
+        if self.window_info.is_minimized():
+            return True
+        return False
+
+    def prioritize_update(self, interactive_duration=1.0):
+        if self.interactive_until is not None:
+            self.interactive_until = max(time.time() + interactive_duration, self.interactive_until)
+        else:
+            self.interactive_until = time.time() + interactive_duration
+        InteractiveWindows.add(self)
+        self.proxy.prioritize_update()
+
     def show(self):
         self.wm_hidden = False
         self.wm_becoming_visible = True
         self.wm_visible_since = time.time()
         self.proxy.show()
+        self.prioritize_update()
 
     def show_with_rect(self, new_rect):
         self.wm_hidden = False
@@ -157,24 +202,33 @@ class Window:
         self.stop_drag()
 
     def close(self):
-        self.closed = True
+        print(f"Manually closed {self}")
+        self.ignore_for(0.5)
         if self.tab_group:
             self.tab_group.remove_window(self)
         if self.space:
             self.space.remove_window(self)
         self.proxy.close()
 
+    def ignore_for(self, duration):
+        if self.ignore_until is not None:
+            self.ignore_until = max(time.time() + duration, self.ignore_until)
+        else:
+            self.ignore_until = time.time() + duration
+
     def minimize(self):
         self.proxy.minimize()
 
     def restore(self):
         self.proxy.restore()
+        self.prioritize_update()
 
     def remove_maximized(self):
         self.proxy.remove_maximized()
 
     def poke(self):
         self.proxy.poke()
+        self.prioritize_update()
 
     def wm_visible_duration(self):
         return time.time() - self.wm_visible_since
@@ -190,6 +244,13 @@ class Window:
         # Classify the window if we haven't classified it yet
         if self.state == WindowState.IgnorePermanent or self.closed:
             return
+
+        # Some windows we want to ignore for a while
+        if self.ignore_until is not None:
+            if self.ignore_until < time.time():
+                self.ignore_until = None
+            else:
+                return
 
         # Update window info from the proxy if it's been changed
         if self.proxy.changed:
@@ -482,8 +543,13 @@ class Window:
 
     def __str__(self):
         return f"{{ {self.window_title} | {self.window_class} @{self.proxy._hwnd} }}"
+    def __repr__(self):
+        return self.__str__()
 
 WindowsByProxy : dict[WindowProxy, Window] = dict()
+InteractiveWindows = set()
+BackgroundWindows_Active = collections.deque()
+BackgroundWindows_Queued = collections.deque()
 NextWindowFunctions = []
 
 def execute_on_next_window(fun):
@@ -493,11 +559,14 @@ def execute_on_next_window(fun):
 def on_proxy_added(proxy):
     window = Window(proxy)
     WindowsByProxy[proxy] = window
+    InteractiveWindows.add(window)
     window.update()
 
 def on_proxy_removed(proxy):
     if proxy not in WindowsByProxy:
         return
+
+    print(f"Removed proxy {proxy}")
 
     window = WindowsByProxy[proxy]
     window.closed = True
@@ -508,6 +577,9 @@ def on_proxy_removed(proxy):
     window.on_removed()
 
     del WindowsByProxy[proxy]
+
+    if window in InteractiveWindows:
+        InteractiveWindows.remove(window)
 
 def get_window(proxy):
     if proxy in WindowsByProxy:

@@ -184,6 +184,7 @@ def on_focus_changed(proxy):
     if FocusWindow != prev_focus:
         PreviousFocusWindow = prev_focus
         FocusChangeTime = time.time()
+        FocusWindow.prioritize_update()
 
         if not FocusHistory or FocusHistory[-1] != FocusWindow:
             FocusHistory.append(FocusWindow)

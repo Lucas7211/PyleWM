@@ -485,3 +485,26 @@ def KeyToUnicode(keyCode, scanCode, shifted):
     result = ToUnicode(keyCode, scanCode, keyState, buffer, length, w.UINT(0))
     isDeadKey = result < 0
     return (buffer.value, isDeadKey)
+
+HWINEVENTHOOK = w.HANDLE
+WINEVENTPROC = c.WINFUNCTYPE(
+    None,
+    HWINEVENTHOOK,
+    w.DWORD,
+    w.HWND,
+    w.LONG,
+    w.LONG,
+    w.DWORD,
+    w.DWORD,
+)
+
+SetWinEventHook = c.WINFUNCTYPE(
+    HWINEVENTHOOK,
+    w.DWORD,
+    w.DWORD,
+    w.HMODULE,
+    WINEVENTPROC,
+    w.DWORD,
+    w.DWORD,
+    w.DWORD,
+)(("SetWinEventHook", c.windll.user32))

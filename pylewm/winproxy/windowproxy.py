@@ -10,6 +10,7 @@ import math
 
 WindowProxyLock = Lock()
 WindowsByHandle : dict[int, 'WindowProxy'] = dict()
+InteractiveWindowProxies = set()
 ProxyCommands = CommandQueue()
 
 class WindowInfo:
@@ -65,6 +66,7 @@ class WindowProxy:
         self._hwnd = hwnd
         self.initialized = False
         self.permanent_ignore = False
+        self.background_update = False
         self.temporary_ignore = False
         self.want_removed_titlebar = False
         self.valid = True
@@ -119,6 +121,8 @@ class WindowProxy:
 
     def __str__(self):
         return f"{{ PROXY {self._info.window_title} | {self._info.window_class} @{self._hwnd} }}"
+    def __repr__(self):
+        return self.__str__()
 
     def _update_hung(self):
         hung = winfuncs.IsHungAppWindow(self._hwnd)
@@ -345,6 +349,13 @@ class WindowProxy:
             self.changed = True
         self._dirty = False
 
+    def is_background_update(self):
+        if self.permanent_ignore:
+            return True
+        if self.background_update:
+            return True
+        return False
+
     def _update(self):
         if not winfuncs.IsWindow(self._hwnd):
             # If the window was closed, we become invalid
@@ -439,6 +450,12 @@ class WindowProxy:
             winfuncs.ShowWindowAsync(self._hwnd, winfuncs.SW_SHOWNOACTIVATE)
             self._zorder_top()
         ProxyCommands.queue(proxy_show)
+
+    def prioritize_update(self):
+        self.background_update = False
+        def proxy_prioritize():
+            InteractiveWindowProxies.add(self)
+        ProxyCommands.queue(proxy_prioritize)
 
     def delayed_show(self, delay=0.05):
         def proxy_show():

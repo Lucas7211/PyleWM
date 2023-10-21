@@ -18,5 +18,6 @@ import pylewm.dropdown
 import pylewm.zoom
 import pylewm.run
 import pylewm.tabs
+import pylewm.info
 
 from pylewm.run import start, restart, quit

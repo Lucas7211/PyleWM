@@ -99,6 +99,16 @@ Class: {window.window_class}
 State: {WindowState.name(window.state)}
 Real Position: {window.real_position}
 Layout Position: {window.layout_position}
+Closed: {window.closed}
+
+HWND: @{window.proxy._hwnd}
+Visible: {window.proxy._info.visible}
+Cloaked: {window.proxy._info.cloaked}
+Hung: {window.proxy._info.is_hung}
+Is Child: {window.proxy._info.is_child}
+
+Style: {window.proxy._info._winStyle :x}
+ExStyle: {window.proxy._info._exStyle :x}
 """
 
     winfuncs.ShowMessageBox("PyleWM: Window Info", state)

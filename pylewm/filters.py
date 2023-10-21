@@ -83,6 +83,11 @@ def AddedBorders(window, border_size):
     """ Force this window to have borders of a particular size in positioning. """
     window.layout_margin = (True, border_size)
 
+@Filter
+def DelayManage(window, duration=0.1):
+    """ Delay managing this window for a short time to prevent glitches """
+    window.ignore_for(duration)
+
 @Filter.post
 def TemporarySpace(window):
     """ The window gets a new desktop on its monitor when spawned. """
