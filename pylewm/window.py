@@ -38,6 +38,7 @@ class Window:
 
         self.wm_hidden = False
         self.wm_becoming_visible = False
+        self.focus_when_layouted = False
 
         self.wm_visible_since = 0
         self.trigger_relayout = False
@@ -85,8 +86,7 @@ class Window:
                 self.make_floating()
             elif self.state == WindowState.Tiled:
                 self.make_tiled()
-                if not Window.InInitialPlacement:
-                    pylewm.focus.set_focus(self)
+                self.focus_when_layouted = True
 
     def make_floating(self):
         self.state = WindowState.Floating
@@ -306,6 +306,10 @@ class Window:
                     if not self.dragging:
                         self.restore_layout()
                     self.trigger_relayout = False
+
+                if self.focus_when_layouted and self.space:
+                    pylewm.focus.set_focus_no_mouse(self)
+                    self.focus_when_layouted = False
             else:
                 # Remove from layout if no longer interactable
                 if self.space and self.space.visible and self.wm_visible_duration() > 0.05:
