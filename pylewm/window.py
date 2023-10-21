@@ -141,8 +141,6 @@ class Window:
 
     def is_background_update(self):
         """ Whether this window can be updated less frequently in the background. """
-        if self.wm_becoming_visible:
-            return False
         if self.interactive_until is not None:
             if time.time() > self.interactive_until:
                 self.interactive_until = None
@@ -150,6 +148,14 @@ class Window:
                 return False
         if self.state == WindowState.IgnorePermanent or self.closed:
             return True
+        if self.state == WindowState.IgnoreTemporary:
+            return True
+        if self.state == WindowState.IgnorePermanent:
+            return True
+        if self.window_info.is_minimized():
+            return True
+        if self.wm_becoming_visible:
+            return False
         if self.state == WindowState.Tiled:
             if not self.space:
                 if not self.window_info.visible:
@@ -161,12 +167,6 @@ class Window:
                 return True
             if self.window_info.cloaked:
                 return True
-        if self.state == WindowState.IgnoreTemporary:
-            return True
-        if self.state == WindowState.IgnorePermanent:
-            return True
-        if self.window_info.is_minimized():
-            return True
         return False
 
     def prioritize_update(self, interactive_duration=1.0):
