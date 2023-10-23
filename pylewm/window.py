@@ -82,6 +82,8 @@ class Window:
             self.proxy.permanent_ignore = (self.state == WindowState.IgnorePermanent)
             self.proxy.temporary_ignore = (self.state == WindowState.IgnoreTemporary)
 
+            # print(f"classify {self} as {new_state} because {reason}")
+
             if self.state == WindowState.Floating:
                 self.make_floating()
             elif self.state == WindowState.Tiled:

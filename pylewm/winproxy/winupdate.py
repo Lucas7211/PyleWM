@@ -25,10 +25,15 @@ def proxy_update():
     global LastTotalUpdateDuration
     global DetectedInitialWindows
 
+    # Record when we started updating
+    global StartTime
+    if StartTime is None:
+        StartTime = time.time()
+
     start_time = time.perf_counter()
 
     # Update what windows are tracked
-    if not DetectedInitialWindows:
+    if not DetectedInitialWindows and (time.time() - StartTime) > 0.1:
         detect_existing_windows()
         def proxy_detect_window(hwnd):
             ProxyCommands.queue(lambda: detect_window(hwnd))
@@ -155,13 +160,8 @@ def update_global_state():
     # Window needs to know if left mouse button is down
     Window.IsLeftMouseHeld = (winfuncs.GetAsyncKeyState(win32con.VK_LBUTTON) != 0)
 
-    # Record when we started updating
-    global StartTime
-    if StartTime is None:
-        StartTime = time.time()
-
     # Trigger initial placement after our window proxies settle down
-    if Window.InInitialPlacement and (time.time() - StartTime) > 0.1:
+    if Window.InInitialPlacement and (time.time() - StartTime) > 0.2:
         all_initialized = True
         for hwnd, proxy in WindowsByHandle.items():
             if not proxy.initialized:
