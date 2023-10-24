@@ -45,7 +45,7 @@ def window_drag_hook(wParam):
             if cursor_proxy:
                 window = pylewm.window.get_window(cursor_proxy)
                 if window:
-                    if window.state == pylewm.window.WindowState.IgnorePermanent:
+                    if window.state == pylewm.window.WindowState.IgnorePermanent or window.state == pylewm.window.WindowState.IgnoreTemporary:
                         window = None
                     elif window.is_taskbar:
                         window = None
