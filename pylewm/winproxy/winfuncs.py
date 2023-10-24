@@ -62,6 +62,11 @@ IsWindow = c.WINFUNCTYPE(
     w.HWND,
 )(("IsWindow", c.windll.user32))
 
+IsTopLevelWindow = c.WINFUNCTYPE(
+    w.BOOL,
+    w.HWND,
+)(("IsTopLevelWindow", c.windll.user32))
+
 IsWindowVisible = c.WINFUNCTYPE(
     w.BOOL,
     w.HWND,

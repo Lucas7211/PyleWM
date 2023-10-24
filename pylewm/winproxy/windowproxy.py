@@ -110,6 +110,15 @@ class WindowProxy:
         self._proxy_resizable = self._info.is_resizable
 
         self._transfer_info()
+    
+    @staticmethod
+    def _should_skip_detect_hwnd(hwnd):
+        if not winfuncs.IsTopLevelWindow(hwnd):
+            return True
+        exStyle = winfuncs.WindowGetExStyle(hwnd)
+        if (exStyle & winfuncs.WS_EX_NOACTIVATE) and not (exStyle & winfuncs.WS_EX_APPWINDOW):
+            return True
+        return False
 
     def _cleanup(self):
         if self._proxy_hidden:

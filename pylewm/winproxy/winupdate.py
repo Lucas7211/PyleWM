@@ -33,7 +33,7 @@ def proxy_update():
     start_time = time.perf_counter()
 
     # Update what windows are tracked
-    if not DetectedInitialWindows and (time.time() - StartTime) > 0.1:
+    if not DetectedInitialWindows and (time.time() - StartTime) > 0.25:
         detect_existing_windows()
         def proxy_detect_window(hwnd):
             ProxyCommands.queue(lambda: detect_window(hwnd))
@@ -53,6 +53,8 @@ def proxy_update():
 
 def detect_window(hwnd):
     if hwnd in WindowsByHandle:
+        return
+    if WindowProxy._should_skip_detect_hwnd(hwnd):
         return
     window = WindowProxy(hwnd)
     WindowsByHandle[hwnd] = window
