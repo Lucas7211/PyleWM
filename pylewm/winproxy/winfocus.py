@@ -40,7 +40,6 @@ def update_focused_window():
             PendingFocusProxy = None
         else:
             # Attempt to set focus, if it takes too many tries we stop
-            print(f"Set Focus: {PendingFocusProxy}")
             attempt_focus_window_handle(PendingFocusProxy._hwnd, PendingFocusRect)
 
             PendingFocusTries += 1
@@ -61,7 +60,6 @@ def update_focused_window():
         if proxy and proxy.initialized:
             FocusHWND = CurFocus
             FocusWindowProxy = proxy
-            print(f"Focus Changed: {FocusWindowProxy}")
 
             # Send a message to the command thread to indicate that the focused window has changed
             Commands.queue(functools.partial(OnFocusChanged, FocusWindowProxy))

@@ -62,7 +62,6 @@ def window_update():
                 BackgroundWindows_Queued.append(window)
             else:
                 window.proxy.background_update = False
-                print(f"Interactive Window: {window}")
                 InteractiveWindows.add(window)
 
         update_index += 1
@@ -71,7 +70,6 @@ def window_update():
     for window in reclassify_windows:
         if window in InteractiveWindows:
             InteractiveWindows.remove(window)
-        print(f"Background Window: {window}")
         BackgroundWindows_Queued.append(window)
 
     LastBackgroundUpdateDuration = time.perf_counter() - interactive_end_time

@@ -33,7 +33,7 @@ def proxy_update():
     start_time = time.perf_counter()
 
     # Update what windows are tracked
-    if not DetectedInitialWindows and (time.time() - StartTime) > 0.25:
+    if not DetectedInitialWindows:
         detect_existing_windows()
         def proxy_detect_window(hwnd):
             ProxyCommands.queue(lambda: detect_window(hwnd))
@@ -69,9 +69,8 @@ def detect_existing_windows():
     """ Detect any newly created windows that we aren't tracking. """
     new_windows = []
     def enum_window(hwnd, lparam):
-        if hwnd in WindowsByHandle:
-            return
         new_windows.append(hwnd)
+        return True
     winfuncs.EnumWindows(winfuncs.tEnumWindowFunc(enum_window), 0)
 
     for hwnd in new_windows:
@@ -133,7 +132,6 @@ def update_tracked_windows():
             if window.is_background_update():
                 BackgroundWindowProxies_Queued.append(window)
             else:
-                print(f"Interactive Proxy: {window}")
                 InteractiveWindowProxies.add(window)
         if not window.valid:
             invalid_windows.append(window)
@@ -146,7 +144,6 @@ def update_tracked_windows():
     for window in reclassify_windows:
         if window in InteractiveWindowProxies:
             InteractiveWindowProxies.remove(window)
-        print(f"Background Proxy: {window}")
         BackgroundWindowProxies_Queued.append(window)
 
     # Cleanup invalid windows

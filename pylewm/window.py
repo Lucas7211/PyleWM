@@ -82,7 +82,7 @@ class Window:
             self.proxy.permanent_ignore = (self.state == WindowState.IgnorePermanent)
             self.proxy.temporary_ignore = (self.state == WindowState.IgnoreTemporary)
 
-            # print(f"classify {self} as {new_state} because {reason}")
+            #print(f"classify {self} as {new_state} because {reason}")
 
             if self.state == WindowState.Floating:
                 self.make_floating()
@@ -204,7 +204,6 @@ class Window:
         self.stop_drag()
 
     def close(self):
-        print(f"Manually closed {self}")
         self.ignore_for(0.5)
         if self.tab_group:
             self.tab_group.remove_window(self)
@@ -571,8 +570,6 @@ def on_proxy_added(proxy):
 def on_proxy_removed(proxy):
     if proxy not in WindowsByProxy:
         return
-
-    print(f"Removed proxy {proxy}")
 
     window = WindowsByProxy[proxy]
     window.closed = True
