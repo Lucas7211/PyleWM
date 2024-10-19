@@ -355,6 +355,7 @@ VK_MAP = {
     win32con.VK_RIGHT: "right",
     win32con.VK_UP: "up",
     win32con.VK_DOWN: "down",
+    win32con.VK_DELETE: "delete",
 }
 
 KEY_MAP = { key:vk for vk,key in VK_MAP.items() }

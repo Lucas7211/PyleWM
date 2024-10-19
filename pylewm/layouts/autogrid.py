@@ -16,10 +16,18 @@ class AutoGridLayout(Layout):
     def is_portrait_mode(self):
         return self.rect.width < self.rect.height
 
+    def aspect_ratio(self):
+        return float(self.rect.width) / float(self.rect.height)
+
     def get_wanted_grid_dimensions(self, window_count):
-        columns = math.ceil(math.sqrt(float(window_count)))
+        aspect = self.aspect_ratio()
+        initial_columns = 2
+        if aspect > 20.0 / 9.0:
+            initial_columns = 3
+
+        columns = max(math.ceil(math.sqrt(float(window_count))), initial_columns)
         rows = int(math.ceil(window_count / columns))
-        if window_count > 2:
+        if window_count > initial_columns:
             rows = max(rows, 3)
         return columns, rows
 
